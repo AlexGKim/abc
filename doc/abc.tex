@@ -1,0 +1,68 @@
+\documentclass[preprint]{aastex}
+\usepackage{amsmath,amssymb}
+\usepackage{mathrsfs}
+
+\bibliographystyle{plain}
+
+
+\begin{document}
+
+\title{Type Ia Supernova Model}
+\author{Alex Kim}
+
+\section{Science Interest}
+The discovery of the accelerating expansion of the Universe came as a great surprise,
+although such behavior was already known to be a theoretical possibility.
+General Relativity (GR) long provided a basis for such an acceleration through
+the Cosmological Constant $\Lambda$, which as a constant vacuum energy density has the
+negative pressure that leads to gravitational repulsion.  An expectation
+for vacuum energy density also comes from particle physics but naive predictions anticipate
+a higher energy density than that observed: the existence of a
+non-zero but small Cosmological Constant is a major challenge confronting physics theory.
+
+There are no viable first-principles physical models, rather the acceleration caused by
+``dark energy''  with an equation of state of fairly unconstrained functional form. The parameterized model used to analyze data are based on a Taylor expansion for which GR is the zeroth-order solution.
+
+Most physicists think that the accelerating universe is due to
+GR's $\Lambda$. The ``easiest'' great physics discovery that can be made with the next 
+generation of surveys is to establish the inconsistency of the data relative to the
+expectations of GR; only if the data can exclude GR do we have 
+a hope to track down the nature of the next generation of physics.  Therefore, it seems that 
+the first layer of statistical analysis should be hypothesis testing with
+GR as the null hypothesis.
+
+The technique we are familiar with is the goodness-of-fit test using $p$-values.
+The likelihood does not reduce to a simple least-squares
+so a $\chi^2$-distribution does not apply.  The model of the data involves latent parameters
+drawn from unknown distributions, and objects not discovered due to survey inefficiency.  
+
+GR makes a prediction for the distance modulus as a function of redshift,
+\begin{equation}
+\mu_\Lambda(z;H_0, \Omega_M, \Omega_\Lambda),
+\end{equation}
+where  three free parameters are accommodated, or two when flatness is assumed i.e.\
+$\Omega_M+\Omega_\Lambda=1$.  For the purposes of hypothesis testing,
+$H_0$, $\Omega_M$, $\Omega_\Lambda$ are nuisance parameters.
+
+
+Each object (transient) in the Universe has intrinsic properties
+\begin{equation}
+\{M(\lambda,t), A(\lambda,t), z, \mu\},
+\end{equation}
+where $M$ is the absolute magnitude, $z$ represents the cosmological redshift (peculiar velocities are ignored), and $\mu$ is the distance modulus corresponding to that redshift.  
+
+We access information about these objects
+\begin{equation}
+\{\hat{T}, \hat{m}(t), \hat{H}, \hat{z}, \hat{\mu}
+\},
+\end{equation}
+where $\hat{T}$ is a boolean whether the transient is discovered and $\hat{m}$ are the measurements.
+$\hat{H}$ is the weight of the object in the analysis, clearly non-discovery implies $\hat{H}=0$
+and traditional Type~Ia SN classification gives a binary $\hat{H} \in \{0,1\}$ for consideration in
+the cosmology analysis.  The measured redshift $\hat{z}$ can have uncertainty due to host-misidentification and further spectroscopic or photometric redshift uncertainty.  $\hat{mu}$
+is a number usually derived from the use of an SN~Ia model to interpret $\hat{m}$.
+
+The underlying function $\mu(z)$ is what we want to infer from the data.  Of particular interest
+is to show that $\mu(z)$ is inconsistent with the theoretical expectation from the theoretical expectation for a Cosmological Constant universe.
+
+\end{document}
