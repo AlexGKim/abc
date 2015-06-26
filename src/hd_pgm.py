@@ -8,64 +8,72 @@ rc("text", usetex=True)
 
 pgm = PGM([7.5, 6.5], origin=[0., 0.2], observed_style='inner')
 
-pgm.add_node(Node('HD',r"$\vec{\mu},\vec{z}$", 1,6))
-pgm.add_node(Node('TypeHost',r"Type, Host", 3, 6, scale=1.8))
-pgm.add_node(Node('Flux',r"$n(t,\lambda)$", 2, 5))
-pgm.add_node(Node('Flux_g',r"$n_g(\lambda)$", 3, 5))
-pgm.add_node(Node('Transmission',r"$T(\lambda)$", 6, 6))
-pgm.add_node(Node('Spectrum',r"$\hat{\mathit{Spec}}$.", 2, 2, observed=True))
-pgm.add_node(Node('Counts',r"$\mathit{ADU}$", 3, 4))
-pgm.add_node(Node('Counts_g',r"$\mathit{ADU}_g$", 4, 4))
+pgm.add_node(Node('HD',r"$\vec{\mu},\vec{z}$, $\vec{\mathit{RA/Dec}}$", 1,4,scale=2))
+pgm.add_node(Node('theta_T',r"$\theta_T$", 1,6))
+pgm.add_node(Node('theta_G',r"$\theta_G$", 1,2))
+
+pgm.add_node(Node('theta_Ti',r"$\theta_{Ti}$", 2,5))
+pgm.add_node(Node('theta_Gi',r"$\theta_{Gi}$", 2,3))
+
+
+pgm.add_node(Node('TypeHost',r"$T_i$, $G_i$", 2, 4, scale=1.5))
+pgm.add_node(Node('Flux',r"$n_i(t,\lambda)$", 2, 6, scale=1.2))
+pgm.add_node(Node('Flux_g',r"$n_{gi}(\lambda)$", 2, 2))
+pgm.add_node(Node('Transmission',r"$\phi(\lambda)$", 6, 4))
+pgm.add_node(Node('Counts',r"$\mathit{ADU}_i$", 3, 5,scale=1.2))
+pgm.add_node(Node('Counts_g',r"$\mathit{ADU}_{gi}$", 3, 1,scale=1.2))
 pgm.add_node(Node('Zeropoints',r"$\hat{Z}$", 6, 5, observed=True))
-pgm.add_node(Node('^Counts',r"$\hat{f}$", 3, 3, observed=True))
-pgm.add_node(Node('Spars',r"$\hat{z_S},\hat{\theta_S}$", 3, 2, observed=True))
-pgm.add_node(Node('^Host',r"$\hat{z_H},\hat{\theta_H}$", 3, 1, observed=True))
-pgm.add_node(Node('Galaxies',r"Gals.", 1, 1, observed=True))
-pgm.add_node(Node('^z',r"$\hat{z}$", 5, 2, observed=True))
-pgm.add_node(Node('^mu',r"$\hat{\mu}$", 5, 1, observed=True))
-pgm.add_node(Node('^Type',r"$\hat{\mathit{Type}}$", 5, 3, observed=True))
-pgm.add_node(Node('Detected',r"$\hat{D}$", 5, 4, observed=True))
+pgm.add_node(Node('Counts_V',r"$\mathit{ADU}_{Vi}$", 3, 4, scale=1.2))
+pgm.add_node(Node('^Counts',r"$\hat{\mathit{ADU}_i}$,$\hat{\mathit{ADU}_{gi}}$", 5, 4, observed=True,scale=2))
+
+pgm.add_node(Node('Spars',r"$\hat{T}_{Si}$, $\hat{z}_{Si},\hat{\theta}_{Si}$", 4, 6, scale=2.1,observed=True))
+pgm.add_node(Node('^Host',r"$\hat{z}_{Hi},\hat{\theta}_{Hi}$", 2, 1, scale=1.5,observed=True))
+pgm.add_node(Node('Galaxies',r"$\hat{\mathit{Gals.}}$", 1, 1, observed=True))
+
+pgm.add_node(Node('Detected',r"$\hat{D}_i$", 4, 3, observed=True))
 
 pgm.add_edge("HD","TypeHost")
 pgm.add_edge("HD","Flux")
 pgm.add_edge("HD","Flux_g")
+pgm.add_edge("HD","^Host")
 
-pgm.add_edge("TypeHost","Flux")
-pgm.add_edge("TypeHost","Flux_g")
+
+pgm.add_edge("TypeHost","theta_Ti")
+pgm.add_edge("TypeHost","theta_Gi")
+
+pgm.add_edge("theta_T","Flux")
+pgm.add_edge("theta_G","Flux_g")
+pgm.add_edge("theta_G","Galaxies")
+
+pgm.add_edge("theta_Ti","Flux")
+pgm.add_edge("theta_Gi","Flux_g")
 
 
 pgm.add_edge("Flux","Counts")
 pgm.add_edge("Flux_g","Counts_g")
 
-pgm.add_edge("Counts","^Counts")
+pgm.add_edge("Counts","Counts_V")
+pgm.add_edge("Counts_V","^Counts")
 pgm.add_edge("Counts_g","^Counts")
-pgm.add_edge("Zeropoints","^Counts")
 
 
 pgm.add_edge("Transmission","Counts")
 pgm.add_edge("Transmission","Counts_g")
 pgm.add_edge("Transmission","Zeropoints")
 
-pgm.add_edge("Flux","Spectrum")
-pgm.add_edge("Flux_g","Spectrum")
-pgm.add_edge("Spectrum","Spars")
+pgm.add_edge("Flux","Spars")
 
 pgm.add_edge("Galaxies","^Host")
 
+pgm.add_edge("Counts_g","Counts_V")
 
-pgm.add_edge("^Counts","Detected")
-pgm.add_edge("^Counts","^Type")
-pgm.add_edge("^Counts","^z")
-pgm.add_edge("^Counts","^mu")
+pgm.add_edge("Counts_V","Detected")
+pgm.add_edge("Detected","^Counts")
+pgm.add_edge("Detected","Spars")
+pgm.add_edge("Detected","^Host")
 
-pgm.add_edge("Spectrum","^Type")
 
-pgm.add_edge("Spars","^z")
-pgm.add_edge("Spars","^mu")
 
-pgm.add_edge("^Host","^Type")
-pgm.add_edge("^Host","^z")
-pgm.add_edge("^Host","^mu")
 
 # pgm.add_edge("Galaxies", "gal_zi")
 
