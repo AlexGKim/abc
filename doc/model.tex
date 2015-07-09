@@ -37,17 +37,19 @@ to  label measurements.
 An alternative would have been to
 model measurements of all discovered transients, not just those typed as SN~Ia. 
 The non-Ia transient population has significant model uncertainty and the information they impart on the expansion history is weak:  I anticipate it is cleaner to limit ourselves to
-modeling discoveries we think are SN~Ia.  This restriction does not obviate the need
-to consider non-Ia contamination in the sample.
+modeling discoveries we think are SN~Ia. This restriction does not obviate the need
+to consider non-Ia contamination in the sample, rather
+we only need to model non-Ia's
+that are mistaken for Ia and not all discovered transients. 
 
 Here $\mu$ is modeled; most analyses instead
 directly have cosmological parameters $\{\Omega_M, \Omega_\Lambda, w_0, w_a\}$.
 A motivation is to provide results that can be applied to test arbitrary cosmological models:
 indeed the model-dependence of the $\mu$'s reported for high-$z$ supernovae 
 \citep[e.g.][]{2012ApJ...746...85S} is a source of confusion to the community.
-An example of a non-parametric model for $\mu$ that is independent of cosmological
-parameters is given in the Appendix of
-\citet{2013ApJ...764..116W}.
+%An example of a non-parametric model for $\mu$ that is independent of cosmological
+%parameters is given in the Appendix of
+%\citet{2013ApJ...764..116W}.
 
 DES plans a ``photometry''-only analysis, in that a significant subset of transients used
 in the Hubble diagram will not observed spectroscopically while active.  Therefore,
@@ -66,9 +68,10 @@ shown in Figure~\ref{pgm:fig}.
    \includegraphics[width=7in]{/Users/akim/project/abc/results/hdpgm.eps} 
    \caption{Probabilistic Graphical Model for the SN~Ia analysis.  The forward modeling
    flow goes from left to right.  Starting from the position and distance
-   $\mu$, $z$, $\text{RA/Dec}$ the transient and host types $T$, $G$ are realized. 
-   The transient- and
-   galaxy-model parameters $\theta_T$, $\theta_{Ti}$, $\theta_G$, $\theta_{Gi}$ along
+   $\mu$, $z$, $\text{RA/Dec}$ and galaxies $G$, the transient type $T$ and host-galaxy
+   $\theta_{gi}$ are realized. 
+   The transient
+    parameters $\theta_T$, $\theta_{Ti}$ along
    with redshift and distance modulus determine the incoming photon flux $n$, $n_g$.
    The instrumental transmission function $\phi$ gives the expected and realized
    counts $\mathit{ADU}$, $\mathit{ADU}_g$, $\mathit{ADU}_V$.  The calibration measurements
@@ -81,30 +84,70 @@ shown in Figure~\ref{pgm:fig}.
 
 
 \subsection{Forward Model}
-I first walk through the PGM as a forward process.  This is useful for understanding
-how the model would be simulated.
-
-Discovered transients typed as SNe~Ia are modeled.  Each has
-a cosmological redshift and corresponding distance modulus; these $z$-$\mu$ pairs are the  parameters that
-constitute the Hubble diagram.  For the moment, the coordinates RA/Dec are considered
-precisely determined from imaging data.
-
-Each transient indexed by $i$ is of a certain type $T$ and comes from a  host galaxy of type $G$.  
-(``Host'' includes the host as well as  all galaxies that project onto the coordinate of
-the transient.)  The
-transients (galaxies) are modeled and described by global parameters $\theta_T$ ($\theta_G$),
-and  parameters specific to the transient $\theta_{Ti}$ ($\theta_{Gi}$).  For example, the SALT2 SN~Ia
-model has individual $c$ and $x_1$ parameters that would constitute $\theta_{Ti}$,
+Let us start with the model description of the universe and its contents, specifically transients
+that are discovered as typed as SN~Ia.
+\begin{itemize}
+\item $G$ is the set of all galaxies that can host a transient.  It is
+the union of the observed galaxy catalog plus potential galaxies that have not
+met the detection threshold, presumably due to low surface brightness.
+\item $\text{RA}=\hat{\text{RA}}$, $\text{Dec} =\hat{\text{Dec}}$.  The observed
+coordinates are taken to be the true coordinates of the transient.
+\item $P(g_i | G, \text{RA/Dec})$. 
+The association of a host galaxy labeled by $g_i$ with the transient.
+This pdf is
+the deliverable we want from Ravi.
+\item $P(z_i, \theta_{gi} | g_i)$. 
+The redshift and galactic parameters associated with SN results.
+For observed galaxies the parameter distributions 
+are based on measurements e.g.\ $\theta_{gi} \sim \mathcal{N}(\hat{\theta}_{gi},\sigma^2_{\hat{\theta}_{gi}})$, otherwise the distribution
+of $\theta_{gi}$ for ``hostless'' galaxies can be fit as part of the model.
+\item $\mu_i=\mu(z_i; \theta_\mu)$.  The distance modulus is a function of redshift,
+we don't impose a specific form for  $\mu$ at the moment,  it could
+be a $\Lambda$CDM prediction with cosmological parameters, a spline with knot values
+as parameters, or as extreme as independent values for each $z$.
+The redshift of the galaxy is assumed to be that of the transient.
+\item $P(T_i | \theta_{gi})$.  The transient type, SN~Ia or non-Ia, depends
+on the host properties.  We could make the relative rates be dependent
+on specific star formation rate and morphology.
+\item $P(\theta_T^{Ia}, \theta_{Ti}^{Ia})$.  The model parameters for SNe~Ia, including
+parameters that describe distributions.
+Different SN~Ia models could be considered: the treatment of SALT2 parameters
+has been presented in \citet{2011MNRAS.418.2308M}.
+The SALT2 SN~Ia
+model has individual $c$ and $x_1$ parameters that would constitute $\theta_{Ti}^{Ia}$,
 and global $\alpha$, $\beta$, and intrinsic dispersion  parameters  common to all supernovae
- and  underlying  $c$ and $x_1$ distributions that would constitute $\theta_T$.
-The Type model includes  information on the
-source and line-of-sight effects, which specify the effective SED. 
-This SED, redshift, and  distance modulus determine the photon flux incident above the Earth's
-atmosphere, $n$ and $n_g$.  
+ and  underlying  $c$ and $x_1$ distributions that would constitute $\theta_T^{Ia}$.
+\item $P(\theta_T^{non-Ia}, \theta_{Ti}^{non-Ia})$.  Non-Ia transients
+that can be mistyped as Ia are described by a parameterized model.
+\item $L_i(t,\lambda; T_i, \theta_T^{Ia}, \theta_{Ti}^{Ia}, \theta_T^{non-Ia}, \theta_{Ti}^{non-Ia},
+\theta_{gi})$.  The source model specifies
+the luminosity. The  model includes  information on the
+source and line-of-sight effects, which specify the effective SED.   Only the
+parameters of the model of the appropriate type $T$ are relevant.  The galaxy parameters
+$\theta_{gi}$ are included if correlations with host-galaxy properties are to be modeled.
+\item $n_i(t,\lambda; L_i, \mu_i, z_i)$.  The  flux incident at Earth
+is specified by the luminosity, distance modulus, and redshift.
+\end{itemize}
 
-The experiment has an optical chain summarized by the transmission functions $\phi(\lambda)$, which determine the expected counts of the transient and galaxy, $\mathit{ADU}$ and
-$\mathit{ADU}_g$.   These expected counts in turn determine realized  transient counts 
-$\mathit{ADU}_V$.
+The universe is observed with an experiment.
+\begin{itemize}
+\item The transmission functions $\phi(\lambda)$ describe the optical path from the
+atmosphere to counts, and is calibrated with measurements $\hat{Z}$.  We expect
+that calibration group to provide us with this function and its uncertainties. 
+\item $\mathit{ADU}$ and
+$\mathit{ADU}_g$ are the expected counts of the transient and galaxy respectively,
+coming from the combination of source flux $n$ and transmission $\phi$.
+\item $\mathit{ADU}_V$ is the realized flux.
+\item The transient is discovered $\hat{D}$ depending on the realized $\mathit{ADU}_V$.
+This should depend mostly on signal-to-noise.
+\item $\hat{\mathit{ADU}}$ and
+$\hat{\mathit{ADU}}_g$ are measured light curves.
+\item $\hat{T}_S$, $\hat{z}_S$, $\hat{\theta}_S$ Transient redshift and properties from
+spectroscopic data. I skip the details of the actual measurement  and make a direct association
+with the fluxes of the transient and underlying galaxy $n$, $n_g$.
+
+\end{itemize}
+has, which determine the expected counts of the transient and galaxy,    These expected counts in turn determine realized  transient counts 
 The signal to noise of the realized counts specify the probability of discovery
 $\hat{D}$ .    The photometry of the subset of discovered transients
 are denoted as $\hat{\mathit{ADU}}$.
