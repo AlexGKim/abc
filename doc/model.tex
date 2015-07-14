@@ -15,98 +15,97 @@
 
 \section{Model}
 We infer a Hubble diagram based on measurements of discovered transients
-classified as Type~Ia supernovae (SNe~Ia).  The inferred Hubble diagram can be
-expressed as
+classified as Type~Ia supernovae (SNe~Ia).  The probability distribution
+function (pdf) of the Hubble diagram is denoted as
 \begin{equation}
-P(\vec{\mu},\vec{z} |  \vec{\hat{D}}=1, \vec{\hat{T}}=\text{SN~Ia}, \vec{\hat{ADU}}, \vec{\hat{T}}_S,\vec{\hat{z}}_S,
-\vec{\hat{\theta}}_S,\vec{\hat{z}}_H,\vec{\hat{\theta}}_H),
+P(\vec{\mu},\vec{z} |  \vec{\hat{ADU}}, \vec{\hat{T}}_S,\vec{\hat{z}}_S,
+\vec{\hat{\theta}}_S,\hat{\text{Gals.}}, \vec{\hat{D}}=1, \vec{\hat{T}}=\text{SN~Ia},
+\vec{\hat{\text{RA}}}, \vec{\hat{\text{Dec}}}),
 \label{hd:eqn}
 \end{equation}
 where the inferred quantities are the set of distance moduli ($\vec{\mu}$)
 and redshifts ($\vec{z}$), and 
-the measurements include: $\hat{D}$ the boolean that indicates that
-the transient was discovered; $\hat{ADU}$ the transient photometry;
+the measurements include:  the transient photometry $\hat{ADU}$;
 spectroscopically derived transient
 typing, redshift and parameters $\hat{T}_S$, $\hat{z}_S$, $\hat{\theta}_S$;
-and the redshift and parameters of the associated host galaxy $\hat{z}_{H}$, $\hat{\theta}_H$.
-A classifier takes these data and infers types $\vec{\hat{T}}$.
-The conditions $\vec{\hat{D}}=1$, $\vec{\hat{T}}=\text{SN~Ia}$ hold as only transients
-discovered and classified as SNe~Ia are modeled.  We use the convention of using carets $\hat{}$
+and the galaxy catalog $\hat{\text{Gals.}}$
+The conditions $\vec{\hat{D}}=1$, $\vec{\hat{T}}=\text{SN~Ia}$ indicate a sample selection
+of transients
+discovered and classified as SNe~Ia. The observed coordinates of the transients
+are $\vec{\hat{\text{RA}}}$, $\vec{\hat{\text{Dec}}}$.
+We use the convention of using carets $\hat{}$
 to  label measurements.
 
-An alternative would have been to
-model measurements of all discovered transients, not just those typed as SN~Ia. 
-The non-Ia transient population has significant model uncertainty and the information they impart on the expansion history is weak:  I anticipate it is cleaner to limit ourselves to
-modeling discoveries we think are SN~Ia. This restriction does not obviate the need
-to consider non-Ia contamination in the sample, rather
-we only need to model non-Ia's
-that are mistaken for Ia and not all discovered transients. 
-
-Here $\mu$ is modeled; most analyses instead
-directly have cosmological parameters $\{\Omega_M, \Omega_\Lambda, w_0, w_a\}$.
-A motivation is to provide results that can be applied to test arbitrary cosmological models:
-indeed the model-dependence of the $\mu$'s reported for high-$z$ supernovae 
-\citep[e.g.][]{2012ApJ...746...85S} is a source of confusion to the community.
-%An example of a non-parametric model for $\mu$ that is independent of cosmological
-%parameters is given in the Appendix of
-%\citet{2013ApJ...764..116W}.
-
-DES plans a ``photometry''-only analysis, in that a significant subset of transients used
-in the Hubble diagram will not observed spectroscopically while active.  Therefore,
-our model must account for transient mistyping and host-galaxy mismatches.  To obtain
-our targeted
-accuracy we need to account for covariances that occur due to photometric
-calibration and Malmquist bias.  Our model will contain elements that may not
-have been included in previous analyses. 
-
-A sketch of a model explaining the data is depicted through the Probabilistic Graphical Model
+The pdf in Equation~\ref{hd:eqn} is proportional to
+\begin{equation}
+P(\vec{\mu},\vec{z},  \vec{\hat{D}}=1, \vec{\hat{T}}=\text{SN~Ia},
+\vec{\hat{\text{RA}}}, \vec{\hat{\text{Dec}}} |  \vec{\hat{ADU}}, \vec{\hat{T}}_S,\vec{\hat{z}}_S,
+\vec{\hat{\theta}}_S,\hat{\text{Gals.}})
+\label{hd2:eqn}
+\end{equation}
+and we model this scenario.  A sketch of such a model is depicted in the Probabilistic Graphical Model
 (PGM)
 shown in Figure~\ref{pgm:fig}.
 
 \begin{figure}[htbp] %  figure placement: here, top, bottom, or page
    \centering
    \includegraphics[width=7in]{/Users/akim/project/abc/results/hdpgm.eps} 
-   \caption{Probabilistic Graphical Model for the SN~Ia analysis.  The forward modeling
-   flow goes from left to right.  Starting from the position and distance
-   $\mu$, $z$, $\text{RA/Dec}$ and galaxies $G$, the transient type $T$ and host-galaxy
-   $\theta_{gi}$ are realized. 
-   The transient
-    parameters $\theta_T$, $\theta_{Ti}$ along
-   with redshift and distance modulus determine the incoming photon flux $n$, $n_g$.
-   The instrumental transmission function $\phi$ gives the expected and realized
-   counts $\mathit{ADU}$, $\mathit{ADU}_g$, $\mathit{ADU}_V$.  The calibration measurements
-   are $Z$.  The measured galaxy catalog is $\hat{\mathit{Gals.}}$  Only detected
+   \caption{Probabilistic Graphical Model for the SN~Ia analysis.  
+   The forward modeling
+   flow goes from left to right, starting with the description of the universe, observatory,
+   and data.
+   A galaxy catalog $\hat{\mathit{Gal.}}$ informs the model for potential hosts $G$.  A transient
+   at coordinates  $\text{RA/Dec}$  has a host $g_i$ drawn from $G$.
+   The galaxy redshift redshift $z$ and parameters $\theta_{gi}$ are fixed based on the host.
+   A distance modulus model with parameters $\theta_\mu$ fix the distance modulus $\mu_i$.
+   The transient type $T$ depends on the host-galaxy.   The transient
+   parameters $\theta_T^X$, $\theta_{Ti}^X$ (and perhaps the host galaxy) fix the luminosity $L$.       The 
+   incoming photon flux $n$, $n_g$  are then fixed
+   with redshift and distance modulus.
+   The instrumental transmission function $\phi$ gives the expected
+   counts $\mathit{ADU}$, $\mathit{ADU}_g$.  The calibration measurements
+   are $\hat{Z}$.  The measured galaxy catalog is $\hat{\mathit{Gals.}}$  Only detected
    supernovae $\hat{D}$ have subsequent light curve ($\hat{ADU}$), spectral
    $\hat{X}_S$, and associated host galaxy $\hat{X}_H$ measurements.  A supernova
    classifier takes measurements and infers a type $\hat{T}$, which is used for sample selection.
+       Nodes labeled by
+   \textasciicircum are fixed, the others are probilistic.
    \label{pgm:fig}}
 \end{figure}
 
-
-\subsection{Forward Model}
-Let us start with the model description of the universe and its contents, specifically transients
-that are discovered as typed as SN~Ia.
+The supernova survey provides the transients that are to be analyzed providing
+the following information:
 \begin{itemize}
-\item $G$ is the set of all galaxies that can host a transient.  It is
-the union of the observed galaxy catalog plus potential galaxies that have not
-met the detection threshold, presumably due to low surface brightness.
-\item $\text{RA}=\hat{\text{RA}}$, $\text{Dec} =\hat{\text{Dec}}$.  The observed
-coordinates are taken to be the true coordinates of the transient.
-\item $P(g_i | G, \text{RA/Dec})$. 
-The association of a host galaxy labeled by $g_i$ with the transient.
+\item $\hat{\text{RA}}$, $\hat{\text{Dec}}$.  The observed
+coordinates.  For our purposes the observed, rather than true, coordinates are sufficient.
+\item $\hat{D}=1$.  The transient is discovered.
+\item $\hat{T}=\text{SN~Ia}$. The transient is classified as SN~Ia.
+\item $\hat{\text{Gals}}$ is a galaxy catalog used to make host-galaxy associations.
+\end{itemize}
+In the PGM, these parameters are labeled as fixed ($\bullet$) data (\textasciicircum).
+
+The model describes the universe and its contents, specifically transients
+that are discovered as typed as SN~Ia and their host galaxies.
+\begin{itemize}
+\item $G$ is a shorthand for the model of all galaxies that can host a transient.  It is
+the union of the objects in the observed galaxy catalog $\hat{\text{Gals}}$
+plus unobserved galaxies that have not
+met the detection threshold, presumably due to their low surface brightness.
+\item $P(g_i | G, \hat{\text{RA}}/\hat{\text{Dec}})$. The host galaxy $g_i$
+is drawn from the galaxy catalog based on coordinates.
 This pdf is
 the deliverable we want from Ravi.
-\item $P(z_i, \theta_{gi} | g_i)$. 
-The redshift and galactic parameters associated with SN results.
-For observed galaxies the parameter distributions 
-are based on measurements e.g.\ $\theta_{gi} \sim \mathcal{N}(\hat{\theta}_{gi},\sigma^2_{\hat{\theta}_{gi}})$, otherwise the distribution
-of $\theta_{gi}$ for ``hostless'' galaxies can be fit as part of the model.
+\item $z_i$, $\theta_{gi}$ are the galaxy redshift and parameters.
+For observed galaxies the parameter values are based on measurements e.g.\ $\theta_{gi} \sim \mathcal{N}(\hat{\theta}_{gi},\sigma^2_{\hat{\theta}_{gi}})$, otherwise the distribution
+of $\theta_{gi}$ for ``hostless'' galaxies is described by the model.
+Redshifts may be photometric or spectroscopic.
+\item $\theta_\mu$ are the parameters that specify that distance modulus.
 \item $\mu_i=\mu(z_i; \theta_\mu)$.  The distance modulus is a function of redshift,
 we don't impose a specific form for  $\mu$ at the moment,  it could
 be a $\Lambda$CDM prediction with cosmological parameters, a spline with knot values
 as parameters, or as extreme as independent values for each $z$.
-The redshift of the galaxy is assumed to be that of the transient.
-\item $P(T_i | \theta_{gi})$.  The transient type, SN~Ia or non-Ia, depends
+The redshift of the galaxy is used in the Hubble diagram.
+\item $P(T_i | \theta_{gi})$.  The transient type $T_i$, SN~Ia or non-Ia, depends
 on the host properties.  We could make the relative rates be dependent
 on specific star formation rate and morphology.
 \item $P(\theta_T^{Ia}, \theta_{Ti}^{Ia})$.  The model parameters for SNe~Ia, including
@@ -120,195 +119,164 @@ and global $\alpha$, $\beta$, and intrinsic dispersion  parameters  common to al
 \item $P(\theta_T^{non-Ia}, \theta_{Ti}^{non-Ia})$.  Non-Ia transients
 that can be mistyped as Ia are described by a parameterized model.
 \item $L_i(t,\lambda; T_i, \theta_T^{Ia}, \theta_{Ti}^{Ia}, \theta_T^{non-Ia}, \theta_{Ti}^{non-Ia},
-\theta_{gi})$.  The source model specifies
+\theta_{gi})$.  The source model fixes
 the luminosity. The  model includes  information on the
 source and line-of-sight effects, which specify the effective SED.   Only the
 parameters of the model of the appropriate type $T$ are relevant.  The galaxy parameters
 $\theta_{gi}$ are included if correlations with host-galaxy properties are to be modeled.
 \item $n_i(t,\lambda; L_i, \mu_i, z_i)$.  The  flux incident at Earth
-is specified by the luminosity, distance modulus, and redshift.
+is fixed by the luminosity, distance modulus, and redshift.
 \end{itemize}
 
-The universe is observed with an experiment.
+The model expectation of measured  signals is governed by:
 \begin{itemize}
 \item The transmission functions $\phi(\lambda)$ describe the optical path from the
-atmosphere to counts, and is calibrated with measurements $\hat{Z}$.  We expect
-that calibration group to provide us with this function and its uncertainties. 
+atmosphere to counts.  We expect
+the calibration group to provide us with the functions and covariance
+$\phi \sim \mathcal{N}(\bar{\phi},C_\phi)$. Self-calibration, taking advantage of the
+fact that SNe~Ia are excellent standard stars, 
+may be included in this model.
 \item $\mathit{ADU}$ and
 $\mathit{ADU}_g$ are the expected counts of the transient and galaxy respectively,
-coming from the combination of source flux $n$ and transmission $\phi$.
-\item $\mathit{ADU}_V$ is the realized flux.
-\item The transient is discovered $\hat{D}$ depending on the realized $\mathit{ADU}_V$.
-This should depend mostly on signal-to-noise.
-\item $\hat{\mathit{ADU}}$ and
-$\hat{\mathit{ADU}}_g$ are measured light curves.
+coming from $\int n_i \phi d\lambda$.
+\end{itemize}
+
+The observations, denoted with \textasciicircum, are now discussed.
+\begin{itemize}
+\item $\hat{\mathit{ADU}}$ is the realized flux.  $\hat{\mathit{ADU}} \sim \mathcal{N}(ADU,C_{ADU})$
+where $C_{ADU}$ is the photometric noise.
 \item $\hat{T}_S$, $\hat{z}_S$, $\hat{\theta}_S$ Transient redshift and properties from
 spectroscopic data. I skip the details of the actual measurement  and make a direct association
 with the fluxes of the transient and underlying galaxy $n$, $n_g$.
-
+\item $\hat{Z}$ represents the calibration measurements.  Although we expect to receive
+the transmission functions from the Calibration Task Force, we may be want to include
+calibration as part of our analysis.
 \end{itemize}
-has, which determine the expected counts of the transient and galaxy,    These expected counts in turn determine realized  transient counts 
-The signal to noise of the realized counts specify the probability of discovery
-$\hat{D}$ .    The photometry of the subset of discovered transients
-are denoted as $\hat{\mathit{ADU}}$.
 
-For discovered transients, there may be spectra of the object itself
-from which typing, redshift and spectral parameters $\hat{T}_S$, $\hat{z}_S$, $\hat{\theta}_S$ are derived.
-From amongst the detected galaxies $\hat{\mathit{Gals.}}$  a host is associated with the transient
-based on its RA/Dec; the host information is summarized as the
-host redshift (spectroscopic or photometric) and parameters $\hat{z}_{H}$, $\hat{\theta}_H$.
-
-The observatory transmission $\phi$ are calibrated $\hat{Z}$.
-
-
-\subsection{Backward Model}
- 
-I now systematically
-examine the model going backwards, from the observables to the fundamental parameters.
-This is useful for understanding dependencies in constructing the likelihood.
-
-The observables are:
-\begin{description}
-\item[$\hat{\mathit{Gals}}$] Detected galaxies from which a transient's host is identified.
-Depends on the model for galaxies $\theta_G$.
-\item[$\hat{D}$] Transient detection.  It depends on
-the realized signal $\hat{\mathit{ADU}_V}$ and its noise, mostly through the signal-to-noise
-$\mathit{SNR}$.
-\item[$\hat{\mathit{ADU}}$]  Photometry of discovered transients.  Its inclusion
-depends on discovery $\hat{D}$ and has the value of the realized signal $\mathit{ADU}_V$.
-\item[$\hat{z}_H$, $\hat{\theta}_H$] Host galaxy redshift and properties from spectroscopic
-and photometric data, based on association
-of the host from the pool of detected galaxies $\hat{\mathit{Gals}}$ and the transient RA/Dec.
-\item[$\hat{T}_S$, $\hat{z}_S$, $\hat{\theta}_S$] Transient redshift and properties from
-spectroscopic data. I skip the details of the actual measurement  and make a direct association
-with the fluxes of the transient and underlying galaxy $n$, $n_g$.
-\item[$\hat{Z}$] Calibration zeropoints.  Depends on the calibration process
-and the underlying transmission functions $\phi(\lambda)$.  Specifies
-the transmission functions.
-\end{description}
-
-The following are elements that are to be modeled, including ``nuisance'' parameters.
-\begin{description}
-\item[$\mathit{ADU}_V$]  Realized counts
-of the transient.  Depends
-on the expected counts of the transient and host $\mathit{ADU}$, $\mathit{ADU}_g$.
-Although all transients will have realized counts but not all will be measured, hence the distinction
-from $\hat{\mathit{ADU}}$.
-\item[$\mathit{ADU}$, $\mathit{ADU}_{g}$]  Expected counts
-of the transient and background galaxy respectively.  Depends
-on the incident fluxes $n$, $n_g$ and the instrumental
-transmission $\phi(\lambda)$.
-\item[$\phi(\lambda)$] DES transmission functions.
-\item[$n$, $n_g$] The incident fluxes at Earth of the transient and background
-galaxy.  Depends on  $z$ and $\mu$, and the SEDs of the Type and Host as
-specified by $\theta_{Ti}$, $\theta_{Gi}$, $\theta_{T}$, $\theta_{G}$.
-\item[$\theta_{Ti}$, $\theta_{Gi}$] Parameters that describe the properties of the individual transient
-and host respectively.
-\item[$\theta_{T}$, $\theta_{G}$] Parameters that describe the global properties of the transient
-and host models.
-\item[$T$, $G$]  The type of transient and projected galaxies (referred to as host), which
-specifies which model to use. The realization depends on the redshift $z$.
-\item[$\vec{\mu}$, $\vec{z}$]  The true distance moduli and cosmological redshifts under
-consideration.  Each redshift has a unique distance modulus.
-\item[$\mathbf{RA/Dec}$] The coordinate of the transient.  For us, it is sufficient to directly
-assign the coordinate measured
-from the images.
-\end{description}
-
-\section{Subsections of the Model}
-
-\subsection{Type}
-\label{type:sec}
-Since our transient sample may not consist purely of SNe~Ia, the model
-has a term of the form $P(T, G | z,\mu)$, which should account for all types of
-objects that could potentially be mistaken for Type~Ia:
-the rates and association with host galaxies are described for
-the full population of potential interlopers.
-This term is not currently well known, particularly at the highest redshifts probed by DES.
-
-An idea is to consider two types: SN~Ia and non-SN~Ia, where the latter's
-intrinsic distributions have loose priors.  Transients that have been spectroscopically
-classified as non-Ia will provide the strongest leverage in constraining the
-contamination: this subset must be unbiased or properly weighted
-relative to the underlying population that constitutes the Hubble diagram.
-Running the model on a pure sample of SNe~Ia can have benefits.
-As discussed in \S\ref{systematics:sec}, comparing these results with
-those from the full sample provides
-a test of systematics.  Alternatively, the non-Ia model may be better constrained
-with the pure sample.
-
-
-To minimize the contribution of non-Ia contamination we strive for
-a pure sample selection so that $P(T=\text{non-Ia}| \mu) \rightarrow 0$.
-
-
-\subsection{Host Matching}
-\sloppy
-The host-galaxy properties depend on the galaxy catalog and the transient
-coordinates $P(\hat{z}_H, \hat{\theta}_H | \hat{\mathit{Gals.}}, \text{RA/Dec})$.  With a
-spectrum of the transient and the underlying background, identification of the host galaxy
-is usually straightforward.
-Otherwise, projections or ambiguous cases can result in the misidentification of
-the host.
-Other supernova surveys (e.g.\ SNLS) 
-with spectroscopically confirmed host associations (e.g.\ with
-matched transient and galaxy redshifts) that replicate the DES population
-can be used to put a prior on this probability.
-
-%An effective way of addressing this term is to
-%analyze the supernovae assuming a correct host match, and
-%experimentally determine $P(\text{mismatch} )$ and
-%$\left. \langle \hat{\mu}-\mu(z)\rangle \right|_{\text{mismatch}}$, $\left. \langle \hat{z}-z \rangle \right|_{\text{mismatch}}$ and cross-terms to correct bias in the Hubble diagram. 
-
-
-% only model $T=\text{SN~Ia}$,
-%and experimentally determine $P(\text{non-Ia})$, 
-%$\left. \langle \mu-\mu_{model} \rangle \right|_{non-Ia}$, and its uncertainty for the
-%sample of non-Ia's that are discovered and misclassified as SN~Ia.
-%This measurement is achieved through spectroscopic
-%typing of a subset drawn from the populations used in the Hubble diagram.
-%The weighted bias would be added as a correction to the Hubble diagram under the assumption that all objects are SNe~Ia.
-
-
-
-\subsection{Type~Ia Supernova Model}
-\label{snmodel:sec}
-The DES light curve analysis in principle may be used for typing and determining
-redshift, in addition to getting supernova properties.   
-Generally the relevant term is
-\begin{equation}
-P(\hat{D}_i=1,\hat{\mathit{ADU}}_{i}, \hat{T}_{Si}, \hat{z}_{Si}, \hat{\theta}_{Si}, \hat{z}_{Hi}, \hat{\theta}_{Hi}
- | \mu_i,z_i,T_i,\theta_T,\theta_{Ti},\phi(\lambda)).
- \end{equation}
-Detection and typing depend on the realized light curves, and hence the truncated
-distribution of discovered transients typed as SN~Ia.
-
-The model contains a piece $P(\hat{\mathit{ADU}}_{i} \hat{z}_{Si}| \mu_i,z_i,\theta_T, \theta_{Ti}, ,\phi(\lambda))$, which
-is the piece that describes underlying SN~Ia properties and light-curve fits.
-
-
-\subsection{Detection Efficiency}
-There term $P(\hat{D}|\mathit{ADU}_V)$.  For all high-redshift supernova searches
-I know of, this depends on the signal-to-noise of the data, and very weakly on the
-structure of the underlying galaxy.  Our detection is now based on machine learning,
-we should confirm that detection dependencies do not depend on our model parameters
-(except for RA/Dec).
-
-\section{Systematic Tests}
-\label{systematics:sec}
-The Hubble diagrams of subsets of data quantify systematic uncertainty.  
-Subsets that may be expected to show evidence for systematics include:
-spectroscopically typed SNe~Ia; transients in deep (3) versus shallow (1/2) DES fields;
-transients with NIR data; splits based on host properties.
-
-A potentially more probative test is to compare the distance moduii inferred for the same
-supernovae, but reducing the amount of data considered.  A subset of DES
-transients have higher signal-to-noise, spectroscopic confirmation, and NIR coverage than
-the average transient, we can take away that extra information in calculating distance modulus
-to get $P(\mu | \mathit{data} - \mu | \mathit{data}^-, z | \mathit{data} - z | \mathit{data}^-)$.
-It is possible that differences in $\mu$s and $z$s have smaller uncertainties that the
-$\mu$ and $z$ alone due to common measurement uncertainties. 
-
+%
+%\section{Subsections of the Model}
+%
+%\subsection{Type}
+%\label{type:sec}
+%Since our transient sample may not consist purely of SNe~Ia, the model
+%has a term of the form $P(T, G | z,\mu)$, which should account for all types of
+%objects that could potentially be mistaken for Type~Ia:
+%the rates and association with host galaxies are described for
+%the full population of potential interlopers.
+%This term is not currently well known, particularly at the highest redshifts probed by DES.
+%
+%An idea is to consider two types: SN~Ia and non-SN~Ia, where the latter's
+%intrinsic distributions have loose priors.  Transients that have been spectroscopically
+%classified as non-Ia will provide the strongest leverage in constraining the
+%contamination: this subset must be unbiased or properly weighted
+%relative to the underlying population that constitutes the Hubble diagram.
+%Running the model on a pure sample of SNe~Ia can have benefits.
+%As discussed in \S\ref{systematics:sec}, comparing these results with
+%those from the full sample provides
+%a test of systematics.  Alternatively, the non-Ia model may be better constrained
+%with the pure sample.
+%
+%
+%To minimize the contribution of non-Ia contamination we strive for
+%a pure sample selection so that $P(T=\text{non-Ia}| \mu) \rightarrow 0$.
+%
+%
+%\subsection{Host Matching}
+%\sloppy
+%The host-galaxy properties depend on the galaxy catalog and the transient
+%coordinates $P(\hat{z}_H, \hat{\theta}_H | \hat{\mathit{Gals.}}, \text{RA/Dec})$.  With a
+%spectrum of the transient and the underlying background, identification of the host galaxy
+%is usually straightforward.
+%Otherwise, projections or ambiguous cases can result in the misidentification of
+%the host.
+%Other supernova surveys (e.g.\ SNLS) 
+%with spectroscopically confirmed host associations (e.g.\ with
+%matched transient and galaxy redshifts) that replicate the DES population
+%can be used to put a prior on this probability.
+%
+%%An effective way of addressing this term is to
+%%analyze the supernovae assuming a correct host match, and
+%%experimentally determine $P(\text{mismatch} )$ and
+%%$\left. \langle \hat{\mu}-\mu(z)\rangle \right|_{\text{mismatch}}$, $\left. \langle \hat{z}-z \rangle \right|_{\text{mismatch}}$ and cross-terms to correct bias in the Hubble diagram. 
+%
+%
+%% only model $T=\text{SN~Ia}$,
+%%and experimentally determine $P(\text{non-Ia})$, 
+%%$\left. \langle \mu-\mu_{model} \rangle \right|_{non-Ia}$, and its uncertainty for the
+%%sample of non-Ia's that are discovered and misclassified as SN~Ia.
+%%This measurement is achieved through spectroscopic
+%%typing of a subset drawn from the populations used in the Hubble diagram.
+%%The weighted bias would be added as a correction to the Hubble diagram under the assumption that all objects are SNe~Ia.
+%
+%
+%
+%\subsection{Type~Ia Supernova Model}
+%\label{snmodel:sec}
+%The DES light curve analysis in principle may be used for typing and determining
+%redshift, in addition to getting supernova properties.   
+%Generally the relevant term is
+%\begin{equation}
+%P(\hat{D}_i=1,\hat{\mathit{ADU}}_{i}, \hat{T}_{Si}, \hat{z}_{Si}, \hat{\theta}_{Si}, \hat{z}_{Hi}, \hat{\theta}_{Hi}
+% | \mu_i,z_i,T_i,\theta_T,\theta_{Ti},\phi(\lambda)).
+% \end{equation}
+%Detection and typing depend on the realized light curves, and hence the truncated
+%distribution of discovered transients typed as SN~Ia.
+%
+%The model contains a piece $P(\hat{\mathit{ADU}}_{i} \hat{z}_{Si}| \mu_i,z_i,\theta_T, \theta_{Ti}, ,\phi(\lambda))$, which
+%is the piece that describes underlying SN~Ia properties and light-curve fits.
+%
+%
+%\subsection{Detection Efficiency}
+%There term $P(\hat{D}|\mathit{ADU}_V)$.  For all high-redshift supernova searches
+%I know of, this depends on the signal-to-noise of the data, and very weakly on the
+%structure of the underlying galaxy.  Our detection is now based on machine learning,
+%we should confirm that detection dependencies do not depend on our model parameters
+%(except for RA/Dec).
+%
+%\section{Systematic Tests}
+%\label{systematics:sec}
+%The Hubble diagrams of subsets of data quantify systematic uncertainty.  
+%Subsets that may be expected to show evidence for systematics include:
+%spectroscopically typed SNe~Ia; transients in deep (3) versus shallow (1/2) DES fields;
+%transients with NIR data; splits based on host properties.
+%
+%A potentially more probative test is to compare the distance moduii inferred for the same
+%supernovae, but reducing the amount of data considered.  A subset of DES
+%transients have higher signal-to-noise, spectroscopic confirmation, and NIR coverage than
+%the average transient, we can take away that extra information in calculating distance modulus
+%to get $P(\mu | \mathit{data} - \mu | \mathit{data}^-, z | \mathit{data} - z | \mathit{data}^-)$.
+%It is possible that differences in $\mu$s and $z$s have smaller uncertainties that the
+%$\mu$ and $z$ alone due to common measurement uncertainties. 
+%
+%\section{Misc.}
+%DES plans a ``photometry''-only analysis, in that a significant subset of transients used
+%in the Hubble diagram will not observed spectroscopically while active.  Therefore,
+%our model must account for transient mistyping and host-galaxy mismatches.  To obtain
+%our targeted
+%accuracy we need to account for covariances that occur due to photometric
+%calibration and Malmquist bias.  Our model will contain elements that may not
+%have been included in previous analyses. 
+%
+%
+%Generically $\vec{\hat{T}}$ can describe sample selection.  I choose to focus
+%on objects typed as SN~Ia, rather than  all discovered transients, not just those typed as SN~Ia. 
+%The non-Ia transient population has significant model uncertainty and the information they impart on the expansion history is weak:  I anticipate it is cleaner to limit ourselves to
+%modeling discoveries we think are SN~Ia. This restriction does not obviate the need
+%to consider non-Ia contamination in the sample, rather
+%we only need to model non-Ia's
+%that are mistaken for Ia and not all discovered transients. 
+%
+%
+%
+%Here $\mu$ is modeled; most analyses instead
+%directly have cosmological parameters $\{\Omega_M, \Omega_\Lambda, w_0, w_a\}$.
+%A motivation is to provide results that can be applied to test arbitrary cosmological models:
+%indeed the model-dependence of the $\mu$'s reported for high-$z$ supernovae 
+%\citep[e.g.][]{2012ApJ...746...85S} is a source of confusion to the community.
+%%An example of a non-parametric model for $\mu$ that is independent of cosmological
+%%parameters is given in the Appendix of
+%%\citet{2013ApJ...764..116W}.
+%
 \bibliography{/Users/akim/Documents/alex}
 
 \end{document}
