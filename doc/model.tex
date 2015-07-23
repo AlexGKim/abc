@@ -16,12 +16,12 @@
 
 \section{Model}
 We infer a Hubble diagram based on measurements of discovered transients
-classified as Type~Ia supernovae (SNe~Ia).  The probability distribution
+that have passed some selection criteria (e.g.\ classified as Type~Ia supernovae, SNe~Ia).  The probability distribution
 function (pdf) of the Hubble diagram is denoted as
 \begin{equation}
 p({\mu},{z} |  {{ADU}}, {{T}}_S,{{z}}_S,
-{{\theta}}_S,\text{GC}, \text{Detected}, {\text{Selected}},
-{\text{RA}}, {\text{Dec}}).
+{{\theta}}_S,\text{GC},
+{\text{RA}}, {\text{Dec}}, \text{Detected}, {\text{Selected}}).
 \label{hd:eqn}
 \end{equation}
 The set of distance moduli
@@ -30,19 +30,26 @@ from which the Hubble diagram is inferred include:
 the transient photometry ${ADU}$; spectral measurements of
 transient
 type, redshift and SN-parameters ${T}_S$, ${z}_S$, ${\theta}_S$;
-the galaxy catalog ${\text{GC}}$; transient coordinates  $\text{RA}$, $\text{Dec}$;
+the galaxy catalog ${\text{GC}}$ and associated galaxy properties such as redshift,
+mass, sSFR, etc.; transient coordinates  $\text{RA}$, $\text{Dec}$;
 and the fact that the transients were Detected and Selected for the analysis.
 
 The pdf in Equation~\ref{hd:eqn} is proportional to
 \begin{equation}
-p({\mu},{z},   \text{Detected}, {\text{Selected}},
-\text{RA}, \text{Dec} |  {{ADU}}, {{T}}_S,{{z}}_S,
-{{\theta}}_S, \text{GC})
+p({\mu},{z}, \text{RA}, \text{Dec}, \text{GC},  \text{Detected}, {\text{Selected}}
+ |  {{ADU}}, {{T}}_S,{{z}}_S,
+{{\theta}}_S)
 \label{hd2:eqn}
 \end{equation}
-and we model this scenario.  A sketch of such a model is depicted in the Probabilistic Graphical Model
+and this is what we model.  A sketch of the model (with the optional inclusion
+of calibration) is depicted in the Probabilistic Graphical Model
 (PGM)
 shown in Figure~\ref{pgm:fig}.
+Note that although we have been discussing the model for the Hubble diagram, the same PGM can
+ be used to express the pdf for cosmological
+parameters, labelled as $\theta_\mu$.
+
+
 
 \begin{figure}[htbp] %  figure placement: here, top, bottom, or page
    \centering
@@ -51,7 +58,7 @@ shown in Figure~\ref{pgm:fig}.
    The forward modeling
    flow goes from left to right, starting with the description of the universe, observatory,
    and data.
-   A GC ${\mathit{Gal.}}$ informs the model for potential hosts $G$.  A transient
+   A galaxy catalog GC informs the model for potential hosts $G$.  A transient
    at coordinates  $\text{RA/Dec}$  has a host $g_i$ drawn from $G$.
    The galaxy redshift redshift $z$ and parameters $\theta_{gi}$ depend on the host.
    A distance modulus model with parameters $\theta_\mu$ fix the distance modulus $\mu_i$.
@@ -61,26 +68,27 @@ shown in Figure~\ref{pgm:fig}.
    with redshift and distance modulus.
    The instrumental transmission function $\phi$ is calibrated with data ${Z}$ and
    gives the expected
-   counts $\overline{\mathit{ADU}}$, $\overline{\mathit{ADU}}_g$.  The galaxy catalog is GC. 
-   The realized light curve (${ADU}$) depends on the expected counts and also
-   must have been Detected and Selected.  Some transients have spectral data
+   counts $\overline{\mathit{ADU}}$, $\overline{\mathit{ADU}}_g$. 
+   The transient must be Detected and Selected and its realized light curve (${ADU}$) depends on the expected counts.  Some transients have spectral data
    ${X}_S$.
    \label{pgm:fig}}
 \end{figure}
 
-The supernova survey provides the transients that are to be analyzed providing
-the following information:
+
+The model describes the transients that constitute the cosmology analysis, given the following
+information.  
 \begin{itemize}
 \item ${\text{RA}}$, ${\text{Dec}}$.  The observed
 coordinates.  For our purposes the observed, rather than true, coordinates are sufficient.
 \item Detected.  The transient is discovered.
 \item Selected. The transient is selected for the cosmology analysis.  This presumably
 includes its classification as SN~Ia.
-\item GC.  The galaxy catalog used to make host-galaxy associations.
+\item GC.  The galaxy catalog used to make host-galaxy associations, including with
+redshifts and galaxy properties.
 \end{itemize}
 
-The model describes the universe and its contents, specifically transients
-that are discovered as typed as SN~Ia and their host galaxies.
+The universe is modeled as the background cosmology, transients that could
+enter the sample, and their host galaxies.
 \begin{itemize}
 \item $G$ is a shorthand for the model of all galaxies that can host a transient.  It is
 the union of the objects in the galaxy catalog GC
@@ -96,9 +104,9 @@ of $\theta_{gi}$ for ``hostless'' galaxies is described by the model.
 Redshifts may be photometric or spectroscopic.
 \item $\theta_\mu$ are the parameters that specify that distance modulus.
 \item $\mu_i=\mu(z_i; \theta_\mu)$.  The distance modulus is a function of redshift,
-we don't impose a specific form for  $\mu$ at the moment,  it could
+whose specific form is unspecified at the moment,  it could
 be a $\Lambda$CDM prediction with cosmological parameters, a spline with knot values
-as parameters, or as extreme as independent values for each $z$.
+as parameters.
 The redshift of the galaxy is used in the Hubble diagram.
 \item $P(T_i | \theta_{gi})$.  The transient type $T_i$, SN~Ia or non-Ia, depends
 on the host properties.  We could make the relative rates be dependent
@@ -119,24 +127,26 @@ the luminosity. The  model includes  information on the
 source and line-of-sight effects, which specify the effective SED.   Only the
 parameters of the model of the appropriate type $T$ are relevant.  The galaxy parameters
 $\theta_{gi}$ are included if correlations with host-galaxy properties are to be modeled.
-\item $n_i(t,\lambda; L_i, \mu_i, z_i)$, $n_{gi}(t,\lambda; L_i, \mu_i, z_i)$.  The  flux incident at Earth
-is fixed by the luminosity, distance modulus, and redshift.
+\item $n_i(t,\lambda; L_i, \mu_i, z_i)$, $n_{gi}(t,\lambda; L_i, \mu_i, z_i)$.  The  fluxes of
+the transient and host that are incident at Earth
+are fixed by the luminosity, distance modulus, and redshift.
 \end{itemize}
 
 The model expectation of measured  signals is governed by:
 \begin{itemize}
 \item The transmission functions $\phi(\lambda)$ describe the optical path from the
 atmosphere to counts.  We expect
-the calibration group to provide us with the functions and covariance
-$\phi \sim \mathcal{N}(\bar{\phi},C_\phi)$. Self-calibration, taking advantage of the
-fact that SNe~Ia are excellent standard stars, 
-may be included in this model.
+the calibration group to provide us with the functions and covariance,
+in which case
+$\phi \sim \mathcal{N}(\bar{\phi},C_\phi)$ would be a fixed condition.
+However, the PGM is written for the more general case where the calibration
+is modeled within our analysis.
 \item $\overline{\mathit{ADU}}$ and
 $\overline{\mathit{ADU}}_g$ are the expected counts of the transient and galaxy respectively,
 coming from $\int n_i \phi d\lambda$.
 \end{itemize}
 
-The observations, denoted with \textasciicircum, are now discussed.
+The observations are as follows:
 \begin{itemize}
 \item ${\mathit{ADU}}$ is the realized flux can be expressed as
 \begin{equation}
