@@ -20,7 +20,7 @@ that have passed some selection criteria (e.g.\ classified as Type~Ia supernovae
 function (pdf) of the Hubble diagram is denoted as
 \begin{equation}
 p({\mu},{z} |  {{ADU}}, {{T}}_S,{{z}}_S,
-{{\theta}}_S,\text{GC},
+{{\theta}}_S; \text{GC},
 {\text{RA}}, {\text{Dec}}, \text{Detected}, {\text{Selected}}).
 \label{hd:eqn}
 \end{equation}
@@ -36,7 +36,7 @@ and the fact that the transients were Detected and Selected for the analysis.
 
 The pdf in Equation~\ref{hd:eqn} is proportional to
 \begin{equation}
-p({\mu},{z}, \text{RA}, \text{Dec}, \text{GC},  \text{Detected}, {\text{Selected}}
+p({\mu},{z}; \text{RA}, \text{Dec}, \text{GC},  \text{Detected}, {\text{Selected}}
  |  {{ADU}}, {{T}}_S,{{z}}_S,
 {{\theta}}_S)
 \label{hd2:eqn}
@@ -57,9 +57,9 @@ parameters, labelled as $\theta_\mu$.
    \caption{Probabilistic Graphical Model for the SN~Ia analysis.  
    The forward modeling
    flow goes from left to right, starting with the description of the universe, observatory,
-   and data.
-   A galaxy catalog GC informs the model for potential hosts $G$.  A transient
-   at coordinates  $\text{RA/Dec}$  has a host $g_i$ drawn from $G$.
+   and data.  The galaxies that host transients are described by a galaxy catalog GC. 
+   A transient has
+   coordinates  $\text{RA/Dec}$.  Its host galaxy $g_i$ is drawn from from the GC.
    The galaxy redshift redshift $z$ and parameters $\theta_{gi}$ depend on the host.
    A distance modulus model with parameters $\theta_\mu$ fix the distance modulus $\mu_i$.
    The transient type $T$ depends on the host-galaxy.   The transient
@@ -84,17 +84,16 @@ coordinates.  For our purposes the observed, rather than true, coordinates are s
 \item Selected. The transient is selected for the cosmology analysis.  This presumably
 includes its classification as SN~Ia.
 \item GC.  The galaxy catalog used to make host-galaxy associations, including with
-redshifts and galaxy properties.
+redshifts and galaxy properties.  It is
+the union of the objects in the galaxy catalog GC
+plus unobserved galaxies that have not
+met the detection threshold, presumably due to their low surface brightness.
 \end{itemize}
 
 The universe is modeled as the background cosmology, transients that could
 enter the sample, and their host galaxies.
 \begin{itemize}
-\item $G$ is a shorthand for the model of all galaxies that can host a transient.  It is
-the union of the objects in the galaxy catalog GC
-plus unobserved galaxies that have not
-met the detection threshold, presumably due to their low surface brightness.
-\item $P(g_i | G, {\text{RA}}/{\text{Dec}})$. The host galaxy $g_i$
+\item $P(g_i ; \text{GC}, {\text{RA}}/{\text{Dec}})$. The host galaxy $g_i$
 is drawn from the GC based on coordinates.
 This pdf is
 the deliverable we want from Ravi.
@@ -150,9 +149,9 @@ The observations are as follows:
 \begin{itemize}
 \item ${\mathit{ADU}}$ is the realized flux can be expressed as
 \begin{equation}
-P({\mathit{ADU}} | \text{Dectected}, \text{Selected}, \overline{\mathit{ADU}}, 
-\overline{\mathit{ADU}}_g)=\frac{P({\mathit{ADU}},\text{Dectected}, \text{Selected} |  
-\overline{\mathit{ADU}},  \overline{\mathit{ADU}}_g)}{P(\text{Dectected}, \text{Selected} | 
+P({\mathit{ADU}} | \overline{\mathit{ADU}}, 
+\overline{\mathit{ADU}}_g; \text{Dectected}, \text{Selected})=\frac{P({\mathit{ADU}};\text{Dectected}, \text{Selected} |  
+\overline{\mathit{ADU}}, \overline{\mathit{ADU}}_g)}{P(\text{Dectected}, \text{Selected} | 
 \overline{\mathit{ADU}},  \overline{{\mathit{ADU}}}_g)},
 \end{equation}
 which can be determined from detection and typing efficiency studies.

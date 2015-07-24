@@ -8,7 +8,7 @@ rc("text", usetex=True)
 
 pgm = PGM([10.5, 7.5], origin=[0., 0.2], observed_style='inner')
 
-pgm.add_node(Node('G',r"$G$", 3,1))
+#pgm.add_node(Node('G',r"$G$", 3,1))
 pgm.add_node(Node('Coords',r"${RA}_i$/${Dec}_i$", 2,2,fixed=True))
 pgm.add_node(Node('G_i',r"$g_i$", 3,2))
 
@@ -32,7 +32,7 @@ pgm.add_node(Node('^Counts',r"${\mathit{ADU}_i}$", 9, 4, observed=True,scale=1.2
 
 pgm.add_node(Node('Spars',r"${T}_{Si}$, ${z}_{Si},{\theta}_{Si}$", 6, 4, scale=1.8,aspect=1.2, observed=True))
 #pgm.add_node(Node('^Host',r"${z}_{Hi},{\theta}_{Hi}$", 7, 2, scale=1.5,observed=True))
-pgm.add_node(Node('Galaxies',r"${\mathit{GC}}$", 1, 1, fixed=True))
+pgm.add_node(Node('Galaxies',r"GC", 2, 1, fixed=True,offset=(0,-20)))
 
 pgm.add_node(Node('Detected',r"Detected", 8, 3, fixed=True,offset=(-10,-20)))
 pgm.add_node(Node('^Type',r"Selected", 8, 2, fixed=True,offset=(-10,-20)))
@@ -61,11 +61,11 @@ pgm.add_edge("Host","Type")
 
 pgm.add_edge("Type","Luminosity")
 pgm.add_edge("Luminosity","Flux")
-pgm.add_edge("G","G_i")
+pgm.add_edge("Galaxies","G_i")
 
 
 pgm.add_edge("theta_T","Luminosity")
-pgm.add_edge("Galaxies","G")
+#pgm.add_edge("Galaxies","G")
 
 pgm.add_edge("theta_Ti","Luminosity")
 pgm.add_edge("Host","Flux_g")
@@ -94,8 +94,8 @@ pgm.add_edge("Detected","^Counts")
 
 # Big Plate: Galaxy
 pgm.add_plate(Plate([1.5, 1.5, 8, 5.],
-                    label=r"SNe $\i = 1, \cdots, N_{SN}$",
-                    shift=-0.1))
+                    label=r"SNe $i = 1, \cdots, N_{SN}$",
+                    shift=-0.1,label_offset=[360,2]))
 
 
 # Render and save.
