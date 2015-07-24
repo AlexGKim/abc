@@ -20,23 +20,23 @@ that have passed some selection criteria (e.g.\ classified as Type~Ia supernovae
 function (pdf) of the Hubble diagram is denoted as
 \begin{equation}
 p({\mu},{z} |  {{ADU}}, {{T}}_S,{{z}}_S,
-{{\theta}}_S; \text{GC},
+{{\theta}}_S;
 {\text{RA}}, {\text{Dec}}, \text{Detected}, {\text{Selected}}).
 \label{hd:eqn}
 \end{equation}
+The semicolon separates random and fixed parameters.
 The set of distance moduli
 and redshifts $(\mu, z)$ is the Hubble diagram.  The available information
 from which the Hubble diagram is inferred include:
 the transient photometry ${ADU}$; spectral measurements of
 transient
 type, redshift and SN-parameters ${T}_S$, ${z}_S$, ${\theta}_S$;
-the galaxy catalog ${\text{GC}}$ and associated galaxy properties such as redshift,
 mass, sSFR, etc.; transient coordinates  $\text{RA}$, $\text{Dec}$;
 and the fact that the transients were Detected and Selected for the analysis.
 
 The pdf in Equation~\ref{hd:eqn} is proportional to
 \begin{equation}
-p({\mu},{z}; \text{RA}, \text{Dec}, \text{GC},  \text{Detected}, {\text{Selected}}
+p({\mu},{z}; \text{RA}, \text{Dec},  \text{Detected}, {\text{Selected}}
  |  {{ADU}}, {{T}}_S,{{z}}_S,
 {{\theta}}_S)
 \label{hd2:eqn}
@@ -57,9 +57,8 @@ parameters, labelled as $\theta_\mu$.
    \caption{Probabilistic Graphical Model for the SN~Ia analysis.  
    The forward modeling
    flow goes from left to right, starting with the description of the universe, observatory,
-   and data.  The galaxies that host transients are described by a galaxy catalog GC. 
-   A transient has
-   coordinates  $\text{RA/Dec}$.  Its host galaxy $g_i$ is drawn from from the GC.
+   and data.    A transient has
+   coordinates  $\text{RA/Dec}$.  It is associated with a host host galaxy $g_i$.
    The galaxy redshift redshift $z$ and parameters $\theta_{gi}$ depend on the host.
    A distance modulus model with parameters $\theta_\mu$ fix the distance modulus $\mu_i$.
    The transient type $T$ depends on the host-galaxy.   The transient
@@ -83,18 +82,17 @@ coordinates.  For our purposes the observed, rather than true, coordinates are s
 \item Detected.  The transient is discovered.
 \item Selected. The transient is selected for the cosmology analysis.  This presumably
 includes its classification as SN~Ia.
-\item GC.  The galaxy catalog used to make host-galaxy associations, including with
-redshifts and galaxy properties.  It is
-the union of the objects in the galaxy catalog GC
-plus unobserved galaxies that have not
-met the detection threshold, presumably due to their low surface brightness.
 \end{itemize}
 
 The universe is modeled as the background cosmology, transients that could
 enter the sample, and their host galaxies.
 \begin{itemize}
-\item $P(g_i ; \text{GC}, {\text{RA}}/{\text{Dec}})$. The host galaxy $g_i$
-is drawn from the GC based on coordinates.
+\item $P(g_i; {\text{RA}}/{\text{Dec}})$. The host galaxy $g_i$
+is drawn based on coordinates.
+It is drawn from
+the union of the objects in the observed galaxy catalog
+plus unobserved galaxies that have not
+met the detection threshold, presumably due to their low surface brightness.
 This pdf is
 the deliverable we want from Ravi.
 \item $z_i$, $\theta_{gi}$ are the galaxy redshift and parameters (e.g.\ mass, sSFR, metallicity).
@@ -138,8 +136,6 @@ atmosphere to counts.  We expect
 the calibration group to provide us with the functions and covariance,
 in which case
 $\phi \sim \mathcal{N}(\bar{\phi},C_\phi)$ would be a fixed condition.
-However, the PGM is written for the more general case where the calibration
-is modeled within our analysis.
 \item $\overline{\mathit{ADU}}$ and
 $\overline{\mathit{ADU}}_g$ are the expected counts of the transient and galaxy respectively,
 coming from $\int n_i \phi d\lambda$.
@@ -160,9 +156,9 @@ spectroscopic data. I skip the details of the actual measurement  and make a dir
 with the fluxes of the transient and underlying galaxy $n$, $n_g$.
 A very simple association is ${T}_S = T$, ${z}_S=z$, ${\theta}_S \in \theta_g$,
 or a blurry version instead of a straight equality.
-\item ${Z}$ represents the calibration measurements.  Although we expect to receive
-the transmission functions from the Calibration Task Force, we may be want to include
-calibration as part of our analysis.
+\item ${Z}$ represents the calibration measurements.   Although this may be given
+by the Calibration Task Force, the PGM is written for the more general case where the calibration
+is modeled within our analysis.
 \end{itemize}
 
 %
