@@ -52,8 +52,9 @@ parameters{
   // transient parameters
   real <lower=-2, upper=2> alpha_Ia;
   real <lower=-2, upper=2> alpha_nonIa;
-  real <lower=0, upper=0.2> sigma_Ia;
-  real <lower=0, upper=0.2> sigma_nonIa;
+  real <lower=0, upper=0.2> sigma;
+//  real <lower=0, upper=0.2> sigma_Ia;
+//  real <lower=0, upper=0.2> sigma_nonIa;
 
   // cosmology parameters
   real <lower=-2, upper=2> beta;
@@ -66,41 +67,49 @@ parameters{
 
   // missing data spectroscopy
   vector<lower=0, upper=1.5>[N_s_mis] zs_mis;
-}
+
+ }
 
 transformed parameters{
 
 // marginalize over type
 
 // for flux data
-  vector[2] lp_adu_s_obs[N_s_obs];
-  vector[2] lp_adu_s_mis[N_s_mis];
+  vector[2] lp_s_obs[N_s_obs];
+  vector[2] lp_s_mis[N_s_mis];
 
-// for spectral data
-  vector[2] lp_type_s_obs[N_s_obs];
 
   for (s in 1:N_s_obs) {
-    lp_adu_s_obs[s][1] <- normal_log(adu_s_obs[s], alpha_Ia + beta * zs_obs[s], sigma_Ia) + log(snIa_rate);
-    lp_adu_s_obs[s][2] <- normal_log(adu_s_obs[s], alpha_nonIa + beta * zs_obs[s], sigma_nonIa)+log(1-snIa_rate);
-
-    lp_type_s_obs[s][1] <- bernoulli_log(snIa_obs[s],1)+log(snIa_rate);
-    lp_type_s_obs[s][2] <- bernoulli_log(snIa_obs[s],0)+log(1-snIa_rate);
+    lp_s_obs[s][1] <- normal_log(adu_s_obs[s], alpha_Ia + beta * zs_obs[s], sigma) + bernoulli_log(1, snIa_rate) +  bernoulli_log(snIa_obs[s],1-1e-8);
+    lp_s_obs[s][2] <- normal_log(adu_s_obs[s], alpha_nonIa + beta * zs_obs[s], sigma)+bernoulli_log(0, snIa_rate) + bernoulli_log(snIa_obs[s],1e-8) ;
   }
 
   for (s in 1:N_s_mis){
-    lp_adu_s_mis[s][1] <- normal_log(adu_s_mis[s], alpha_Ia + beta * zs_mis[s], sigma_Ia) + log(snIa_rate);
-    lp_adu_s_mis[s][2] <- normal_log(adu_s_mis[s], alpha_nonIa + beta * zs_mis[s], sigma_nonIa)+log(1-snIa_rate);
+    //flux
+    lp_s_mis[s][1] <- normal_log(adu_s_mis[s], alpha_Ia + beta * zs_mis[s], sigma) +  bernoulli_log(1, snIa_rate);
+    lp_s_mis[s][2] <- normal_log(adu_s_mis[s], alpha_nonIa + beta * zs_mis[s], sigma)+bernoulli_log(0, snIa_rate);
   }
-
+  
 }
 
 model{
 
-  for (m in 1:N_s_obs){
-    increment_log_prob(log_sum_exp(lp_adu_s_obs[m]));
-    increment_log_prob(log_sum_exp(lp_type_s_obs[m]));
+  /*
+  for (s in 1:N_s_obs){
+    adu_s_obs[s] ~  normal(alpha_Ia + beta * zs_obs[s], sigma) * bernoulli(logit_obs[s]);
+    snIa_obs[s] ~ bernoulli(logit_obs[s]);
   }
-  for (m in 1:N_s_mis)
-    increment_log_prob(log_sum_exp(lp_adu_s_mis[m]));
 
+  for (s in 1:N_s_mis){
+    adu_s_mis[s] ~  normal(alpha_Ia + beta * zs_mis[s], sigma) * bernoulli(logit_mis[s]);
+  }
+*/
+  
+  for (s in 1:N_s_obs){
+    increment_log_prob(log_sum_exp(lp_s_obs[s]));
+  }
+  for (s in 1:N_s_mis)
+    increment_log_prob(log_sum_exp(lp_s_mis[s]));
+
+  
 }

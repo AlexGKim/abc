@@ -12,14 +12,16 @@ s_mis = numpy.zeros(N_sn,dtype=bool)
 s_mis[s_obs] = True
 s_mis = numpy.where(numpy.logical_not(s_mis))[0]
 
+sigma=0.02
+
 alpha_snIa=0.
 alpha_nonIa=1.
 frac_Ia=0.9
 
-snIa = numpy.random.binomial(1, 0.9, size=N_sn)
+snIa = numpy.random.binomial(1, frac_Ia, size=N_sn)
 
 wsnIa = numpy.where(snIa)[0]
-adu = zs + alpha_nonIa
+adu = zs + alpha_nonIa + numpy.random.normal(loc=0, scale=sigma,size=N_sn)
 adu[wsnIa]+= (alpha_snIa-alpha_nonIa)
 
 
