@@ -3,6 +3,7 @@
 import pystan
 import matplotlib.pyplot as plt
 import numpy.random
+from astropy.cosmology import WMAP9 as cosmo
 
 N_sn=50
 N_s_obs=45
@@ -14,15 +15,15 @@ s_mis = numpy.where(numpy.logical_not(s_mis))[0]
 
 sigma=0.02
 
-alpha_snIa=0.
+alpha_snIa=2.
 alpha_nonIa=1.
-frac_Ia=0.9
+frac_Ia=0.8
 
 snIa = numpy.random.binomial(1, frac_Ia, size=N_sn)
 
 wsnIa = numpy.where(snIa)[0]
-adu = zs + alpha_nonIa + numpy.random.normal(loc=0, scale=sigma,size=N_sn)
-adu[wsnIa]+= (alpha_snIa-alpha_nonIa)
+adu = alpha_nonIa/(cosmo.luminosity_distance(zs).value/cosmo.hubble_distance)**2 *(1+numpy.random.normal(loc=0, scale=sigma,size=N_sn))
+adu[wsnIa]*= alpha_snIa/alpha_nonIa
 
 
 data = {'N_sn':N_sn,
