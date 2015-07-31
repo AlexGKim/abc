@@ -33,7 +33,9 @@ data = {'N_sn':N_sn,
 		'adu_s_obs': adu[s_obs,None],
 		'adu_s_mis': adu[s_mis,None],
 		'zs_obs': zs[s_obs],
-		'snIa_obs': snIa[s_obs]
+		'snIa_obs': snIa[s_obs],
+		'host_zs_obs': zs[s_obs],
+		'host_zs_mis': zs[s_mis]
 		}
 
 fit1 = pystan.stan(file='des.stan', data=data, iter=1000, chains=4)
