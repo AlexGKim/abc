@@ -120,8 +120,8 @@ transformed data {
   real z0;
 
   int n_int;
-  real z_int[25];
-  real z_int_s[25+1];
+  real z_int[50];
+  real z_int_s[50+1];
 
   real galaxy_classification;
 
@@ -134,11 +134,11 @@ transformed data {
   z0 <- 0;
 
   // redshifts at which the integral is solved
-  n_int <- 25;
+  n_int <- 50;
 
   z_int_s[1] <-0;
   for (i in 1:n_int){
-    z_int[i]<-(zmax*1.5)/n_int*i;
+    z_int[i]<-exp((log(1+zmax*1.5))/n_int*i)-1;
     z_int_s[i+1] <- z_int[i];
   }
 }
