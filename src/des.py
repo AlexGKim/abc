@@ -5,7 +5,8 @@ import matplotlib.pyplot as plt
 import numpy.random
 from astropy.cosmology import FlatLambdaCDM
 
-cosmo=FlatLambdaCDM(70,0.28)
+omega_M=0.28
+cosmo=FlatLambdaCDM(70,omega_M)
 
 N_sn=50
 N_s_obs=50
@@ -52,8 +53,8 @@ data = {'N_sn':N_sn,
 		}
 
 init = {
-	'Omega_M':0.28,
-	'Omega_L':0.72,
+	'Omega_M':omega_M,
+	'Omega_L':1-omega_M,
 	'zs_true_obs': zs[s_obs],
   	'zs_true_mis': zs[s_mis],
   	'alpha_Ia': alpha_snIa,

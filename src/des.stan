@@ -233,9 +233,10 @@ transformed parameters{
 model{
 
   // magnitude zeropoint constrained by a prior of nearby SNe
-  alpha_Ia ~ lognormal(2,0.02/2.5);
+  alpha_Ia ~ lognormal(log(2.),0.02/2.5*log(10));
 
   trans_zs_obs ~ normal(zs_true_obs,(1+zs_true_obs)*0.001);
+
  
   for (s in 1:N_obs){
     increment_log_prob(log_sum_exp(lp_obs[s]));
@@ -246,4 +247,5 @@ model{
     increment_log_prob(log_sum_exp(lp_mis[s]));
     increment_log_prob(log_sum_exp(lp_gal_mis[s]));
   }
+
 }
