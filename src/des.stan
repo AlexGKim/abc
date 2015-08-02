@@ -1,8 +1,8 @@
 functions{
 
-  real[] spline(real[] x, real[] y, int n, real yp1, real ypn){
-    real y2[n];
-    real u[n-1];
+  vector spline(vector x, vector y, int n, real yp1, real ypn){
+    vector[n] y2;
+    vector[n-1] u;
     real sig;
     real p;
     real qn;
@@ -42,7 +42,7 @@ functions{
     return y2;
   }
 
-  real splint(real[] xa, real[] ya, real[] y2a, int n, real x){
+  real splint(vector xa, vector ya, vector y2a, int n, real x){
     real y;
     real h;
     real a;
@@ -101,11 +101,11 @@ data{
   vector[N_adu_max] adu_obs[N_obs];
   vector[N_adu_max] adu_mis[N_sn-N_obs];
 
-  real trans_zs_obs[N_obs];
+  vector[N_obs] trans_zs_obs;
   int<lower=0, upper=1> snIa_obs[N_obs];
 
-  real host_zs_obs[N_obs];
-  real host_zs_mis[N_sn-N_obs];
+  vector[N_obs] host_zs_obs;
+  vector[N_sn-N_obs] host_zs_mis;
 }
 
 transformed data {
@@ -121,7 +121,7 @@ transformed data {
 
   int n_int;
   real z_int[50];
-  real z_int_s[50+1];
+  vector[50+1] z_int_s;
 
   real galaxy_classification;
 
@@ -159,9 +159,9 @@ parameters{
   // relative rate parameter
   real<lower=0, upper=1> snIa_rate;
 
-  // missing data spectroscopy
-  real<lower=0, upper=zmax*1.5> zs_true_obs[N_obs];
-  real<lower=0, upper=zmax*1.5> zs_true_mis[N_mis];
+  // true redshifts spectroscopy
+  vector<lower=0, upper=zmax*1.5>[N_obs] zs_true_obs;
+  vector<lower=0, upper=zmax*1.5>[N_mis] zs_true_mis;
 
  }
 
@@ -181,12 +181,12 @@ transformed parameters{
   real <lower=0> luminosity_distance_int[n_int,1];
   
   //variables for spline
-  real y2[n_int+1];
-  real <lower=0> luminosity_distance_int_s[n_int+1];
+  vector <lower=0>[n_int+1] luminosity_distance_int_s;
+  vector[n_int+1] y2;
 
   //predicted adu
-  real <lower=0> adu_true_obs[N_obs];
-  real <lower=0> adu_true_mis[N_mis];
+  vector <lower=0>[N_obs] adu_true_obs;
+  vector <lower=0>[N_mis] adu_true_mis;
 
 
   theta[1] <- Omega_M;
@@ -204,6 +204,7 @@ transformed parameters{
 
   for (m in 1:N_obs){
     adu_true_obs[m] <- ((1+zs_true_obs[m])* splint(z_int_s, luminosity_distance_int_s, y2, n_int+1, zs_true_obs[m]))^(-2);
+ //   print (theta, " ",zs_true_obs[m]," ",adu_true_obs[m]," ",adu_obs[m][1]);
   }
 
   for (m in 1:N_mis){
@@ -212,8 +213,8 @@ transformed parameters{
 
 // marginalize over type
   for (s in 1:N_obs) {
-    lp_obs[s][1] <- lognormal_log(adu_obs[s][1], log(adu_true_obs[s]*alpha_Ia), sigma_Ia/2.5) + bernoulli_log(1, snIa_rate) +  bernoulli_log(snIa_obs[s],1-1e-6);
-    lp_obs[s][2] <- lognormal_log(adu_obs[s][1], log(adu_true_obs[s]*alpha_nonIa), sigma_nonIa/2.5)+bernoulli_log(0, snIa_rate) + bernoulli_log(snIa_obs[s],1e-6) ;
+    lp_obs[s][1] <- lognormal_log(adu_obs[s][1], log(adu_true_obs[s]*alpha_Ia), sigma_Ia/2.5*log(10)) + bernoulli_log(1, snIa_rate) +  bernoulli_log(snIa_obs[s],1-1e-6);
+    lp_obs[s][2] <- lognormal_log(adu_obs[s][1], log(adu_true_obs[s]*alpha_nonIa), sigma_nonIa/2.5*log(10))+bernoulli_log(0, snIa_rate) + bernoulli_log(snIa_obs[s],1e-6) ;
 
     lp_gal_obs[s][1] <- normal_log(host_zs_obs[s], zs_true_obs[s], (1+zs_true_obs[s])*0.001) + bernoulli_log(1, galaxy_classification);
     lp_gal_obs[s][2] <- uniform_log(host_zs_obs[s],0,zmax*1.5) + bernoulli_log(0, galaxy_classification);
@@ -221,8 +222,8 @@ transformed parameters{
 
   for (s in 1:N_mis){
     //flux
-    lp_mis[s][1] <- lognormal_log(adu_mis[s][1], log(adu_true_mis[s]*alpha_Ia),  sigma_Ia/2.5) + bernoulli_log(1, snIa_rate);
-    lp_mis[s][2] <- lognormal_log(adu_mis[s][1], log(adu_true_mis[s]*alpha_nonIa), sigma_nonIa/2.5)+bernoulli_log(0, snIa_rate);
+    lp_mis[s][1] <- lognormal_log(adu_mis[s][1], log(adu_true_mis[s]*alpha_Ia),  sigma_Ia/2.5*log(10)) + bernoulli_log(1, snIa_rate);
+    lp_mis[s][2] <- lognormal_log(adu_mis[s][1], log(adu_true_mis[s]*alpha_nonIa), sigma_nonIa/2.5*log(10))+bernoulli_log(0, snIa_rate);
 
     lp_gal_mis[s][1] <- normal_log(host_zs_mis[s], zs_true_mis[s], (1+zs_true_mis[s])*0.001) + bernoulli_log(1, galaxy_classification);
     lp_gal_mis[s][2] <- uniform_log(host_zs_mis[s],0,zmax*1.5) + bernoulli_log(0, galaxy_classification);
@@ -230,10 +231,15 @@ transformed parameters{
 }
 
 model{
+
+  // magnitude zeropoint constrained by a prior of nearby SNe
+  alpha_Ia ~ lognormal(2,0.02/2.5);
+
+  trans_zs_obs ~ normal(zs_true_obs,(1+zs_true_obs)*0.001);
+ 
   for (s in 1:N_obs){
     increment_log_prob(log_sum_exp(lp_obs[s]));
     increment_log_prob(log_sum_exp(lp_gal_obs[s]));
-    trans_zs_obs[s] ~ normal(zs_true_obs[s],(1+zs_true_obs[s])*0.001);
   }
 
   for (s in 1:N_mis){
