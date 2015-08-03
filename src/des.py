@@ -9,7 +9,7 @@ import numpy.random
 from astropy.cosmology import FlatLambdaCDM
 
 
-def genData(N_sn, N_s_obs):
+def genData(N_sn, N_s_obs, Ninit):
 	omega_M=0.28
 	cosmo=FlatLambdaCDM(70,omega_M)
 
@@ -37,6 +37,10 @@ def genData(N_sn, N_s_obs):
 	adu[wsnIa] = alpha_snIa*adu[wsnIa]*10**(numpy.random.normal(loc=0, scale=sigma_snIa/2.5,size=len(wsnIa)))
 	adu[wnonIa] = alpha_nonIa*adu[wnonIa]*10**(numpy.random.normal(loc=0, scale=sigma_nonIa/2.5,size=len(wnonIa)))
 
+	host_zs_mis = zs[s_mis]*numpy.random.binomial(1,0.98,size=len(s_mis))
+	wrong_host_zs = host_zs_mis == 0
+	host_zs_mis[wrong_host_zs] = numpy.random.uniform(zmin/1.5,zmax*1.5,size=wrong_host_zs.sum())
+
 	data = {'N_sn':N_sn,
 			'N_obs':N_s_obs,
 
@@ -52,34 +56,48 @@ def genData(N_sn, N_s_obs):
 			'snIa_obs': snIa[s_obs],
 
 			'host_zs_obs': zs[s_obs],
-			'host_zs_mis': zs[s_mis]
+			'host_zs_mis': host_zs_mis
 			}
 
-	init = {
-		'Omega_M':omega_M,
-		'Omega_L':1-omega_M,
-		'zs_true_obs': zs[s_obs],
-	  	'zs_true_mis': zs[s_mis],
-	  	'alpha_Ia': alpha_snIa,
-	 	'alpha_nonIa': alpha_nonIa,
-	  	'sigma_Ia': sigma_snIa,
-	  	'sigma_nonIa':sigma_nonIa,
-	  	'snIa_rate':frac_Ia
-		}	
+	init=[]
+	for i in xrange(Ninit):
+		host_zs_mis = zs[s_mis]*numpy.random.binomial(1,0.98,size=len(s_mis))
+		wrong_host_zs = host_zs_mis == 0
+		host_zs_mis[wrong_host_zs] = numpy.random.uniform(zmin/1.5,zmax*1.5,size=wrong_host_zs.sum())
+		init.append ( {
+			'Omega_M':omega_M,
+			'Omega_L':1-omega_M,
+			'w': -1,
+			'zs_true_obs': zs[s_obs],
+		  	'zs_true_mis': host_zs_mis,
+		  	'alpha_Ia': alpha_snIa,
+		 	'alpha_nonIa': alpha_nonIa,
+		  	'sigma_Ia': sigma_snIa,
+		  	'sigma_nonIa':sigma_nonIa,
+		  	'snIa_rate':frac_Ia
+			} )
+
+
+#	plt.scatter(zs[wsnIa],adu[wsnIa],color='b')
+#	plt.scatter(zs[wnonIa],adu[wnonIa],color='r')
+#	plt.show()
 	return data, init
 
+Nchains=4
 
 sm = pystan.StanModel(file='des.stan')
 
-nspec = numpy.arange(50,100,10)
+nspec = numpy.arange(100,301,50)
 mn=[]
 std=[]
 for ns in nspec:
-	data, init = genData(100,ns)
-	fit = sm.sampling(data=data, iter=1000, chains=4, init=[init,init,init,init])
-	samples = fit.extract('Omega_M')
-	mn.append(samples['Omega_M'].mean())
-	std.append(samples['Omega_M'].std())
+	data, init = genData(300,ns,Nchains)
+
+	fit = sm.sampling(data=data, iter=1000, chains=Nchains, init=init)
+	#print fit
+	samples = fit.extract(['Omega_M','zs_true_mis','w'])
+	mn.append(samples['w'].mean())
+	std.append(samples['w'].std())
 plt.errorbar(nspec,mn,yerr=std,fmt='o')
 plt.savefig('plot.pdf')
 
