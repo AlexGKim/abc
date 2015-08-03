@@ -68,24 +68,25 @@ functions{
     return y; 
   }
 
-  // differential equation we want to solve is dz/H = dr/sqrt(1-kr2)
+  // differential equation we want to solve is d(z+1)/H = dr/sqrt(1-kr2)
   // H^2/H_0^2 = Omega_R a-4 + Omega_M a-3 + Omega_k a-2 + Omega_L
-  real[] friedmann(real z,
+  // zp= z+1
+  real[] friedmann(real zp,
           real[] r,
           real[] theta,
           real[] x_r,
           int[] i_r){
-    real H2;
-    real drdz[1];
+
+    real drdzp[1];
  //   real omega_k;
  //   omega_k <- (1-theta[1]-theta[2]);
- //   H2 <- theta[1]*(1+z)^3 + theta[2]+ omega_k*(1+z)^2;
- //   drdz[1] <- sqrt((1-fabs(omega_k)/omega_k*r[1])/H2);
+ //   drdzp[1] <- theta[1]*zp^3 + theta[2]+ omega_k*zp^2;
+ //   drdzp[1] <- sqrt((1-fabs(omega_k)/omega_k*r[1]*r[1])/drdzp[1]);
 
     //do flat for simplicity
-    H2 <- theta[1]*(1+z)^3 + (1- theta[1]);
-    drdz[1] <- sqrt(1/H2);
-    return drdz;
+    drdzp[1] <- theta[1]*zp^3 + (1- theta[1]);
+    drdzp[1] <- sqrt(1/drdzp[1]);
+    return drdzp;
   }
 }
 
@@ -120,8 +121,8 @@ transformed data {
   real z0;
 
   int n_int;
-  real z_int[50];
-  vector[50+1] z_int_s;
+  real zp_int[25];
+  vector[25+1] z_int_s;
 
   real galaxy_classification;
 
@@ -138,12 +139,12 @@ transformed data {
   z0 <- 0;
 
   // redshifts at which the integral is solved
-  n_int <- 50;
+  n_int <- 25;
 
   z_int_s[1] <-0;
   for (i in 1:n_int){
-    z_int[i]<-exp((log(1+zmax*1.5))/n_int*i)-1;
-    z_int_s[i+1] <- z_int[i];
+    zp_int[i]<-exp((log(1+zmax*1.5))/n_int*i);
+    z_int_s[i+1] <- zp_int[i]-1;
   }
 }
 
@@ -152,8 +153,8 @@ parameters{
   // transient parameters
   real <lower=0.2, upper = 4> alpha_Ia;
   real <lower=0.2, upper = 4> alpha_nonIa;
-  real <lower=0, upper=0.2> sigma_Ia;
-  real <lower=0, upper=0.5> sigma_nonIa;
+  real <lower=0> sigma_Ia;  //these sigmas are in log space
+  real <lower=0> sigma_nonIa;
 
 
   // cosmology parameters
@@ -201,7 +202,7 @@ transformed parameters{
   theta[2] <- Omega_L;
 
   // get luminosity distance at nodes
-  luminosity_distance_int <- integrate_ode(friedmann, r0, z0, z_int, theta, x_r, x_i);
+  luminosity_distance_int <- integrate_ode(friedmann, r0, z0+1, zp_int, theta, x_r, x_i);
   luminosity_distance_int_s[1] <-0;
   for (i in 1:n_int){
     luminosity_distance_int_s[i+1] <- luminosity_distance_int[i,1];
@@ -212,7 +213,6 @@ transformed parameters{
 
   for (m in 1:N_obs){
     adu_true_obs[m] <- ((1+zs_true_obs[m])* splint(z_int_s, luminosity_distance_int_s, y2, n_int+1, zs_true_obs[m]))^(-2);
- //   print (theta, " ",zs_true_obs[m]," ",adu_true_obs[m]," ",adu_obs[m][1]);
   }
 
   for (m in 1:N_mis){
