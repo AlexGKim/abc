@@ -125,9 +125,13 @@ transformed data {
 
   real galaxy_classification;
 
+  real snIa_logit;
+
+  snIa_logit <- logit(1-1e-6);
+
   N_mis <- N_sn-N_obs;
 
-  galaxy_classification <- 0.98;
+  galaxy_classification <- logit(0.98);
 
   // the initial condition for solving the cosmology ODE
   r0[1] <- 0;
@@ -188,6 +192,10 @@ transformed parameters{
   vector <lower=0>[N_obs] adu_true_obs;
   vector <lower=0>[N_mis] adu_true_mis;
 
+  real snIa_rate_logit;
+
+  snIa_rate_logit <- logit(snIa_rate);
+
 
   theta[1] <- Omega_M;
   theta[2] <- Omega_L;
@@ -213,20 +221,20 @@ transformed parameters{
 
 // marginalize over type
   for (s in 1:N_obs) {
-    lp_obs[s][1] <- lognormal_log(adu_obs[s][1], log(adu_true_obs[s]*alpha_Ia), sigma_Ia/2.5*log(10)) + bernoulli_log(1, snIa_rate) +  bernoulli_log(snIa_obs[s],1-1e-6);
-    lp_obs[s][2] <- lognormal_log(adu_obs[s][1], log(adu_true_obs[s]*alpha_nonIa), sigma_nonIa/2.5*log(10))+bernoulli_log(0, snIa_rate) + bernoulli_log(snIa_obs[s],1e-6) ;
+    lp_obs[s][1] <- lognormal_log(adu_obs[s][1], log(adu_true_obs[s]*alpha_Ia), sigma_Ia/2.5*log(10)) + bernoulli_logit_log(1, snIa_rate_logit) +  bernoulli_logit_log(snIa_obs[s],snIa_logit);
+    lp_obs[s][2] <- lognormal_log(adu_obs[s][1], log(adu_true_obs[s]*alpha_nonIa), sigma_nonIa/2.5*log(10))+bernoulli_logit_log(0, snIa_rate_logit) + bernoulli_logit_log(snIa_obs[s],logit(1-inv_logit(snIa_logit))) ;
 
-    lp_gal_obs[s][1] <- normal_log(host_zs_obs[s], zs_true_obs[s], (1+zs_true_obs[s])*0.001) + bernoulli_log(1, galaxy_classification);
-    lp_gal_obs[s][2] <- uniform_log(host_zs_obs[s],0,zmax*1.5) + bernoulli_log(0, galaxy_classification);
+    lp_gal_obs[s][1] <- lognormal_log(1+host_zs_obs[s], log(1+zs_true_obs[s]), 0.001) + bernoulli_logit_log(1, galaxy_classification);
+    lp_gal_obs[s][2] <- uniform_log(host_zs_obs[s],0,zmax*1.5) + bernoulli_logit_log(0, galaxy_classification);
   }
 
   for (s in 1:N_mis){
     //flux
-    lp_mis[s][1] <- lognormal_log(adu_mis[s][1], log(adu_true_mis[s]*alpha_Ia),  sigma_Ia/2.5*log(10)) + bernoulli_log(1, snIa_rate);
-    lp_mis[s][2] <- lognormal_log(adu_mis[s][1], log(adu_true_mis[s]*alpha_nonIa), sigma_nonIa/2.5*log(10))+bernoulli_log(0, snIa_rate);
+    lp_mis[s][1] <- lognormal_log(adu_mis[s][1], log(adu_true_mis[s]*alpha_Ia),  sigma_Ia/2.5*log(10)) + bernoulli_logit_log(1, snIa_rate_logit);
+    lp_mis[s][2] <- lognormal_log(adu_mis[s][1], log(adu_true_mis[s]*alpha_nonIa), sigma_nonIa/2.5*log(10))+bernoulli_logit_log(0, snIa_rate_logit);
 
-    lp_gal_mis[s][1] <- normal_log(host_zs_mis[s], zs_true_mis[s], (1+zs_true_mis[s])*0.001) + bernoulli_log(1, galaxy_classification);
-    lp_gal_mis[s][2] <- uniform_log(host_zs_mis[s],0,zmax*1.5) + bernoulli_log(0, galaxy_classification);
+    lp_gal_mis[s][1] <- lognormal_log(1+host_zs_mis[s], log(1+zs_true_mis[s]), 0.001) + bernoulli_logit_log(1, galaxy_classification);
+    lp_gal_mis[s][2] <- uniform_log(host_zs_mis[s],0,zmax*1.5) + bernoulli_logit_log(0, galaxy_classification);
   }
 }
 
@@ -235,9 +243,8 @@ model{
   // magnitude zeropoint constrained by a prior of nearby SNe
   alpha_Ia ~ lognormal(log(2.),0.02/2.5*log(10));
 
-  trans_zs_obs ~ normal(zs_true_obs,(1+zs_true_obs)*0.001);
+  (1+trans_zs_obs) ~ lognormal(log(1+zs_true_obs),0.001);
 
- 
   for (s in 1:N_obs){
     increment_log_prob(log_sum_exp(lp_obs[s]));
     increment_log_prob(log_sum_exp(lp_gal_obs[s]));
