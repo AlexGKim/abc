@@ -28,32 +28,52 @@ def genData(N_sn, N_s_obs, Ninit, seed):
 	alpha_nonIa=1.
 	frac_Ia=.8
 
+	# zs : the true redshifts
 	zs = numpy.sort(numpy.random.uniform(zmin,zmax,N_sn))
 
+	# snIa : the true types
 	snIa = numpy.random.binomial(1, frac_Ia, size=N_sn)
 
 	wsnIa = numpy.where(snIa)[0]
 	wnonIa = numpy.where(numpy.logical_not(snIa))[0]
 
+	# adu : the observed counts
 	adu = 1/(cosmo.luminosity_distance(zs).value/cosmo.hubble_distance.value)**2
-
 	adu_random = numpy.random.normal(size=N_sn)
-
 	adu[wsnIa] = alpha_snIa*adu[wsnIa]*10**(adu_random[wsnIa]*sigma_snIa/2.5)
 	adu[wnonIa] = alpha_nonIa*adu[wnonIa]*10**(adu_random[wnonIa]*sigma_nonIa/2.5)
 
-	host_zs_random = zs*numpy.random.binomial(1,0.98,size=N_sn)
-	wrong_host_zs = host_zs_random == 0
-	host_zs_random[wrong_host_zs] = 	numpy.random.uniform(zmin/1.5,zmax*1.5,size=wrong_host_zs.sum())
+	# host_choice : 1 if correct host is chosen to have highest probability, 0 otherwise
+	host_choice = numpy.random.binomial(1,0.98,size=N_sn)
+	neighbor_zs=numpy.random.uniform((1+zmin/1.5)**3,(1+zmax*1.5)**3,size=N_sn)**(1./3)-1
+	host_zs_random_ = zs*host_choice + neighbor_zs*(1-host_choice)
+	neighbor_zs_random_ = zs*(1-host_choice) + neighbor_zs*host_choice
+	# wrong_host_zs : indeces if incorrect host galaxy association
+	#wrong_host_zs = host_zs_random_ == 0
+	#host_zs_random_[wrong_host_zs] = 
 
-	numpy.random.seed()
+	# host_zs_random : redshifts of potential host galaxies with the probability of each
+	host_zs_random=[]
+	for i in xrange(N_sn):
+		ans=[]
+		ans.append(numpy.array([host_zs_random_[i],0.98]))
+		ans.append(numpy.array([neighbor_zs_random_[i],0.02]))
+		host_zs_random.append(ans)
 
-	s_obs = numpy.sort(numpy.random.choice(N_sn, N_s_obs,replace=False))
-	s_mis = numpy.zeros(N_sn,dtype=bool)
-	s_mis[s_obs] = True
-	s_mis = numpy.where(numpy.logical_not(s_mis))[0]
+	# s_obs_random : order in which supernovae get a spectrum
+	s_obs_random = numpy.arange(N_sn,dtype='int')
+	numpy.random.shuffle(s_obs_random)
+	s_obs = numpy.sort(s_obs_random[:N_s_obs]).tolist()
+	s_mis = numpy.sort(s_obs_random[N_s_obs:]).tolist()
 
-	host_zs_mis=host_zs_random[s_mis]
+	host_zs_obs=[]
+	for i in xrange(len(s_obs)):
+		host_zs_obs.append(host_zs_random[s_obs[i]])
+	host_zs_mis=[]
+	for i in xrange(len(s_mis)):
+		host_zs_mis.append(host_zs_random[s_mis[i]])
+
+	host_zs_mis=numpy.array(host_zs_mis)
 
 	data = {'N_sn':N_sn,
 			'N_obs':N_s_obs,
@@ -69,21 +89,33 @@ def genData(N_sn, N_s_obs, Ninit, seed):
 			'trans_zs_obs': zs[s_obs],
 			'snIa_obs': snIa[s_obs],
 
-			'host_zs_obs': zs[s_obs],
-			'host_zs_mis': host_zs_mis
+			'host_zs_obs': host_zs_obs, #zs[s_obs],
+			'host_zs_mis_': host_zs_mis.flatten()
 			}
 
 	init=[]
 	for i in xrange(Ninit):
-		host_zs_mis = zs[s_mis]*numpy.random.binomial(1,0.98,size=len(s_mis))
-		wrong_host_zs = host_zs_mis == 0
-		host_zs_mis[wrong_host_zs] = numpy.random.uniform(zmin/1.5,zmax*1.5,size=wrong_host_zs.sum())
+		# host_zs_mis_init : initial conditions of host redshift _mis for MCMC
+		host_choice = numpy.random.binomial(1,0.98,size=N_sn)
+		host_zs_mis_init = (host_zs_random_*host_choice + neighbor_zs_random_*(1-host_choice))[s_mis]
+		# neighbor_zs_random__ = host_zs*_random_(1-host_choice) + neighbor_zs_random_*host_choice
+		# host_zs_mis_init=[]
+		# for j in xrange(len(s_mis)):
+		# 	z_cand = numpy.array([host_zs_random[s_mis[j]][0][0],host_zs_random[s_mis[j]][1][0],host_zs_random[s_mis[j]][2][0]])
+		# 	ind = numpy.random.multinomial(1,[host_zs_random[s_mis[j]][0][1],host_zs_random[s_mis[j]][1][1],host_zs_random[s_mis[j]][2][1]])
+		# 	ind = numpy.where(ind ==1)[0][0]
+		# 	host_zs_mis_init.append(z_cand[ind])
+		# host_zs_mis_init = numpy.array(host_zs_mis_init)
+
+#		host_zs_mis_init = host_zs_random[s_mis]*numpy.random.binomial(1,0.98,size=len(s_mis))
+#		wrong_host_zs_init = host_zs_mis_init == 0
+#		host_zs_mis_init[wrong_host_zs_init] = numpy.random.uniform(zmin/1.5,zmax*1.5,size=wrong_host_zs_init.sum())
 		init.append ( {
 			'Omega_M':omega_M,
 			'Omega_L':1-omega_M,
 			'w': -1,
 			'zs_true_obs': zs[s_obs],
-		  	'zs_true_mis': host_zs_mis,
+		  	'zs_true_mis': host_zs_mis_init,
 		  	'alpha_Ia': alpha_snIa,
 		 	'alpha_nonIa': alpha_nonIa,
 		  	'sigma_Ia': sigma_snIa,
@@ -91,33 +123,34 @@ def genData(N_sn, N_s_obs, Ninit, seed):
 		  	'snIa_rate':frac_Ia
 			} )
 
-	return data, init
+	info = {
+			'zs' : zs,							# the true redshifts
+			'snIa' : snIa,						# the true types
+			'host_zs_random' : host_zs_random, 	# redshift of associated host galaxy IF there were no spectra
+			'host_choice' : host_choice,	# indeces if incorrect host galaxy association
+			's_obs' : s_obs,
+			's_mis' : s_mis
+		}
 
-Nchains=16
+	return data, init, info
 
-sm = pystan.StanModel(file='des.stan')
+def main():
+	Nchains=8
+	N_sn=200
 
-nspec = numpy.arange(500,1001,100)
-mn=[]
-std=[]
-for ns in nspec:
-	data, init = genData(1000,ns,Nchains,1)
+	sm = pystan.StanModel(file='des.stan')
 
-	fit = sm.sampling(data=data, iter=1000, chains=Nchains, init=init)
-	print fit
-	samples = fit.extract(['Omega_M','zs_true_mis','w'])
-	mn.append(samples['w'].mean())
-	std.append(samples['w'].std())
+	nspec = numpy.arange(100,N_sn+1,25)
+	mn=[]
+	std=[]
+	for ns in nspec:
+		data, init, info = genData(N_sn,ns,Nchains,1)
 
-	with open('model'+str(ns)+'.pkl', 'wb') as f:
-		pickle.dump(fit.extract(), f)
+		fit = sm.sampling(data=data, iter=1000, chains=Nchains, init=init)
+		samples = fit.extract(['Omega_M','zs_true_mis','w'])
 
-# plt.errorbar(nspec,mn,yerr=std,fmt='o')
-# plt.savefig('plot.pdf')
+		with open('model'+str(ns)+'.pkl', 'wb') as f:
+			pickle.dump([fit.extract(),info], f)
 
-
-# fit1 = pystan.stan(file='des.stan', data=data, iter=1000, chains=4, init=[init,init,init,init])
-
-# print fit1
-# fit1.plot()
-# plt.show()
+if __name__ == "__main__":
+    main()

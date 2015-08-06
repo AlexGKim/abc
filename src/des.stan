@@ -105,8 +105,12 @@ data{
   vector[N_obs] trans_zs_obs;
   int<lower=0, upper=1> snIa_obs[N_obs];
 
-  vector[N_obs] host_zs_obs;
-  vector[N_sn-N_obs] host_zs_mis;
+#  vector[N_obs] host_zs_obs;
+  vector[2] host_zs_obs[N_obs, 2];
+
+  real host_zs_mis_[(N_sn-N_obs)*2*2];  // need to do this way in case N_mis =0
+//  vector[2] host_zs_mis[N_sn-N_obs, 2];
+
 }
 
 transformed data {
@@ -128,14 +132,9 @@ transformed data {
 
   real snIa_logit;
 
-//  vector[N_obs] trans_zs_obs_log;
-//  vector[N_obs] host_zs_obs_log;
-//  vector[N_sn-N_obs] host_zs_mis_log;
+  int index;
 
-//  trans_zs_obs_log <- log(1+trans_zs_obs);
-//  host_zs_obs_log <- log(1+host_zs_obs);
-//  host_zs_mis_log <- log(1+host_zs_mis);
-
+  vector[2] host_zs_mis[N_sn-N_obs, 2];
 
   snIa_logit <- logit(1-1e-6);
 
@@ -155,6 +154,17 @@ transformed data {
     zp_int[i]<-exp((log(1+zmax*1.5))/n_int*i);
     z_int_s[i+1] <- zp_int[i]-1;
   }
+
+  index <- 1;
+  for (i in 1:N_mis){
+    for (j in 1:2){
+      for (k in 1:2){
+        host_zs_mis[i,j,k] <-host_zs_mis_[index];
+        index <- index+1;
+      }
+    }
+  }
+
 }
 
 parameters{
@@ -167,8 +177,8 @@ parameters{
 
 
   // cosmology parameters
-  real <lower=0.1, upper=0.5> Omega_M;
-  real <lower=0.5, upper=0.9> Omega_L;
+  real <lower=0.0, upper=1> Omega_M;
+  real <lower=0.0, upper=1> Omega_L;
   real <lower=-2, upper=0> w;
 
   // relative rate parameter
@@ -241,10 +251,14 @@ transformed parameters{
     lp_obs[s][1] <- lognormal_log(adu_obs[s][1], log(adu_true_obs[s]*alpha_Ia), sigma_Ia/2.5*log(10)) + bernoulli_logit_log(1, snIa_rate_logit) +  bernoulli_logit_log(snIa_obs[s],snIa_logit);
     lp_obs[s][2] <- lognormal_log(adu_obs[s][1], log(adu_true_obs[s]*alpha_nonIa), sigma_nonIa/2.5*log(10))+bernoulli_logit_log(0, snIa_rate_logit) + bernoulli_logit_log(snIa_obs[s],logit(1-inv_logit(snIa_logit))) ;
 
-    lp_gal_obs[s][1] <- lognormal_log(1+host_zs_obs[s], log(1+zs_true_obs[s]), 0.001) + bernoulli_logit_log(1, galaxy_classification);
+    for (t in 1:2){
+//      print (t," ",host_zs_obs[s][t][1]," ",host_zs_obs[s][t][2]);
+      lp_gal_obs[s][t] <- lognormal_log(1+host_zs_obs[s][t][1], log(1+zs_true_obs[s]), 0.001) + bernoulli_logit_log(1, host_zs_obs[s][t][2]);
+    }
+ //   lp_gal_obs[s][1] <- lognormal_log(1+host_zs_obs[s], log(1+zs_true_obs[s]), 0.001) + bernoulli_logit_log(1, galaxy_classification);
 //  cauchy may give a larger derivative at extreme values
 //    lp_gal_obs[s][1] <- cauchy_log(host_zs_obs_log[s], zs_true_obs_log[s], 0.001) + bernoulli_logit_log(1, galaxy_classification);
-    lp_gal_obs[s][2] <- uniform_log(host_zs_obs[s],zmin/1.5,zmax*1.5) + bernoulli_logit_log(0, galaxy_classification);
+//    lp_gal_obs[s][2] <- uniform_log(host_zs_obs[s],zmin/1.5,zmax*1.5) + bernoulli_logit_log(0, galaxy_classification);
   }
 
   for (s in 1:N_mis){
@@ -252,9 +266,13 @@ transformed parameters{
     lp_mis[s][1] <- lognormal_log(adu_mis[s][1], log(adu_true_mis[s]*alpha_Ia),  sigma_Ia/2.5*log(10)) + bernoulli_logit_log(1, snIa_rate_logit);
     lp_mis[s][2] <- lognormal_log(adu_mis[s][1], log(adu_true_mis[s]*alpha_nonIa), sigma_nonIa/2.5*log(10))+bernoulli_logit_log(0, snIa_rate_logit);
 
-    lp_gal_mis[s][1] <- lognormal_log(1+host_zs_mis[s], log(1+zs_true_mis[s]), 0.001) + bernoulli_logit_log(1, galaxy_classification);
+    for (t in 1:2){
+      print(t," ",host_zs_mis[s][t][1]," ",host_zs_mis[s][t][2]);
+      lp_gal_mis[s][t] <- lognormal_log(1+host_zs_mis[s][t][1], log(1+zs_true_mis[s]), 0.001) + bernoulli_logit_log(1, host_zs_mis[s][t][2]);
+    }
+//    lp_gal_mis[s][1] <- lognormal_log(1+host_zs_mis[s], log(1+zs_true_mis[s]), 0.001) + bernoulli_logit_log(1, galaxy_classification);
 //    lp_gal_mis[s][1] <- cauchy_log(host_zs_mis_log[s], zs_true_mis_log[s], 0.001) + bernoulli_logit_log(1, galaxy_classification);
-    lp_gal_mis[s][2] <- uniform_log(host_zs_mis[s],zmin/1.5,zmax*1.5) + bernoulli_logit_log(0, galaxy_classification);
+//    lp_gal_mis[s][2] <- uniform_log(host_zs_mis[s],zmin/1.5,zmax*1.5) + bernoulli_logit_log(0, galaxy_classification);
   }
 }
 
