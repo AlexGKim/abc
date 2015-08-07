@@ -6,38 +6,48 @@ rc("font", family="serif", size=10)
 rc("text", usetex=True)
 
 
-pgm = PGM([10.5, 6.5], origin=[0., 0.2], observed_style='inner')
+pgm = PGM([10.5, 7.5], origin=[0., 0.2], observed_style='inner')
 
 #pgm.add_node(Node('G',r"$G$", 3,1))
-pgm.add_node(Node('Coords',r"${RA}_i$/${Dec}_i$", 2,1,fixed=True))
-pgm.add_node(Node('G_i',r"$g_i$", 3,1))
+#pgm.add_node(Node('Coords',r"${RA}_i$/${Dec}_i$", 2,1,fixed=True))
+pgm.add_node(Node('G_i',r"$g_i$", 2,2))
 
-pgm.add_node(Node('mu',r"$\theta_\mu$", 1,3))
-pgm.add_node(Node('HD',r"$\mu_i$", 4,3,fixed=True))
-pgm.add_node(Node('theta_T',r"$\theta_T^{Ia}$, $\theta_T^{non-Ia}$", 2,6,scale=1.5,aspect=1.5))
-pgm.add_node(Node('theta_Ti',r"$\theta_{Ti}^{Ia}$, $\theta_{Ti}^{non-Ia}$", 2,5,scale=1.5,aspect=1.5))
+pgm.add_node(Node('mu',r"$\theta_\mu$", 1,4))
+pgm.add_node(Node('rate',r"$\theta_r$", 1,5))
+pgm.add_node(Node('HD',r"$\mu_i$", 4,4,fixed=True))
+pgm.add_node(Node('theta_T',r"$\theta_T^{Ia}$, $\theta_T^{non-Ia}$", 2,7,scale=1.5,aspect=1.5))
+pgm.add_node(Node('theta_Ti',r"$\theta_{Ti}^{Ia}$, $\theta_{Ti}^{non-Ia}$", 2,6,scale=1.5,aspect=1.5))
 
-pgm.add_node(Node('Host',r"$\theta_{gi}$", 2, 2))
-pgm.add_node(Node('z',r"$z_i$", 3, 2))
+pgm.add_node(Node('Host',r"$\theta_{gi}$", 2, 3, fixed=True,offset=(-10,-5)))
+pgm.add_node(Node('z',r"$z_i$", 3, 3, fixed=True,offset=(-10,-5)))
 
-pgm.add_node(Node('Type',r"$T_i$", 2, 4))
-pgm.add_node(Node('Luminosity',r"$L_i(t,\lambda)$", 4, 5, scale=1.2,fixed=True))
-pgm.add_node(Node('Flux',r"$n_i(t,\lambda)$", 5, 4, scale=1.2,fixed=True,offset=(15,0)))
-pgm.add_node(Node('Flux_g',r"$n_{gi}(\lambda)$", 5, 1,fixed=True,offset=(0,-20)))
-pgm.add_node(Node('Transmission',r"$\phi(\lambda)$", 7, 6))
-pgm.add_node(Node('Counts',r"$\overline{\mathit{ADU}}_i$", 8, 4,scale=1.2,fixed=True,offset=(15,0)))
-pgm.add_node(Node('Counts_g',r"$\overline{\mathit{ADU}}_{gi}$", 8, 3,scale=1.2,fixed=True,offset=(10,-25)))
-pgm.add_node(Node('Zeropoints',r"${Z}$", 9, 6, observed=True))
-pgm.add_node(Node('^Counts',r"${\mathit{ADU}_i}$", 9, 3, observed=True,scale=1.2,aspect=1.2))
+pgm.add_node(Node('Type',r"$T_i$", 2, 5))
+pgm.add_node(Node('Luminosity',r"$L_i(t,\lambda)$", 4, 6, scale=1.2,fixed=True))
+pgm.add_node(Node('Flux',r"$n_i(t,\lambda)$", 5, 5, scale=1.2,fixed=True,offset=(15,0)))
+pgm.add_node(Node('Flux_g',r"$n_{gi}(\lambda)$", 5, 2,fixed=True,offset=(0,-20)))
+pgm.add_node(Node('Transmission',r"$\phi(\lambda)$", 7, 7))
+pgm.add_node(Node('Counts',r"$\overline{\mathit{ADU}}_i$", 8, 5,scale=1.2,fixed=True,offset=(15,0)))
+pgm.add_node(Node('Counts_g',r"$\overline{\mathit{ADU}}_{gi}$", 8, 4,scale=1.2,fixed=True,offset=(10,-25)))
+pgm.add_node(Node('Zeropoints',r"${Z}$", 9, 7, observed=True))
+pgm.add_node(Node('^Counts',r"${\mathit{ADU}_i}$", 9, 4, observed=True,scale=1.2,aspect=1.2))
 
-pgm.add_node(Node('Spars',r"${T}_{Si}$, ${z}_{Si},{\theta}_{Si}$", 6, 3, scale=1.8,aspect=1.2, observed=True))
+pgm.add_node(Node('Spars',r"${T}_{Si}$, ${z}_{Si},{\theta}_{Si}$", 6, 4, scale=1.8,aspect=1.2, observed=True))
 #pgm.add_node(Node('^Host',r"${z}_{Hi},{\theta}_{Hi}$", 7, 2, scale=1.5,observed=True))
 
-pgm.add_node(Node('Detected',r"Detected$_i$", 8, 2, fixed=True,offset=(-10,-20)))
-pgm.add_node(Node('^Type',r"Selected$_i$", 8, 1, fixed=True,offset=(-10,-20)))
+#pgm.add_node(Node('Detected',r"Detected$_i$", 8, 3, fixed=True,offset=(-10,-20)))
+pgm.add_node(Node('^Type',r"Select$_i$", 9, 5, observed=True,scale=1,aspect=1.5))
+
+pgm.add_node(Node('Gals',r"$\theta_G$", 6, 1, observed=True))
+
+
+pgm.add_edge("G_i","Gals")
+
+pgm.add_edge("rate","Type")
+
 
 pgm.add_edge("mu","HD")
-pgm.add_edge("^Type","^Counts")
+pgm.add_edge("Counts","^Type")
+pgm.add_edge("Counts_g","^Type")
 
 pgm.add_edge("Host","Luminosity")
 
@@ -45,7 +55,7 @@ pgm.add_edge("Host","Luminosity")
 pgm.add_edge("z","HD")
 
 
-pgm.add_edge("Coords","G_i")
+# pgm.add_edge("Coords","G_i")
 pgm.add_edge("G_i","Host")
 
 pgm.add_edge("G_i","z")
@@ -85,13 +95,13 @@ pgm.add_edge("Flux","Spars")
 pgm.add_edge("Counts_g","^Counts")
 
 
-pgm.add_edge("Detected","^Counts")
+#pgm.add_edge("Detected","^Counts")
 
 
 
 
 # Big Plate: Galaxy
-pgm.add_plate(Plate([1.5, 0.5, 8, 5.],
+pgm.add_plate(Plate([1.5, 1.5, 8, 5.],
                     label=r"SNe $i = 1, \cdots, N_{SN}$",
                     shift=-0.1,label_offset=[360,2]))
 

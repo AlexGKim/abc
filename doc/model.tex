@@ -20,29 +20,21 @@ that have passed some selection criteria (e.g.\ classified as Type~Ia supernovae
 function (pdf) of the Hubble diagram is denoted as
 \begin{equation}
 p({\mu},{z} |  {{ADU}}, {{T}}_S,{{z}}_S,
-{{\theta}}_S;
-{\text{RA}}, {\text{Dec}}, \text{Detected}, {\text{Selected}}).
+{{\theta}}_S, \theta_G,
+{\text{Select}}).
 \label{hd:eqn}
 \end{equation}
-The semicolon separates random and fixed parameters.
 The set of distance moduli
 and redshifts $(\mu, z)$ is the Hubble diagram.  The available information
 from which the Hubble diagram is inferred include:
 the transient photometry ${ADU}$; spectral measurements of
 transient
 type, redshift and SN-parameters ${T}_S$, ${z}_S$, ${\theta}_S$;
-mass, sSFR, etc.; transient coordinates  $\text{RA}$, $\text{Dec}$;
-and the fact that the transients were Detected and Selected for the analysis.
+host-galaxy parameter measurements $\theta_H$ including redshift,
+mass, sSFR, etc.; and the sample-selection score Select.
 
-The pdf in Equation~\ref{hd:eqn} is proportional to
-\begin{equation}
-p({\mu},{z}; \text{RA}, \text{Dec},  \text{Detected}, {\text{Selected}}
- |  {{ADU}}, {{T}}_S,{{z}}_S,
-{{\theta}}_S)
-\label{hd2:eqn}
-\end{equation}
-and this is what we model.  A sketch of the model (with the optional inclusion
-of calibration) is depicted in the Probabilistic Graphical Model
+A sketch of a more extensive model that includes the
+model of Equation~\ref{hd:eqn} is depicted in the Probabilistic Graphical Model
 (PGM)
 shown in Figure~\ref{pgm:fig}.
 Note that although we have been discussing the model for the Hubble diagram, the same PGM can
@@ -73,32 +65,12 @@ parameters, labelled as $\theta_\mu$.
    \label{pgm:fig}}
 \end{figure}
 
-
-The model describes the transients that constitute the cosmology analysis, given the following
-information.  
-\begin{itemize}
-\item ${\text{RA}}$, ${\text{Dec}}$.  The observed
-coordinates.  For our purposes the observed, rather than true, coordinates are sufficient.
-\item Detected.  The transient is discovered.
-\item Selected. The transient is selected for the cosmology analysis.  This presumably
-includes its classification as SN~Ia.
-\end{itemize}
-
 The universe is modeled as the background cosmology, transients that could
 enter the sample, and their host galaxies.
 \begin{itemize}
-\item $P(g_i; {\text{RA}}/{\text{Dec}})$. The host galaxy $g_i$
-is drawn based on coordinates.
-It is drawn from
-the union of the objects in the observed galaxy catalog
-plus unobserved galaxies that have not
-met the detection threshold, presumably due to their low surface brightness.
-This pdf is
-the deliverable we want from Ravi.
+\item  $g_i$ labels the distinct galaxy that is the transient host.
 \item $z_i$, $\theta_{gi}$ are the galaxy redshift and parameters (e.g.\ mass, sSFR, metallicity).
-For observed galaxies the parameter values are based on measurements e.g.\ $\theta_{gi} \sim \mathcal{N}({\theta}_{gi},\sigma^2_{{\theta}_{gi}})$, otherwise the distribution
-of $\theta_{gi}$ for ``hostless'' galaxies is described by the model.
-Redshifts may be photometric or spectroscopic.
+Given the galaxy $g_i$, these values are specified.
 \item $\theta_\mu$ are the parameters that specify that distance modulus.
 \item $\mu_i=\mu(z_i; \theta_\mu)$.  The distance modulus is a function of redshift,
 whose specific form is unspecified at the moment,  it could
@@ -143,14 +115,18 @@ coming from $\int n_i \phi d\lambda$.
 
 The observations are as follows:
 \begin{itemize}
-\item ${\mathit{ADU}}$ is the realized flux can be expressed as
+\item ${\mathit{ADU}}$ is the realized flux. 
+\item Select is the score used to decide if the transient is used in the analysis.
+It and $\mathit{ADU}$ are not independent so what is relevant is their joint distribution
 \begin{equation}
-P({\mathit{ADU}} | \overline{\mathit{ADU}}, 
-\overline{\mathit{ADU}}_g; \text{Dectected}, \text{Selected})=\frac{P({\mathit{ADU}};\text{Dectected}, \text{Selected} |  
-\overline{\mathit{ADU}}, \overline{\mathit{ADU}}_g)}{P(\text{Dectected}, \text{Selected} | 
-\overline{\mathit{ADU}},  \overline{{\mathit{ADU}}}_g)},
+P({\mathit{ADU},\text{Select}} | \overline{\mathit{ADU}}, 
+\overline{\mathit{ADU}}_g),
 \end{equation}
 which can be determined from detection and typing efficiency studies.
+\item $\theta_G$ represents the galaxy parameters of the
+galaxy catalog used to identify prospective host galaxies.
+The contribution to the likelihood $P(\theta_G|g_i)$ can be
+estimated as $P(g_i|\theta_G)\frac{P(\theta_G)}{P(z)}$: Ravi is determining $P(g_i|\theta_G)$.
 \item ${T}_S$, ${z}_S$, ${\theta}_S$ Transient type, redshift and properties from
 spectroscopic data. I skip the details of the actual measurement  and make a direct association
 with the fluxes of the transient and underlying galaxy $n$, $n_g$.

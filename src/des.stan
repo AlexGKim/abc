@@ -195,10 +195,12 @@ transformed parameters{
   real theta[3];
 
   // log probability
+  // P(ADU|theta_t,g)
   vector[2] lp_obs[N_obs];
   vector[2] lp_mis[N_mis];
 
   // log probability
+  // P(\theta_g|g)
   vector[2] lp_gal_obs[N_obs];
   vector[2] lp_gal_mis[N_mis];
 
@@ -214,12 +216,6 @@ transformed parameters{
   vector <lower=0>[N_mis] adu_true_mis;
 
   real snIa_rate_logit;
-
-//  vector[N_obs] zs_true_obs_log;
-//  vector[N_mis] zs_true_mis_log;
-
-//  zs_true_obs_log <- log(1+zs_true_obs);
-//  zs_true_mis_log <- log(1+zs_true_mis);
 
   snIa_rate_logit <- logit(snIa_rate);
 
@@ -246,32 +242,31 @@ transformed parameters{
     adu_true_mis[m] <- ((1+zs_true_mis[m])* splint(z_int_s, luminosity_distance_int_s, y2, n_int+1, zs_true_mis[m]))^(-2);
   }
 
-// marginalize over type
   for (s in 1:N_obs) {
+    // marginalize over type
     lp_obs[s][1] <- lognormal_log(adu_obs[s][1], log(adu_true_obs[s]*alpha_Ia), sigma_Ia/2.5*log(10)) + bernoulli_logit_log(1, snIa_rate_logit) +  bernoulli_logit_log(snIa_obs[s],snIa_logit);
     lp_obs[s][2] <- lognormal_log(adu_obs[s][1], log(adu_true_obs[s]*alpha_nonIa), sigma_nonIa/2.5*log(10))+bernoulli_logit_log(0, snIa_rate_logit) + bernoulli_logit_log(snIa_obs[s],logit(1-inv_logit(snIa_logit))) ;
 
+    // marginalize over possible hosts
+    // *********  P(gals|z) \propto P(z|gals)/ P(z) assume flat P(z) ********
     for (t in 1:2){
-//      print (t," ",host_zs_obs[s][t][1]," ",host_zs_obs[s][t][2]);
       lp_gal_obs[s][t] <- lognormal_log(1+host_zs_obs[s][t][1], log(1+zs_true_obs[s]), 0.001) + bernoulli_logit_log(1, host_zs_obs[s][t][2]);
     }
  //   lp_gal_obs[s][1] <- lognormal_log(1+host_zs_obs[s], log(1+zs_true_obs[s]), 0.001) + bernoulli_logit_log(1, galaxy_classification);
-//  cauchy may give a larger derivative at extreme values
-//    lp_gal_obs[s][1] <- cauchy_log(host_zs_obs_log[s], zs_true_obs_log[s], 0.001) + bernoulli_logit_log(1, galaxy_classification);
 //    lp_gal_obs[s][2] <- uniform_log(host_zs_obs[s],zmin/1.5,zmax*1.5) + bernoulli_logit_log(0, galaxy_classification);
   }
 
   for (s in 1:N_mis){
-    //flux
+   // marginalize over type
     lp_mis[s][1] <- lognormal_log(adu_mis[s][1], log(adu_true_mis[s]*alpha_Ia),  sigma_Ia/2.5*log(10)) + bernoulli_logit_log(1, snIa_rate_logit);
     lp_mis[s][2] <- lognormal_log(adu_mis[s][1], log(adu_true_mis[s]*alpha_nonIa), sigma_nonIa/2.5*log(10))+bernoulli_logit_log(0, snIa_rate_logit);
 
+    // marginalize over possible hosts
+    // *********  P(gals|z) \propto P(z|gals)/ P(z) assume flat P(z) ********
     for (t in 1:2){
-      print(t," ",host_zs_mis[s][t][1]," ",host_zs_mis[s][t][2]);
       lp_gal_mis[s][t] <- lognormal_log(1+host_zs_mis[s][t][1], log(1+zs_true_mis[s]), 0.001) + bernoulli_logit_log(1, host_zs_mis[s][t][2]);
     }
 //    lp_gal_mis[s][1] <- lognormal_log(1+host_zs_mis[s], log(1+zs_true_mis[s]), 0.001) + bernoulli_logit_log(1, galaxy_classification);
-//    lp_gal_mis[s][1] <- cauchy_log(host_zs_mis_log[s], zs_true_mis_log[s], 0.001) + bernoulli_logit_log(1, galaxy_classification);
 //    lp_gal_mis[s][2] <- uniform_log(host_zs_mis[s],zmin/1.5,zmax*1.5) + bernoulli_logit_log(0, galaxy_classification);
   }
 }
@@ -281,9 +276,10 @@ model{
   // magnitude zeropoint constrained by a prior of nearby SNe
   alpha_Ia ~ lognormal(log(2.),0.02/2.5*log(10));
 
+  // P(z_s|g)
   (1+trans_zs_obs) ~ lognormal(log(1+zs_true_obs),0.001);
-//  trans_zs_obs_log ~ cauchy(zs_true_obs_log,0.001);
 
+  # from Stan manual 30.1 no speed benefit from vectorization of increment_log_prob 
   for (s in 1:N_obs){
     increment_log_prob(log_sum_exp(lp_obs[s]));
     increment_log_prob(log_sum_exp(lp_gal_obs[s]));

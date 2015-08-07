@@ -111,16 +111,16 @@ def genData(N_sn, N_s_obs, Ninit, seed):
 #		wrong_host_zs_init = host_zs_mis_init == 0
 #		host_zs_mis_init[wrong_host_zs_init] = numpy.random.uniform(zmin/1.5,zmax*1.5,size=wrong_host_zs_init.sum())
 		init.append ( {
-			'Omega_M':omega_M,
+			'Omega_M':numpy.random.normal(omega_M,0.1),
 			'Omega_L':1-omega_M,
-			'w': -1,
+			'w': numpy.random.normal(-0.9,0.1),
 			'zs_true_obs': zs[s_obs],
-		  	'zs_true_mis': host_zs_mis_init,
-		  	'alpha_Ia': alpha_snIa,
-		 	'alpha_nonIa': alpha_nonIa,
-		  	'sigma_Ia': sigma_snIa,
-		  	'sigma_nonIa':sigma_nonIa,
-		  	'snIa_rate':frac_Ia
+		  	'zs_true_mis': numpy.random.uniform((1+zmin/1.5)**3,(1+zmax*1.5)**3,size=N_sn-N_s_obs)**(1./3)-1, #host_zs_mis_init,
+		  	'alpha_Ia': numpy.random.normal(alpha_snIa,0.1),
+		 	'alpha_nonIa': numpy.random.normal(alpha_nonIa,0.1),
+		  	'sigma_Ia': numpy.random.normal(sigma_snIa,0.05),
+		  	'sigma_nonIa':numpy.random.normal(sigma_nonIa,0.5),
+		  	'snIa_rate':numpy.random.lognormal(numpy.log(frac_Ia),0.1)
 			} )
 
 	info = {
@@ -135,18 +135,18 @@ def genData(N_sn, N_s_obs, Ninit, seed):
 	return data, init, info
 
 def main():
-	Nchains=8
+	Nchains=4
 	N_sn=200
 
 	sm = pystan.StanModel(file='des.stan')
 
-	nspec = numpy.arange(100,N_sn+1,25)
+	nspec = numpy.arange(100,N_sn+1,250)
 	mn=[]
 	std=[]
 	for ns in nspec:
 		data, init, info = genData(N_sn,ns,Nchains,1)
 
-		fit = sm.sampling(data=data, iter=1000, chains=Nchains, init=init)
+		fit = sm.sampling(data=data, iter=100000, thin=100, warmup = 500, chains=Nchains, init=init)
 		samples = fit.extract(['Omega_M','zs_true_mis','w'])
 
 		with open('model'+str(ns)+'.pkl', 'wb') as f:
