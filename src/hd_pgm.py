@@ -22,7 +22,7 @@ pgm.add_node(Node('Host',r"$\theta_{gi}$", 2, 3, fixed=True,offset=(-10,-5)))
 pgm.add_node(Node('z',r"$z_i$", 3, 3, fixed=True,offset=(-10,-5)))
 
 pgm.add_node(Node('Type',r"$T_i$", 2, 5))
-pgm.add_node(Node('Luminosity',r"$L_i(t,\lambda)$", 4, 6, scale=1.2,fixed=True))
+pgm.add_node(Node('Luminosity',r"$L_i(t,\lambda)$", 4, 6, scale=1.2))
 pgm.add_node(Node('Flux',r"$n_i(t,\lambda)$", 5, 5, scale=1.2,fixed=True,offset=(15,0)))
 pgm.add_node(Node('Flux_g',r"$n_{gi}(\lambda)$", 5, 2,fixed=True,offset=(0,-20)))
 pgm.add_node(Node('Transmission',r"$\phi(\lambda)$", 7, 7))
@@ -35,7 +35,7 @@ pgm.add_node(Node('Spars',r"${T}_{Si}$, ${z}_{Si},{\theta}_{Si}$", 6, 4, scale=1
 #pgm.add_node(Node('^Host',r"${z}_{Hi},{\theta}_{Hi}$", 7, 2, scale=1.5,observed=True))
 
 #pgm.add_node(Node('Detected',r"Detected$_i$", 8, 3, fixed=True,offset=(-10,-20)))
-pgm.add_node(Node('^Type',r"Select$_i$", 9, 5, observed=True,scale=1,aspect=1.5))
+pgm.add_node(Node('^Type',r"$\tau_i$", 9, 2, observed=True))
 
 pgm.add_node(Node('Gals',r"$\theta_G$", 6, 1, observed=True))
 
@@ -46,9 +46,8 @@ pgm.add_edge("rate","Type")
 
 
 pgm.add_edge("mu","HD")
-pgm.add_edge("Counts","^Type")
-pgm.add_edge("Counts_g","^Type")
-
+pgm.add_edge("^Counts","^Type")
+pgm.add_edge("Spars","^Type")
 pgm.add_edge("Host","Luminosity")
 
 
@@ -61,6 +60,7 @@ pgm.add_edge("G_i","Host")
 pgm.add_edge("G_i","z")
 pgm.add_edge("HD","Flux")
 pgm.add_edge("z","Flux")
+pgm.add_edge("G_i","Flux_g")
 pgm.add_edge("HD","Flux_g")
 pgm.add_edge("z","Flux_g")
 #pgm.add_edge("HD","^Host")
@@ -76,7 +76,6 @@ pgm.add_edge("theta_T","Luminosity")
 #pgm.add_edge("Galaxies","G")
 
 pgm.add_edge("theta_Ti","Luminosity")
-pgm.add_edge("Host","Flux_g")
 
 
 pgm.add_edge("Flux","Counts")
