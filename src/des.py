@@ -146,11 +146,14 @@ def main():
 	for ns in nspec:
 		data, init, info = genData(N_sn,ns,Nchains,1)
 
-		fit = sm.sampling(data=data, iter=100000, thin=100, warmup = 500, chains=Nchains, init=init)
+		fit = sm.sampling(data=data, iter=1000,  chains=Nchains, init=init)
 		samples = fit.extract(['Omega_M','zs_true_mis','w'])
 
+		logposterior = fit.get_logposterior()
+
 		with open('model'+str(ns)+'.pkl', 'wb') as f:
-			pickle.dump([fit.extract(),info], f)
+			pickle.dump([fit.extract(),info, logposterior], f)
+
 
 if __name__ == "__main__":
     main()
