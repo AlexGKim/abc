@@ -56,8 +56,8 @@ def genData(N_sn, N_s_obs, Ninit, seed):
 	host_zs_random=[]
 	for i in xrange(N_sn):
 		ans=[]
-		ans.append(numpy.array([host_zs_random_[i],0.98]))
-		ans.append(numpy.array([neighbor_zs_random_[i],0.02]))
+		ans.append(numpy.array([host_zs_random_[i],numpy.log(0.98/(1-0.98)]))
+		ans.append(numpy.array([neighbor_zs_random_[i],numpy.log(0.02/(1-0.02)]))
 		host_zs_random.append(ans)
 
 	# s_obs_random : order in which supernovae get a spectrum
@@ -90,7 +90,9 @@ def genData(N_sn, N_s_obs, Ninit, seed):
 			'snIa_obs': snIa[s_obs],
 
 			'host_zs_obs': host_zs_obs, #zs[s_obs],
-			'host_zs_mis_': host_zs_mis.flatten()
+			'host_zs_mis_': host_zs_mis.flatten(),
+
+			'n_int': 50
 			}
 
 	init=[]
@@ -114,8 +116,8 @@ def genData(N_sn, N_s_obs, Ninit, seed):
 			'Omega_M':numpy.random.normal(omega_M,0.1),
 			'Omega_L':1-omega_M,
 			'w': numpy.random.normal(-0.9,0.1),
-			'zs_true_obs': zs[s_obs],
-		  	'zs_true_mis': numpy.random.uniform((1+zmin/1.5)**3,(1+zmax*1.5)**3,size=N_sn-N_s_obs)**(1./3)-1, #host_zs_mis_init,
+			'ainv_true_obs': 1+zs[s_obs],
+		  	'ainv_true_mis': numpy.random.uniform((1+zmin/1.5)**3,(1+zmax*1.5)**3,size=N_sn-N_s_obs)**(1./3), #host_zs_mis_init,
 		  	'alpha_Ia': numpy.random.normal(alpha_snIa,0.1),
 		 	'alpha_nonIa': numpy.random.normal(alpha_nonIa,0.1),
 		  	'sigma_Ia': numpy.random.normal(sigma_snIa,0.05),
@@ -147,7 +149,7 @@ def main():
 		data, init, info = genData(N_sn,ns,Nchains,1)
 
 		fit = sm.sampling(data=data, iter=1000,  chains=Nchains, init=init)
-		samples = fit.extract(['Omega_M','zs_true_mis','w'])
+		samples = fit.extract(['Omega_M','ainv_true_mis','w'])
 
 		logposterior = fit.get_logposterior()
 
