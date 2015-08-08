@@ -56,8 +56,8 @@ def genData(N_sn, N_s_obs, Ninit, seed):
 	host_zs_random=[]
 	for i in xrange(N_sn):
 		ans=[]
-		ans.append(numpy.array([host_zs_random_[i],numpy.log(0.98/(1-0.98)]))
-		ans.append(numpy.array([neighbor_zs_random_[i],numpy.log(0.02/(1-0.02)]))
+		ans.append(numpy.array([host_zs_random_[i],numpy.log(0.98/(1-0.98))]))  #logit
+		ans.append(numpy.array([neighbor_zs_random_[i],numpy.log(0.02/(1-0.02))]))
 		host_zs_random.append(ans)
 
 	# s_obs_random : order in which supernovae get a spectrum
@@ -142,7 +142,7 @@ def main():
 
 	sm = pystan.StanModel(file='des.stan')
 
-	nspec = numpy.arange(100,N_sn+1,250)
+	nspec = numpy.arange(200,N_sn+1,250)
 	mn=[]
 	std=[]
 	for ns in nspec:
