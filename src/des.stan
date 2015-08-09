@@ -94,6 +94,8 @@ data{
 
   int<lower=1> N_adu_max;
 
+  int<lower=1> N_SNIa;
+
   real<lower=0> zmin;
   real<lower=zmin> zmax;
 
@@ -108,8 +110,6 @@ data{
   vector[N_sn-N_obs] host_zs_mis;  // need to do this way in case N_mis =0, transformed data is used
   
   int n_int;
-
-  int N_SNIa;
 }
 
 transformed data {
@@ -117,11 +117,6 @@ transformed data {
   int N_mis;
 
   real ainv_int[n_int];
-
-  # real snIa_logit;
-  # real nonIa_logit;
-
-  int index;
 
   real ln10d25;
 
@@ -132,13 +127,19 @@ transformed data {
   real zmax3;
 
   vector[N_obs] host_zs_obs3;
-
   vector[N_sn-N_obs] host_zs_mis3;  // need to do this way in case N_mis =0, transformed data is used
 
   vector[N_SNIa] adu_SNIa;
   vector[N_obs-N_SNIa] adu_nonIa;
   int index_SNIa[N_SNIa];
   int index_nonIa[N_obs-N_SNIa];
+
+  real loggalaxyProb;
+  real lognotgalaxyProb;
+
+  loggalaxyProb <- log(0.98);
+  lognotgalaxyProb <- log(0.02);
+  
 
 
   zmin3 <-(zmin*0.5)^3;
@@ -153,6 +154,7 @@ transformed data {
 
   N_mis <- N_sn-N_obs;
 
+  // used to approximate volume
   for (i in 1:N_obs){
     host_zs_obs3[i]<-pow(host_zs_obs[i],3.);
   }
@@ -160,10 +162,12 @@ transformed data {
     host_zs_mis3[i]<-pow(host_zs_mis[i],3.);
   }
 
+  // redshift nodes for interpolation
   for (i in 1:n_int){
     ainv_int[i] <- (1+zmin*.1) + (zmax*1.5-zmin*.1)/(n_int-1)*(i-1);
   }
 
+  // vectors for observed SNIa and nonIa used fo efficient calculation
   {
     int iaindex;
     int noniaindex;
@@ -194,24 +198,21 @@ parameters{
 
   // cosmology parameters
   real <lower=0.0, upper=1> Omega_M;
-  real <lower=0.0, upper=1> Omega_L;
+//  real <lower=0.0, upper=1> Omega_L;
   real <lower=-2, upper=0> w;
 
   // relative rate parameter
-#  real<lower=0, upper=1> snIa_rate;
   simplex[2] snIa_rate;
 
-  // true redshifts spectroscopy
+  // true redshifts
   vector<lower=1+zmin*0.1, upper=1+zmax*1.5>[N_obs] ainv_true_obs;
   vector<lower=1+zmin*0.1, upper=1+zmax*1.5>[N_mis] ainv_true_mis;
  }
 
 transformed parameters{
 
-
   // log probability
   // P(ADU|theta_t,g)
-//  vector[2] lp_obs[N_obs];
   vector[2] lp_mis[N_mis];
 
   // log probability
@@ -219,22 +220,13 @@ transformed parameters{
   vector[2] lp_gal_obs[N_obs];
   vector[2] lp_gal_mis[N_mis];
 
-
   vector[N_obs] logainv_true_obs;
-  vector[N_mis] logainv_true_mis;
 
   vector[N_SNIa] adu_true_SNIa;
   vector[N_obs-N_SNIa] adu_true_nonIa;
 
-  vector[2] snIa_rate_logit;
-
-  snIa_rate_logit[1] <- logit(snIa_rate[1]);
-  snIa_rate_logit[2] <- logit(snIa_rate[2]);
-
 
   logainv_true_obs <- log(ainv_true_obs);
-  logainv_true_mis <- log(ainv_true_mis);
-
 
 
   {
@@ -242,6 +234,10 @@ transformed parameters{
     real y2[n_int];
 
     real adu_true_mis;
+    vector[2] logsnIa_rate;
+
+    vector[N_mis] logainv_true_mis;
+    logainv_true_mis <- log(ainv_true_mis);
 
     // get luminosity distance at nodes
     {
@@ -254,7 +250,7 @@ transformed parameters{
       r0[1] <- 0;
 
       theta[1] <- Omega_M;
-      theta[2] <- Omega_L;
+      theta[2] <- (1-Omega_M);
       theta[3] <- w;
       luminosity_distance_int <- integrate_ode(friedmann, r0, ainv0, ainv_int, theta, x_r, x_i);
       for (m in 1:n_int){
@@ -266,7 +262,6 @@ transformed parameters{
     // should work well in 1+z vs d_L since the relationship is linear
     y2 <- spline(ainv_int, luminosity_distance_int_s,n_int, 0., 0.);
 
-    
     for (s in 1:N_SNIa){
       adu_true_SNIa[s] <- splint(ainv_int, luminosity_distance_int_s, y2, n_int, ainv_true_obs[index_SNIa[s]])^(-2);
     }
@@ -276,46 +271,26 @@ transformed parameters{
     }
  
     for (s in 1:N_obs) {
-        //predicted adu
-
-      //adu_true_obs[s]  <- splint(ainv_int, luminosity_distance_int_s, y2, n_int, ainv_true_obs[s])^(-2);
-      // marginalize over type
-      //lp_obs[s][1] <- normal_log(adu_obs[s][1], adu_true_obs*alpha_Ia, adu_true_obs*alpha_Ia*sigma_Ia*ln10d25) + log(snIa_rate[1]) +  bernoulli_logit_log(snIa_obs[s],snIa_logit);
-      //lp_obs[s][2] <- normal_log(adu_obs[s][1], adu_true_obs*alpha_nonIa, adu_true_obs*alpha_nonIa* sigma_nonIa*ln10d25)+ log(snIa_rate[2])  + bernoulli_logit_log(snIa_obs[s], nonIa_logit) ;
-
       // marginalize over possible hosts
-      // *********  P(gals|z) \propto P(z|gals)/ P(z) assume flat P(z) ********
-      /*
-      for (t in 1:2){
-        lp_gal_obs[s][t] <- lognormal_log(1+host_zs_obs[s][t][1], logainv_true_obs[s], 0.001) + bernoulli_logit_log(1, host_zs_obs[s][t][2]);
-      }
-      */
-      lp_gal_obs[s][1] <- lognormal_log(1+host_zs_obs[s], logainv_true_obs[s], 0.001) + log(0.98);
-      lp_gal_obs[s][2] <- uniform_log(host_zs_obs3[s], zmin3, zmax3) + log(0.02);
+      lp_gal_obs[s][1] <- lognormal_log(1+host_zs_obs[s], logainv_true_obs[s], 0.001) + loggalaxyProb;
+      lp_gal_obs[s][2] <- uniform_log(host_zs_obs3[s], zmin3, zmax3) + lognotgalaxyProb;
     }
     
+    logsnIa_rate <- log(snIa_rate);
     for (s in 1:N_mis){
       adu_true_mis  <- splint(ainv_int, luminosity_distance_int_s, y2, n_int, ainv_true_mis[s])^(-2);
      // marginalize over type
-      lp_mis[s][1] <- normal_log(adu_mis[s][1], adu_true_mis*alpha_Ia,  adu_true_mis*alpha_Ia*sigma_Ia*ln10d25) + log(snIa_rate[1]) ;
-      lp_mis[s][2] <- normal_log(adu_mis[s][1], adu_true_mis*alpha_nonIa, adu_true_mis*alpha_nonIa*sigma_nonIa*ln10d25)+ log(snIa_rate[2]);
+      lp_mis[s][1] <- normal_log(adu_mis[s][1], adu_true_mis*alpha_Ia,  adu_true_mis*alpha_Ia*sigma_Ia*ln10d25) + logsnIa_rate[1] ;
+      lp_mis[s][2] <- normal_log(adu_mis[s][1], adu_true_mis*alpha_nonIa, adu_true_mis*alpha_nonIa*sigma_nonIa*ln10d25)+ logsnIa_rate[2];
 
       // marginalize over possible hosts
-      // *********  P(gals|z) \propto P(z|gals)/ P(z) assume flat P(z) ********
-      /*
-      for (t in 1:2){
-        lp_gal_mis[s][t] <- lognormal_log(1+host_zs_mis[s][t][1], logainv_true_mis[s], 0.001) + bernoulli_logit_log(1, host_zs_mis[s][t][2]);
-      }
-      */
-      lp_gal_mis[s][1] <- lognormal_log(1+host_zs_mis[s], logainv_true_mis[s], 0.001) + log(0.98);
-      lp_gal_mis[s][2] <- uniform_log(host_zs_mis3[s], zmin3,zmax3) + log(0.02);
+      lp_gal_mis[s][1] <- lognormal_log(1+host_zs_mis[s], logainv_true_mis[s], 0.001) + loggalaxyProb;
+      lp_gal_mis[s][2] <- uniform_log(host_zs_mis3[s], zmin3,zmax3) + lognotgalaxyProb;
     }
-  
   }
 }
 
 model{
-
   // magnitude zeropoint constrained by a prior of nearby SNe
   alpha_Ia ~ lognormal(log(2.),0.02*ln10d25);
 
@@ -323,6 +298,7 @@ model{
   trans_ainv_obs ~ lognormal(logainv_true_obs,0.001);
 
   //collect classified SNe and vectorize accordingly
+  // P(ADU, Ts | rate) = P(ADU| SNIa) P(SNIa|rate) for guys with Ts=1
   adu_SNIa ~ normal(adu_true_SNIa*alpha_Ia, adu_true_SNIa*alpha_Ia*sigma_Ia*ln10d25);
   increment_log_prob(N_SNIa*log(snIa_rate[1]));
 
@@ -333,7 +309,6 @@ model{
   
   # from Stan manual 30.1 no speed benefit from vectorization of increment_log_prob 
   for (s in 1:N_obs){
-//    increment_log_prob(log_sum_exp(lp_obs[s]));
     increment_log_prob(log_sum_exp(lp_gal_obs[s]));
   }
 
