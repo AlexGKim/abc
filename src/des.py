@@ -71,13 +71,14 @@ def genData(N_sn, N_s_obs, Ninit, seed):
 			'adu_obs': adu[s_obs,None],
 			'adu_mis': adu[s_mis,None],
 
-			'trans_zs_obs': zs[s_obs],
+			'trans_ainv_obs': 1+zs[s_obs],
 			'snIa_obs': snIa[s_obs],
 
 			'host_zs_obs': host_zs_random[s_obs], #zs[s_obs],
 			'host_zs_mis': host_zs_random[s_mis],
 
-			'n_int': 50
+			'n_int': 25,
+			'N_SNIa': snIa[s_obs].sum()
 			}
 
 	init=[]
@@ -97,6 +98,7 @@ def genData(N_sn, N_s_obs, Ninit, seed):
 #		host_zs_mis_init = host_zs_random[s_mis]*numpy.random.binomial(1,0.98,size=len(s_mis))
 #		wrong_host_zs_init = host_zs_mis_init == 0
 #		host_zs_mis_init[wrong_host_zs_init] = numpy.random.uniform(zmin/1.5,zmax*1.5,size=wrong_host_zs_init.sum())
+		rate = numpy.random.lognormal(numpy.log(frac_Ia),0.1)
 		init.append ( {
 			'Omega_M':numpy.random.normal(omega_M,0.1),
 			'Omega_L':1-omega_M,
@@ -107,7 +109,7 @@ def genData(N_sn, N_s_obs, Ninit, seed):
 		 	'alpha_nonIa': numpy.random.normal(alpha_nonIa,0.1),
 		  	'sigma_Ia': numpy.random.normal(sigma_snIa,0.05),
 		  	'sigma_nonIa':numpy.random.normal(sigma_nonIa,0.5),
-		  	'snIa_rate':numpy.random.lognormal(numpy.log(frac_Ia),0.1)
+		  	'snIa_rate': [rate,1-rate]
 			} )
 
 	info = {
