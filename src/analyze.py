@@ -51,4 +51,4 @@ def main(n_s):
 	individual(200,n_s)
 
 if __name__ == "__main__":
-    main(200)
+    main(100)

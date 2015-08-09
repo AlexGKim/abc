@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import matplotlib
-#matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 import pystan
@@ -46,19 +46,12 @@ def genData(N_sn, N_s_obs, Ninit, seed):
 	# host_choice : 1 if correct host is chosen to have highest probability, 0 otherwise
 	host_choice = numpy.random.binomial(1,0.98,size=N_sn)
 	neighbor_zs=numpy.random.uniform((1+zmin/1.5)**3,(1+zmax*1.5)**3,size=N_sn)**(1./3)-1
-	host_zs_random_ = zs*host_choice + neighbor_zs*(1-host_choice)
-	neighbor_zs_random_ = zs*(1-host_choice) + neighbor_zs*host_choice
+	host_zs_random = zs*host_choice + neighbor_zs*(1-host_choice)
+	neighbor_zs_random = zs*(1-host_choice) + neighbor_zs*host_choice
 	# wrong_host_zs : indeces if incorrect host galaxy association
 	#wrong_host_zs = host_zs_random_ == 0
 	#host_zs_random_[wrong_host_zs] = 
 
-	# host_zs_random : redshifts of potential host galaxies with the probability of each
-	host_zs_random=[]
-	for i in xrange(N_sn):
-		ans=[]
-		ans.append(numpy.array([host_zs_random_[i],numpy.log(0.98/(1-0.98))]))  #logit
-		ans.append(numpy.array([neighbor_zs_random_[i],numpy.log(0.02/(1-0.02))]))
-		host_zs_random.append(ans)
 
 	# s_obs_random : order in which supernovae get a spectrum
 	s_obs_random = numpy.arange(N_sn,dtype='int')
@@ -66,14 +59,6 @@ def genData(N_sn, N_s_obs, Ninit, seed):
 	s_obs = numpy.sort(s_obs_random[:N_s_obs]).tolist()
 	s_mis = numpy.sort(s_obs_random[N_s_obs:]).tolist()
 
-	host_zs_obs=[]
-	for i in xrange(len(s_obs)):
-		host_zs_obs.append(host_zs_random[s_obs[i]])
-	host_zs_mis=[]
-	for i in xrange(len(s_mis)):
-		host_zs_mis.append(host_zs_random[s_mis[i]])
-
-	host_zs_mis=numpy.array(host_zs_mis)
 
 	data = {'N_sn':N_sn,
 			'N_obs':N_s_obs,
@@ -89,8 +74,8 @@ def genData(N_sn, N_s_obs, Ninit, seed):
 			'trans_zs_obs': zs[s_obs],
 			'snIa_obs': snIa[s_obs],
 
-			'host_zs_obs': host_zs_obs, #zs[s_obs],
-			'host_zs_mis_': host_zs_mis.flatten(),
+			'host_zs_obs': host_zs_random[s_obs], #zs[s_obs],
+			'host_zs_mis': host_zs_random[s_mis],
 
 			'n_int': 50
 			}
@@ -98,8 +83,8 @@ def genData(N_sn, N_s_obs, Ninit, seed):
 	init=[]
 	for i in xrange(Ninit):
 		# host_zs_mis_init : initial conditions of host redshift _mis for MCMC
-		host_choice = numpy.random.binomial(1,0.98,size=N_sn)
-		host_zs_mis_init = (host_zs_random_*host_choice + neighbor_zs_random_*(1-host_choice))[s_mis]
+		#host_choice = numpy.random.binomial(1,0.98,size=N_sn)
+		#host_zs_mis_init = (host_zs_random_*host_choice + neighbor_zs_random_*(1-host_choice))[s_mis]
 		# neighbor_zs_random__ = host_zs*_random_(1-host_choice) + neighbor_zs_random_*host_choice
 		# host_zs_mis_init=[]
 		# for j in xrange(len(s_mis)):
@@ -117,7 +102,7 @@ def genData(N_sn, N_s_obs, Ninit, seed):
 			'Omega_L':1-omega_M,
 			'w': numpy.random.normal(-0.9,0.1),
 			'ainv_true_obs': 1+zs[s_obs],
-		  	'ainv_true_mis': numpy.random.uniform((1+zmin/1.5)**3,(1+zmax*1.5)**3,size=N_sn-N_s_obs)**(1./3), #host_zs_mis_init,
+		  	'ainv_true_mis': 1+host_zs_random[s_mis], #host_zs_mis_init,
 		  	'alpha_Ia': numpy.random.normal(alpha_snIa,0.1),
 		 	'alpha_nonIa': numpy.random.normal(alpha_nonIa,0.1),
 		  	'sigma_Ia': numpy.random.normal(sigma_snIa,0.05),
@@ -142,13 +127,14 @@ def main():
 
 	sm = pystan.StanModel(file='des.stan')
 
-	nspec = numpy.arange(200,N_sn+1,250)
+	nspec = numpy.arange(100,N_sn+1,250)
 	mn=[]
 	std=[]
 	for ns in nspec:
 		data, init, info = genData(N_sn,ns,Nchains,1)
 
-		fit = sm.sampling(data=data, iter=1000,  chains=Nchains, init=init)
+		fit = sm.sampling(data=data, iter=1000, thin=1, chains=Nchains, init=init)
+		print fit
 		samples = fit.extract(['Omega_M','ainv_true_mis','w'])
 
 		logposterior = fit.get_logposterior()
