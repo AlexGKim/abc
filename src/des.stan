@@ -126,8 +126,8 @@ transformed data {
   real zmin3;
   real zmax3;
 
-  vector[N_obs] host_zs_obs3;
-  vector[N_sn-N_obs] host_zs_mis3;  // need to do this way in case N_mis =0, transformed data is used
+//  vector[N_obs] host_zs_obs3;
+//  vector[N_sn-N_obs] host_zs_mis3;  // need to do this way in case N_mis =0, transformed data is used
 
   vector[N_SNIa] adu_SNIa;
   vector[N_obs-N_SNIa] adu_nonIa;
@@ -137,10 +137,13 @@ transformed data {
   real loggalaxyProb;
   real lognotgalaxyProb;
 
+  real logvolumedensity;
+
   loggalaxyProb <- log(0.98);
   lognotgalaxyProb <- log(0.02);
   
-
+  logvolumedensity <- 4./3*pi()*(zmax^3 - zmin^3);
+  logvolumedensity <- -log(logvolumedensity) + log(4*pi()); //extra piece from r jacobian
 
   zmin3 <-(zmin*0.5)^3;
   zmax3 <-(zmax*1.5)^3;
@@ -155,12 +158,13 @@ transformed data {
   N_mis <- N_sn-N_obs;
 
   // used to approximate volume
-  for (i in 1:N_obs){
-    host_zs_obs3[i]<-pow(host_zs_obs[i],3.);
-  }
-  for (i in 1:N_mis){
-    host_zs_mis3[i]<-pow(host_zs_mis[i],3.);
-  }
+//  for (i in 1:N_obs){
+//    host_zs_obs3[i]<-pow(host_zs_obs[i],3.);
+//  }
+
+//  for (i in 1:N_mis){
+//    host_zs_mis3[i]<-pow(host_zs_mis[i],3.);
+//  }
 
   // redshift nodes for interpolation
   for (i in 1:n_int){
@@ -205,7 +209,8 @@ parameters{
   simplex[2] snIa_rate;
 
   // true redshifts
-  vector<lower=1+zmin*0.1, upper=1+zmax*1.5>[N_obs] ainv_true_obs;
+  //in principle observed guys have redshift uncertainty but for efficiency ignore for the moment
+//  vector<lower=1+zmin*0.1, upper=1+zmax*1.5>[N_obs] ainv_true_obs;
   vector<lower=1+zmin*0.1, upper=1+zmax*1.5>[N_mis] ainv_true_mis;
  }
 
@@ -217,16 +222,15 @@ transformed parameters{
 
   // log probability
   // P(\theta_g|g)
-  vector[2] lp_gal_obs[N_obs];
   vector[2] lp_gal_mis[N_mis];
 
-  vector[N_obs] logainv_true_obs;
+//  vector[N_obs] logainv_true_obs;
 
   vector[N_SNIa] adu_true_SNIa;
   vector[N_obs-N_SNIa] adu_true_nonIa;
 
 
-  logainv_true_obs <- log(ainv_true_obs);
+//  logainv_true_obs <- log(ainv_true_obs);
 
 
   {
@@ -263,18 +267,14 @@ transformed parameters{
     y2 <- spline(ainv_int, luminosity_distance_int_s,n_int, 0., 0.);
 
     for (s in 1:N_SNIa){
-      adu_true_SNIa[s] <- splint(ainv_int, luminosity_distance_int_s, y2, n_int, ainv_true_obs[index_SNIa[s]])^(-2);
+//      adu_true_SNIa[s] <- splint(ainv_int, luminosity_distance_int_s, y2, n_int, ainv_true_obs[index_SNIa[s]])^(-2);
+      adu_true_SNIa[s] <- splint(ainv_int, luminosity_distance_int_s, y2, n_int, trans_ainv_obs[index_SNIa[s]])^(-2);
     }
 
     for (s in 1:(N_obs-N_SNIa)){
-      adu_true_nonIa[s] <- splint(ainv_int, luminosity_distance_int_s, y2, n_int, ainv_true_obs[index_nonIa[s]])^(-2);
+      adu_true_nonIa[s] <- splint(ainv_int, luminosity_distance_int_s, y2, n_int, trans_ainv_obs[index_nonIa[s]])^(-2);
     }
  
-    for (s in 1:N_obs) {
-      // marginalize over possible hosts
-      lp_gal_obs[s][1] <- lognormal_log(1+host_zs_obs[s], logainv_true_obs[s], 0.001) + loggalaxyProb;
-      lp_gal_obs[s][2] <- uniform_log(host_zs_obs3[s], zmin3, zmax3) + lognotgalaxyProb;
-    }
     
     logsnIa_rate <- log(snIa_rate);
     for (s in 1:N_mis){
@@ -285,8 +285,9 @@ transformed parameters{
 
       // marginalize over possible hosts
       lp_gal_mis[s][1] <- lognormal_log(1+host_zs_mis[s], logainv_true_mis[s], 0.001) + loggalaxyProb;
-      lp_gal_mis[s][2] <- uniform_log(host_zs_mis3[s], zmin3,zmax3) + lognotgalaxyProb;
+      lp_gal_mis[s][2] <- logvolumedensity + 2*log(host_zs_mis[s]) + lognotgalaxyProb ; // logvolumedensity has 4pi piece of jacaboian
     }
+
   }
 }
 
@@ -295,7 +296,7 @@ model{
   alpha_Ia ~ lognormal(log(2.),0.02*ln10d25);
 
   // P(z_s|g)
-  trans_ainv_obs ~ lognormal(logainv_true_obs,0.001);
+  //trans_ainv_obs ~ lognormal(logainv_true_obs,0.001);
 
   //collect classified SNe and vectorize accordingly
   // P(ADU, Ts | rate) = P(ADU| SNIa) P(SNIa|rate) for guys with Ts=1
@@ -308,9 +309,6 @@ model{
   }
   
   # from Stan manual 30.1 no speed benefit from vectorization of increment_log_prob 
-  for (s in 1:N_obs){
-    increment_log_prob(log_sum_exp(lp_gal_obs[s]));
-  }
 
   for (s in 1:N_mis){
     increment_log_prob(log_sum_exp(lp_mis[s]));
