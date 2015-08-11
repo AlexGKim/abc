@@ -25,7 +25,7 @@ def genData(N_sn, N_s_obs, Ninit, seed):
 	sigma_nonIa=1
 
 	alpha_snIa=2.
-	alpha_nonIa=1.
+	alpha_nonIa=alpha_snIa*10**(-2./2.5)
 	frac_Ia=.8
 
 	# zs : the true redshifts
@@ -104,7 +104,7 @@ def genData(N_sn, N_s_obs, Ninit, seed):
 			'Omega_L':1-omega_M,
 			'w': numpy.random.normal(-0.9,0.1),
 			'ainv_true_obs': 1+zs[s_obs],
-		  	'ainv_true_mis': 1+host_zs_random[s_mis], #host_zs_mis_init,
+		  	'ainv_true_mis': (i % 2)*(1+host_zs_random[s_mis]) + (1-(i%2))*(1+zs[s_mis]), #host_zs_mis_init,
 		  	'alpha_Ia': numpy.random.normal(alpha_snIa,0.1),
 		 	'alpha_nonIa': numpy.random.normal(alpha_nonIa,0.1),
 		  	'sigma_Ia': numpy.random.normal(sigma_snIa,0.05),
@@ -135,7 +135,7 @@ def main():
 	for ns in nspec:
 		data, init, info = genData(N_sn,ns,Nchains,1)
 
-		fit = sm.sampling(data=data, iter=1000, thin=1, chains=Nchains, init=init)
+		fit = sm.sampling(data=data, iter=10000, thin=10, chains=Nchains, init=init)
 		print fit
 		samples = fit.extract(['Omega_M','ainv_true_mis','w'])
 

@@ -126,9 +126,6 @@ transformed data {
   real zmin3;
   real zmax3;
 
-//  vector[N_obs] host_zs_obs3;
-//  vector[N_sn-N_obs] host_zs_mis3;  // need to do this way in case N_mis =0, transformed data is used
-
   vector[N_SNIa] adu_SNIa;
   vector[N_obs-N_SNIa] adu_nonIa;
   int index_SNIa[N_SNIa];
@@ -139,11 +136,11 @@ transformed data {
 
   real logvolumedensity;
 
+  vector[N_sn-N_obs] lp_gal_mis_2;
+
   loggalaxyProb <- log(0.98);
   lognotgalaxyProb <- log(0.02);
   
-  logvolumedensity <- 4./3*pi()*(zmax^3 - zmin^3);
-  logvolumedensity <- -log(logvolumedensity) + log(4*pi()); //extra piece from r jacobian
 
   zmin3 <-(zmin*0.5)^3;
   zmax3 <-(zmax*1.5)^3;
@@ -152,23 +149,17 @@ transformed data {
 
   ln10d25 <- log(10.)/2.5;
 
-  # snIa_logit <- logit(1-1e-6);
-  # nonIa_logit <- logit(1e-6);
-
   N_mis <- N_sn-N_obs;
-
-  // used to approximate volume
-//  for (i in 1:N_obs){
-//    host_zs_obs3[i]<-pow(host_zs_obs[i],3.);
-//  }
-
-//  for (i in 1:N_mis){
-//    host_zs_mis3[i]<-pow(host_zs_mis[i],3.);
-//  }
 
   // redshift nodes for interpolation
   for (i in 1:n_int){
     ainv_int[i] <- (1+zmin*.1) + (zmax*1.5-zmin*.1)/(n_int-1)*(i-1);
+  }
+
+  logvolumedensity <- 4./3*pi()*(zmax^3 - zmin^3);
+  logvolumedensity <- -log(logvolumedensity) + log(4*pi()); //extra piece from r jacobian
+  for (i in 1:N_mis){
+    lp_gal_mis_2[i] <-  logvolumedensity + 2*log(host_zs_mis[i]) + lognotgalaxyProb;  // logvolumedensity has 4pi piece of jacaboian
   }
 
   // vectors for observed SNIa and nonIa used fo efficient calculation
@@ -241,7 +232,11 @@ transformed parameters{
     vector[2] logsnIa_rate;
 
     vector[N_mis] logainv_true_mis;
+
+
     logainv_true_mis <- log(ainv_true_mis);
+
+
 
     // get luminosity distance at nodes
     {
@@ -285,9 +280,8 @@ transformed parameters{
 
       // marginalize over possible hosts
       lp_gal_mis[s][1] <- lognormal_log(1+host_zs_mis[s], logainv_true_mis[s], 0.001) + loggalaxyProb;
-      lp_gal_mis[s][2] <- logvolumedensity + 2*log(host_zs_mis[s]) + lognotgalaxyProb ; // logvolumedensity has 4pi piece of jacaboian
+      lp_gal_mis[s][2] <- lp_gal_mis_2[s] ;
     }
-
   }
 }
 

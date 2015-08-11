@@ -20,6 +20,7 @@ def individual(N_sn, N_s):
 	plt.plot(logposterior[3][200:],label=3)
 	plt.legend()
 	plt.show()
+
 	# plt.plot(extract['w'])
 	# plt.show()
 	# plt.hist(extract['w'])
@@ -29,9 +30,8 @@ def individual(N_sn, N_s):
 	plt.show()
 
 	missed_wrong = info['host_choice'][info['s_mis']] == 0
-	print missed_wrong.sum()
 	if missed_wrong.sum() !=0:
-		plt.plot(extract['ainv_true_mis'][:,missed_wrong] - info['zs'][info['s_mis']][missed_wrong])
+		plt.plot(extract['ainv_true_mis'][:,missed_wrong] - info['zs'][info['s_mis']][missed_wrong]-1)
 		plt.show()
 	# plt.plot(extract['zs_true_mis'][:,missed_wrong] - info['host_zs_random'][info['s_mis']][missed_wrong])
 	# plt.show()
@@ -48,7 +48,7 @@ def group(N_sn, nspec):
 
 
 def main(n_s):
-	individual(200,n_s)
+	individual(150,n_s)
 
 if __name__ == "__main__":
     main(100)
