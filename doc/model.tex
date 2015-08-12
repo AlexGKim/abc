@@ -16,31 +16,61 @@
 
 \section{Model}
 We infer a Hubble diagram based on measurements of discovered transients
-that have passed some selection criteria (e.g.\ classified as Type~Ia supernovae, SNe~Ia).  The probability distribution
-function (pdf) of the Hubble diagram is denoted as
+that have passed some selection criteria (e.g.\ classified as Type~Ia supernovae).  The posterior
+of the Hubble diagram is denoted as
 \begin{equation}
 p({\mu},{z} |  {{ADU}}, {{T}}_S,{{z}}_S,
 {{\theta}}_S, \theta_G, \tau).
 \label{hd:eqn}
 \end{equation}
 The set of distance moduli
-and redshifts $(\mu, z)$ contains the points that constitute the Hubble diagram.  The available information
+and redshifts $(\mu, z)$ contains the points that constitute the Hubble diagram.  The
+data
 from which the Hubble diagram is inferred include:
 the transient photometry ${ADU}$; spectral measurements of
 transient
 type, redshift and SN-parameters ${T}_S$, ${z}_S$, ${\theta}_S$;
 host-galaxy parameter measurements $\theta_H$ (including redshift,
-mass, sSFR, etc.).  Only a subset of all detected transients enter the cosmology
-analysis: the sample-selection criterion is denoted as $\tau$.  For example
-$\tau$ could be the classification score of PSNID.
+mass, sSFR, etc.).  
+The subset transients that enter the cosmology
+analysis is based on the sample-selection criteria $\tau$: for example
+the classification score from PSNID (a classifier based on multi-band
+light curves).
+
+The posterior of $\mu$ and $z$ is an efficient way
+to distribute supernova results in is a way that is independent of cosmological model,
+facilitating joint-probe analysis or consideration of non-standard models.  Choosing
+a specific cosmological model, the posterior of the model parameters $\theta_\mu$
+is of interest.  The model presented here accommodates both options.
 
 A sketch of a more extensive model that includes the
 model of Equation~\ref{hd:eqn} is depicted in the Probabilistic Graphical Model
 (PGM)
 shown in Figure~\ref{pgm:fig}.
-Note that although we have been discussing the model for the Hubble diagram, the same PGM can
-also expresses the pdf for cosmological
-parameters, labelled as $\theta_\mu$.
+The fundamental parameters are those with no incoming arrows;  most are
+used to model the universe: 
+the background cosmology, transients that could enter the sample, and their host galaxies.
+\begin{itemize}
+\item  $g$ labels the  galaxy that hosts the transient.
+\item $\theta_\mu$ are the parameters that specify that distance modulus.  They could
+be the parameters of a specific cosmological
+parameters, or an empirical model independent of physics.
+\item $\theta_\tau$ govern the relative rates of supernovae of different types in galaxies.
+\item $\theta_T^{Ia}$, $\theta_{Ti}^{Ia}$.  The model parameters for SNe~Ia, including
+parameters that describe distributions.
+Different SN~Ia models could be considered.  The treatment of SALT2
+has been presented in \citet{2011MNRAS.418.2308M}:
+in this model each supernova
+has individual $c$ and $x_1$ parameters that constitute $\theta_{Ti}^{Ia}$;
+global SN~Ia properties
+$\alpha$, $\beta$, $\sigma_{int}$ 
+ and  underlying  $c$ and $x_1$ distributions   constitute $\theta_T^{Ia}$.
+\item $\theta_T^{\mathit{non-Ia}}$, $\theta_{Ti}^{\mathit{non-Ia}}$.  False-positive non-Ia transients
+that enter the analysis are described by a parameterized model.
+\item The transmission functions $\phi(\lambda)$ describe the optical path from the
+atmosphere to counts.  Calibration solutions are generally provided
+but are included in Figure~\ref{pgm:fig} to encompass the case of self-calibration.
+\end{itemize}
 
 \begin{figure}[htbp] %  figure placement: here, top, bottom, or page
    \centering
@@ -50,7 +80,7 @@ parameters, labelled as $\theta_\mu$.
    flow goes from left to right, starting with the description of the universe, observatory,
    and data.    A transient has host galaxy $g_i$, which determines its redshift $z_i$
    and galaxy parameters $\theta_{gi}$.
-   A distance modulus model with parameters $\theta_\mu$ fix the distance modulus $\mu_i$.
+   A model with parameters $\theta_\mu$ fix the distance modulus $\mu_i$.
    The transient type $T$ depends on the host-galaxy parameters  $\theta_{gi}$
    and rates $\theta_r$.   The transient
    parameters $\theta_T^X$, $\theta_{Ti}^X$ (and perhaps the host galaxy) determine the luminosity $L$.       The 
@@ -61,33 +91,9 @@ parameters, labelled as $\theta_\mu$.
    counts $\overline{\mathit{ADU}}$, $\overline{\mathit{ADU}}_g$. 
    The transient has realized light curves (${ADU}$) and passes selection criteria
    through $\tau_i$ to be included in the sample.  Some transients have spectral data
-   ${X}_S$.
+   ${X}_S$.  The properties of the galaxy identified as the host galaxy is $\theta_G$. 
    \label{pgm:fig}}
 \end{figure}
-
-The fundamental parameters that need to be determined are those with no incoming arrows in Figure~\ref{pgm:fig}.  Most all are used to model the universe: 
-the background cosmology, transients that could enter the sample, and their host galaxies.
-\begin{itemize}
-\item  $g_i$ labels the distinct galaxy that hosts the transient.
-\item $\theta_\mu$ are the parameters that specify that distance modulus, e.g.\ the cosmological
-parameters.
-\item $\theta_\tau$ govern the relative rates of supernovae of different types in galaxies.
-\item $\theta_T^{Ia}$, $\theta_{Ti}^{Ia}$.  The model parameters for SNe~Ia, including
-parameters that describe distributions.
-Different SN~Ia models could be considered: the treatment of SALT2 parameters
-has been presented in \citet{2011MNRAS.418.2308M}.
-The SALT2 SN~Ia
-model has individual $c$ and $x_1$ parameters that would constitute $\theta_{Ti}^{Ia}$,
-and global $\alpha$, $\beta$, and intrinsic dispersion  parameters  common to all supernovae
- and  underlying  $c$ and $x_1$ distributions that would constitute $\theta_T^{Ia}$.
-\item $\theta_T^{non-Ia}$, $\theta_{Ti}^{non-Ia}$.  Non-Ia transients
-that can be mistyped as Ia are described by a parameterized model.
-\item The transmission functions $\phi(\lambda)$ describe the optical path from the
-atmosphere to counts.  We expect
-the calibration group to provide us with the functions and covariance $\phi \sim \mathcal{N}(\bar{\phi},C_\phi)$, in which case it would not have to be determined as part
-of our analysis.    There is a chance that we will want to determine calibration ourselves,
-so it is included in Figure~\ref{pgm:fig}.
-\end{itemize}
 
 From these fundamental parameters we can determine the expected
 signals
@@ -98,15 +104,15 @@ probabilistic (ovals).
 \item $z_i$, $\theta_{gi}$ are the galaxy redshift and parameters (e.g.\ mass, sSFR, metallicity).
 Each galaxy $g_i$ has its values for these quantities.
 \item $\mu_i=\mu(z_i; \theta_\mu)$.  The distance modulus is a function of redshift,
-whose specific form is unspecified at the moment,  it could
+Unspecified at the moment,  it could
 be a $\Lambda$CDM prediction with cosmological parameters, a spline with knot values
 as parameters.
-The redshift of the galaxy is used in the Hubble diagram.
+The redshift of the galaxy is used in the Hubble diagram, peculiar velocities are not considered.
 \item $P(T_i | \theta_r, \theta_{gi})$.  The transient type $T_i$, SN~Ia or non-Ia, depends
-on the relative rates given the host properties.  Note that the type is probabilistic.
-\item $P(L_i(t,\lambda)| T_i, \theta_T^{Ia}, \theta_{Ti}^{Ia}, \theta_T^{non-Ia}, \theta_{Ti}^{non-Ia},
+on the relative rates given the host properties.
+\item $P(L_i(t,\lambda)| T_i, \theta_T^{Ia}, \theta_{Ti}^{Ia}, \theta_T^{\mathit{non-Ia}}, \theta_{Ti}^{\mathit{non-Ia}},
 \theta_{gi})$.  The source model determines
-the luminosity; often the model includes intrinsic dispersion making the luminosity
+the luminosity; the model may include intrinsic dispersion to make the luminosity
 probabilistic. The  model includes  information on the
 source and line-of-sight effects, which specify the effective SED.   Only the
 parameters of the model of the appropriate type $T$ are relevant.  The galaxy parameters
@@ -114,30 +120,135 @@ $\theta_{gi}$ are included if correlations with host-galaxy properties are to be
 \item $n_i(t,\lambda; L_i, \mu_i, z_i)$, $n_{gi}(t; g_i, \mu_i, z_i)$.  The  fluxes of
 the transient and host that are incident at Earth
 are fixed by the luminosity, distance modulus, and redshift.
+The supernova redshift is required for this calculation,
+for simplicity the supernova and host-galaxy redshift are assumed to be equal.
 \item $\overline{\mathit{ADU}}$ and
 $\overline{\mathit{ADU}}_g$ are the expected counts of the transient and galaxy respectively,
-coming from $\int n_i \phi d\lambda$.
+coming from $\int n_i \phi d\lambda$.  
 \end{itemize}
 
 The observations are as follows:
 \begin{itemize}
-\item ${\mathit{ADU}}$ is the realized flux. $P({\mathit{ADU}} | \overline{\mathit{ADU}}, 
-\overline{\mathit{ADU}}_g)$.
+\item ${\mathit{ADU}}$ is the realized flux.  It depends on the underlying flux and
+the photometric noise.
 \item $\theta_G$ represents the galaxy parameters of the
 galaxy catalog used to identify prospective host galaxies.
-The contribution to the likelihood $P(\theta_G|g_i)$ can be
-estimated as $P(g_i|\theta_G)\frac{P(\theta_G)}{P(z)}$: Ravi is determining $P(g_i|\theta_G)$.
-\item ${T}_S$, ${z}_S$, ${\theta}_S$ Transient type, redshift and properties from
-spectroscopic data. I skip the details of the actual measurement  and make a direct association
-with the fluxes of the transient and underlying galaxy $n$, $n_g$.
-A very simple association is ${T}_S = T$, ${z}_S=z$, ${\theta}_S \in \theta_g$,
-or a blurry version instead of a straight equality.
+\item ${T}_S$, ${z}_S$, ${\theta}_S$ are the transient type, redshift and properties from
+spectroscopic data. Details of the actual measurement are ignored and a direct association
+is made with the fluxes of the transient and underlying galaxy $n$, $n_g$.
 \item $\tau$ is the score used to decide if the transient is used in the analysis.  It is
 determined based on other measurements $\tau(\mathit{ADU},T_S)$.
 \item ${Z}$ represents the calibration measurements.   Although this may be given
 by the Calibration Task Force, the PGM is written for the more general case where the calibration
 is modeled within our analysis.
 \end{itemize}
+
+%The likelihood for the model is
+%\begin{multline}
+%p(\mathit{ADU}, {{T}}_S,{{z}}_S,
+%{{\theta}}_S, \theta_G, \tau, Z | g, \theta_\mu, \theta_r, \theta_T^{Ia}, \theta_{Ti}^{Ia}, \theta_T^{non-Ia}, \theta_{Ti}^{non-Ia}, \phi) = \\
+%p(\theta_G|g)p(Z|\phi)p(\mathit{ADU}, {{T}}_S,{{z}}_S,
+%{{\theta}}_S, \tau | g, \theta_\mu, \theta_r, \theta_T^{Ia}, \theta_{Ti}^{Ia}, \theta_T^{non-Ia}, \theta_{Ti}^{non-Ia}, \phi).
+%\label{likelihood:eqn}
+%\end{multline}
+
+\section{Simple Example}
+\subsection{Model}
+A simplified version of the above model,
+\begin{equation}
+p(\mathit{ADU}, {{T}}_S,{{z}}_S, \theta_G| z, \Omega_M, w, \theta_r,\alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}}),
+\end{equation}
+is examined in this section.
+The measurements: 
+\begin{itemize}
+\item $\mathit{ADU}$ are measured counts at peak brightness.
+\item ${{T}}_S$, ${{z}}_S$ are spectroscopic type and redshift.
+\item $\theta_G$ is the redshift of the galaxy identified as the transient host.
+\end{itemize}
+The model parameters:
+\begin{itemize}
+\item $z$ is the cosmological redshift.
+\item $\Omega_M$, $w$ are the parameters of a flat dark-energy cosmology.
+\item $\theta_r$ is the fraction of transients that are SN~Ia, independent
+of host-galaxy properties and redshift.
+\item $\alpha_{Ia}$, $\sigma_{Ia}$, $\alpha_{\mathit{non-Ia}}$, $\sigma_{\mathit{non-Ia}}$ are
+the luminosity (times $4\pi$) and intrinsic dispersion for SNe~Ia and non-Ia at peak.
+Light-curve shape and color are not considered in this simple model.
+\end{itemize}
+
+The transients are divided into samples defined by available data: {\it obs} are transients observed spectroscopically while active, from which $T_S=1$ are those typed
+as SN~Ia and $T_S=0$ as non-Ia.  {\it mis} transients are not observed
+spectroscopically when active.
+
+\begin{itemize}
+\item All transients have measured counts at peak brightness $\mathit{ADU}$.
+For transients in set {\it mis} without active spectroscopy:
+\begin{multline}
+p(\mathit{ADU}| z, \Omega_M, w, \theta_r, \alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}})=\\
+\theta_r\mathcal{N}\left(\frac{\alpha_{Ia}}{d_L^2(z;\Omega_M, w)}, \frac{\ln{10}}{2.5}\sigma_{Ia}\right)+\left(1-\theta_r\right)
+\mathcal{N}\left(\frac{\alpha_{\mathit{non-Ia}}}{d_L^2(z;\Omega_M, w)}, \frac{\ln{10}}{2.5}\sigma_{\mathit{non-Ia}}\right).
+\end{multline}
+The luminosity distance $d_L$ is for a flat universe.  
+\item The transients of subset {\it obs} have spectroscopic observations of type $T_S$ and redshift
+$z_S$.
+\begin{itemize}
+\item A direct association of $z_S=z$ is made.
+\begin{equation}
+p(z_S|z) = \delta(z_S-z)
+\label{specz:eqn}
+\end{equation}
+\item For transients in set $T_S=1$:
+\begin{equation}
+p(\mathit{ADU}, T_S=1 | z, \Omega_M, w, \theta_r, \alpha_{Ia},\sigma_{Ia})=
+\theta_r\mathcal{N}\left(\frac{\alpha_{Ia}}{d_L^2(z;\Omega_M, w)}, \frac{\ln{10}}{2.5}\sigma_{Ia}\right).
+\end{equation}
+\item For transients in set $T_S=0$:
+\begin{multline}
+p(\mathit{ADU}, T_S=0 | z, \Omega_M, w, \theta_r, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}})= \\
+\left(1-\theta_r\right)
+\mathcal{N}\left(\frac{\alpha_{\mathit{non-Ia}}}{d_L^2(z;\Omega_M, w)}, \frac{\ln{10}}{2.5}\sigma_{\mathit{non-Ia}}\right).
+\end{multline}
+\end{itemize}
+\item All transients are associated with a host galaxy with spectroscopic redshift $\theta_G$,
+\begin{equation}
+p(\theta_G|z) =
+	P_{host} \ln{\mathcal{N}}(\theta_G;\ln(1+z),0.001) + (1-P_{host})\left(\frac{3 \theta_G^2}{z_{max}^3 - z_{min}^3}\right).
+\end{equation}
+The host is determined correctly with probability $P_{host}=0.98$ in which case the
+host redshift is determined from a log-normal distribution centered around the true redshift
+with 0.001 fractional uncertainty.   Otherwise the redshift is drawn from the ``uniform in volume'' term on the right.
+[Note: to speed the cacluation, I only consider host-galaxy measurements
+of the {\it mis} set.]
+\item This simple example does not consider data $\theta_S$, $\tau$ or $Z$, i.e.
+spectroscopic parameters, sample-selection effects, and calibration.
+\end{itemize}
+
+A prior is applied to the SN~Ia absolute magnitude
+\begin{equation}
+\alpha_{SNIa} \sim \ln\mathcal{N}\left(\ln\left(\alpha^0_{SNIa}\right),\frac{\ln{10}}{2.5}0.02\right),
+\end{equation}
+where $\alpha^0_{SNIa}$ is the true input luminosity.
+
+Note some of the choices for the distributions are driven by computational
+speed. 
+Also, Stan cannot handle discrete parameters and
+cannot except pdf's that support zero probability.
+
+\subsection{Analysis of Simulated Data}
+Simulated data is drawn from the above model with the following parameter
+choices:
+\begin{itemize}
+\item Cosmological parameters $\Omega_M=0.28$, $w=-1$.
+\item Type~Ia supernovae with intrinsic dispersion $\sigma_{Ia}=0.1$.
+\item Non-Ia supernovae 2 magnitudes fainter than SNe~Ia $\alpha_{\mathit{non-Ia}} = 10^{-2/2.5} \alpha_{Ia}$ with 
+ $\sigma_{\mathit{non-Ia}}=1$.
+\item $\theta_r=0.8$.
+\item 200 supernovae uniformly distributed in the range $0.1<z<1$.
+\item $z_{min}=0.05$ and $z_{max}=1.5$ used for the range of possible true redshifts.
+\end{itemize}
+From a realization of these data, spectroscopic follow-up is
+accumulated: analysis is performed at 50\%, 75\%, and 100\% 
+completeness.
 
 %
 %\section{Subsections of the Model}

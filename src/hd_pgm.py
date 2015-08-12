@@ -35,7 +35,7 @@ pgm.add_node(Node('Spars',r"${T}_{Si}$, ${z}_{Si},{\theta}_{Si}$", 6, 4, scale=1
 #pgm.add_node(Node('^Host',r"${z}_{Hi},{\theta}_{Hi}$", 7, 2, scale=1.5,observed=True))
 
 #pgm.add_node(Node('Detected',r"Detected$_i$", 8, 3, fixed=True,offset=(-10,-20)))
-pgm.add_node(Node('^Type',r"$\tau_i$", 9, 2, observed=True))
+pgm.add_node(Node('^Type',r"$\tau_i$", 9, 2, fixed=True,offset=(10,-10)))
 
 pgm.add_node(Node('Gals',r"$\theta_G$", 6, 1, observed=True))
 

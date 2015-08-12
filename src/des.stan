@@ -156,7 +156,7 @@ transformed data {
     ainv_int[i] <- (1+zmin*.1) + (zmax*1.5-zmin*.1)/(n_int-1)*(i-1);
   }
 
-  logvolumedensity <- 4./3*pi()*(zmax^3 - zmin^3);
+  logvolumedensity <- 4./3*pi()*((zmax*1.5)^3 - (zmin*.5)^3);
   logvolumedensity <- -log(logvolumedensity) + log(4*pi()); //extra piece from r jacobian
   for (i in 1:N_mis){
     lp_gal_mis_2[i] <-  logvolumedensity + 2*log(host_zs_mis[i]) + lognotgalaxyProb;  // logvolumedensity has 4pi piece of jacaboian
@@ -202,7 +202,7 @@ parameters{
   // true redshifts
   //in principle observed guys have redshift uncertainty but for efficiency ignore for the moment
 //  vector<lower=1+zmin*0.1, upper=1+zmax*1.5>[N_obs] ainv_true_obs;
-  vector<lower=1+zmin*0.1, upper=1+zmax*1.5>[N_mis] ainv_true_mis;
+  vector<lower=1+zmin*0.5, upper=1+zmax*1.5>[N_mis] ainv_true_mis;
  }
 
 transformed parameters{
