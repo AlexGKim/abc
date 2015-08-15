@@ -129,19 +129,19 @@ def main():
 
 	sm = pystan.StanModel(file='des.stan')
 
-	nspec = numpy.arange(100,N_sn+1,250)
+	nspec = numpy.arange(100,N_sn+1,50)
 	mn=[]
 	std=[]
 	for ns in nspec:
 		data, init, info = genData(N_sn,ns,Nchains,1)
 
-		fit = sm.sampling(data=data, iter=10000, thin=10, chains=Nchains, init=init)
+		fit = sm.sampling(data=data, iter=50000, thin=50, chains=Nchains, init=init)
 		print fit
-		samples = fit.extract(['Omega_M','ainv_true_mis','w'])
+		#samples = fit.extract(['Omega_M','ainv_true_mis','w'])
 
 		logposterior = fit.get_logposterior()
 
-		with open('model'+str(ns)+'.pkl', 'wb') as f:
+		with open('../results/model'+str(ns)+'.pkl', 'wb') as f:
 			pickle.dump([fit.extract(),info, logposterior], f)
 
 

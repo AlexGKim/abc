@@ -74,7 +74,7 @@ but are included in Figure~\ref{pgm:fig} to encompass the case of self-calibrati
 
 \begin{figure}[htbp] %  figure placement: here, top, bottom, or page
    \centering
-   \includegraphics[width=7in]{/Users/akim/project/abc/results/hdpgm.eps} 
+   \includegraphics[width=7in]{/Users/akim/project/abc/results/hdpgm.pdf} 
    \caption{Probabilistic Graphical Model for the SN~Ia analysis.  
    The forward modeling
    flow goes from left to right, starting with the description of the universe, observatory,
@@ -178,7 +178,8 @@ Light-curve shape and color are not considered in this simple model.
 
 The transients are divided into samples defined by available data: {\it obs} are transients observed spectroscopically while active, from which $T_S=1$ are those typed
 as SN~Ia and $T_S=0$ as non-Ia.  {\it mis} transients are not observed
-spectroscopically when active.
+spectroscopically when active.  The same SN~Ia and non-Ia parameters are taken to
+apply to both {\it obs} and {\it mis} samples.
 
 \begin{itemize}
 \item All transients have measured counts at peak brightness $\mathit{ADU}$.
@@ -214,7 +215,7 @@ p(\mathit{ADU}, T_S=0 | z, \Omega_M, w, \theta_r, \alpha_{\mathit{non-Ia}},\sigm
 p(\theta_G|z) =
 	P_{host} \ln{\mathcal{N}}(\theta_G;\ln(1+z),0.001) + (1-P_{host})\left(\frac{3 \theta_G^2}{z_{max}^3 - z_{min}^3}\right).
 \end{equation}
-The host is determined correctly with probability $P_{host}=0.98$ in which case the
+The host is determined correctly with probability $P_{host}$ in which case the
 host redshift is determined from a log-normal distribution centered around the true redshift
 with 0.001 fractional uncertainty.   Otherwise the redshift is drawn from the ``uniform in volume'' term on the right.
 [Note: to speed the cacluation, I only consider host-galaxy measurements
@@ -245,10 +246,80 @@ choices:
 \item $\theta_r=0.8$.
 \item 200 supernovae uniformly distributed in the range $0.1<z<1$.
 \item $z_{min}=0.05$ and $z_{max}=1.5$ used for the range of possible true redshifts.
+\item $P_{host}=0.98$.
 \end{itemize}
 From a realization of these data, spectroscopic follow-up is
 accumulated: analysis is performed at 50\%, 75\%, and 100\% 
 completeness.
+
+The simulated data is analyzed using \citet{pystan-software:2015},
+the Python interface to
+\citet{stan-software:2015}, a probabilistic programming language for
+inference of Bayesian models with Hamiltonian Monte Carlo.  There are
+four chains run, each with 50,000 samples then thinned by 50.
+
+\subsubsection{50\% Spectroscopic Confirmation}
+Results for the $\Omega_M$--$w$ posterior for the
+case where 50\% of the transients have a direct spectrum
+are shown in Figure~\ref{contour.100:fig}.
+As will be discussed shortly, the Stan run does not result in a Markov Chain Monte Carlo
+that has
+converged to a stationary solution.  Nevertheless, the results are presented here
+in the hope that they will spark progress in producing robust posteriors or at the
+least provide an alert to the computational challenge of the analysis.
+Despite their dubious quality, we can be consoled that the distributions
+look similar to those of JLA \citep{2014A&A...568A..22B} 
+and so satisfy qualitative expectations.
+
+\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
+   \centering
+   \includegraphics[scale=0.6]{/Users/akim/project/abc/results/{contour.100}.pdf} 
+   \caption{Probability distribution function for $\Omega_M$--$w$  when 50\% of transients
+   get spectra while active.
+   Solid lines represent the input cosmology.  Dashed lines in the
+   histograms are the 0.16 and 0.86 quantiles. 
+   \label{contour.100:fig}}
+\end{figure}
+
+A transient
+without a spectrum has uncertain type and uncertain redshift: the redshift
+of the associated host galaxy, and redshifts associated with SNe~Ia and non-Ia's
+at the observed magnitude, are viable but disjoint possibilities.  The initial condition
+for redshifts of transients without an active spectrum is near the true redshift
+for chains 0 and 2, and near the host redshift in chains 1 and 3.
+
+Figure~\ref{missed_wrong.100:fig} shows draws
+for the redshift parameter for two transients: one is Type~Ia and the other is
+non-Ia, neither have a spectrum and both have an incorrect host galaxy association.
+The SN~Ia is placed at $z=0.95$ but is misassociated with a galaxy at
+$z=1.24$.  The posterior shows a preference for the input redshift, but as the analyzer
+must entertain the possibility it is non-Ia the posterior sometimes
+goes to lower redshifts. Although two of the chains start near the incorrect-host redshift,
+there are no such redshifts drawn.
+
+\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
+   \centering
+   \includegraphics[scale=0.6]{/Users/akim/project/abc/results/{missed_wrong.100}.pdf} 
+   \caption{Redshift posterior for a Type~Ia and a non-Ia that were not observed
+   spectroscopically and for whom the host-galaxy is misassociated.
+   The results of the four chains are
+   placed in sequence.   \label{missed_wrong.100:fig}}
+\end{figure}
+
+The non-Ia is placed at $z=0.39$ and is misassociated with a galaxy at $z=0.48$.
+Three of the four chains stay in the neighborhood of the incorrect-host redshift.
+Chain 2, whose initial condition was at the true redshift, also accepts redshift solutions as
+if were a Type~Ia.  Clearly this chain does not mix with the others.
+
+Figure~\ref{posterior.100:fig} shows the log-posteriors and histograms of
+the $w$-draws from Chain 2 compared to the others.
+\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
+   \centering
+   \includegraphics[scale=0.5]{/Users/akim/project/abc/results/{posterior.100}.pdf} 
+   \includegraphics[scale=0.5]{/Users/akim/project/abc/results/{wsub.100}.pdf} 
+   \caption{Log-posterior and $w$-draws from  Chain 2 compared to the others.  \label{posterior.100:fig}}
+\end{figure}
+
 
 %
 %\section{Subsections of the Model}
@@ -306,30 +377,6 @@ completeness.
 %%The weighted bias would be added as a correction to the Hubble diagram under the assumption that all objects are SNe~Ia.
 %
 %
-%
-%\subsection{Type~Ia Supernova Model}
-%\label{snmodel:sec}
-%The DES light curve analysis in principle may be used for typing and determining
-%redshift, in addition to getting supernova properties.   
-%Generally the relevant term is
-%\begin{equation}
-%P({D}_i=1,{\mathit{ADU}}_{i}, {T}_{Si}, {z}_{Si}, {\theta}_{Si}, {z}_{Hi}, {\theta}_{Hi}
-% | \mu_i,z_i,T_i,\theta_T,\theta_{Ti},\phi(\lambda)).
-% \end{equation}
-%Detection and typing depend on the realized light curves, and hence the truncated
-%distribution of discovered transients typed as SN~Ia.
-%
-%The model contains a piece $P({\mathit{ADU}}_{i} {z}_{Si}| \mu_i,z_i,\theta_T, \theta_{Ti}, ,\phi(\lambda))$, which
-%is the piece that describes underlying SN~Ia properties and light-curve fits.
-%
-%
-%\subsection{Detection Efficiency}
-%There term $P({D}|\mathit{ADU}_V)$.  For all high-redshift supernova searches
-%I know of, this depends on the signal-to-noise of the data, and very weakly on the
-%structure of the underlying galaxy.  Our detection is now based on machine learning,
-%we should confirm that detection dependencies do not depend on our model parameters
-%(except for RA/Dec).
-%
 %\section{Systematic Tests}
 %\label{systematics:sec}
 %The Hubble diagrams of subsets of data quantify systematic uncertainty.  
@@ -345,14 +392,6 @@ completeness.
 %It is possible that differences in $\mu$s and $z$s have smaller uncertainties that the
 %$\mu$ and $z$ alone due to common measurement uncertainties. 
 %
-%\section{Misc.}
-%DES plans a ``photometry''-only analysis, in that a significant subset of transients used
-%in the Hubble diagram will not observed spectroscopically while active.  Therefore,
-%our model must account for transient mistyping and host-galaxy mismatches.  To obtain
-%our targeted
-%accuracy we need to account for covariances that occur due to photometric
-%calibration and Malmquist bias.  Our model will contain elements that may not
-%have been included in previous analyses. 
 %
 %
 %Generically ${{T}}$ can describe sample selection.  I choose to focus
@@ -362,18 +401,7 @@ completeness.
 %to consider non-Ia contamination in the sample, rather
 %we only need to model non-Ia's
 %that are mistaken for Ia and not all discovered transients. 
-%
-%
-%
-%Here $\mu$ is modeled; most analyses instead
-%directly have cosmological parameters $\{\Omega_M, \Omega_\Lambda, w_0, w_a\}$.
-%A motivation is to provide results that can be applied to test arbitrary cosmological models:
-%indeed the model-dependence of the $\mu$'s reported for high-$z$ supernovae 
-%\citep[e.g.][]{2012ApJ...746...85S} is a source of confusion to the community.
-%%An example of a non-parametric model for $\mu$ that is independent of cosmological
-%%parameters is given in the Appendix of
-%%\citet{2013ApJ...764..116W}.
-%
+
 \bibliography{/Users/akim/Documents/alex}
 
 \end{document}

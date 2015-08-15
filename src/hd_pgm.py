@@ -2,7 +2,7 @@
 
 from matplotlib import rc
 from daft import PGM, Node, Plate
-rc("font", family="serif", size=10)
+rc("font", family="serif", size=12)
 rc("text", usetex=True)
 
 
@@ -111,4 +111,4 @@ pgm.render()
 # pgm.figure.text(0.45,0.98,r'\underline{OBSERVATORY}',size='large')
 # pgm.figure.text(0.72,0.98,r'\underline{DATA}',size='large')
 
-pgm.figure.savefig("../results/hdpgm.eps")
+pgm.figure.savefig("../results/hdpgm.pdf")
