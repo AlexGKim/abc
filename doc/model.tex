@@ -154,6 +154,7 @@ is modeled within our analysis.
 
 \section{Simple Example}
 \subsection{Model}
+\label{example:sec}
 A simplified version of the above model,
 \begin{equation}
 p(\mathit{ADU}, {{T}}_S,{{z}}_S, \theta_G| z, \Omega_M, w, \theta_r,\alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}}),
@@ -162,7 +163,7 @@ is examined in this section.
 The measurements: 
 \begin{itemize}
 \item $\mathit{ADU}$ are measured counts at peak brightness.
-\item ${{T}}_S$, ${{z}}_S$ are spectroscopic type and redshift.
+\item ${{T}}_S$, ${{z}}_S$ are spectroscopic type and redshift for a subset of transients.
 \item $\theta_G$ is the redshift of the galaxy identified as the transient host.
 \end{itemize}
 The model parameters:
@@ -191,7 +192,7 @@ p(\mathit{ADU}| z, \Omega_M, w, \theta_r, \alpha_{Ia},\sigma_{Ia}, \alpha_{\math
 \end{multline}
 The luminosity distance $d_L$ is for a flat universe.  
 \item The transients of subset {\it obs} have spectroscopic observations of type $T_S$ and redshift
-$z_S$.
+$z_S$, which are taken to be unambiguous.
 \begin{itemize}
 \item A direct association of $z_S=z$ is made.
 \begin{equation}
@@ -236,90 +237,201 @@ Also, Stan cannot handle discrete parameters and
 cannot except pdf's that support zero probability.
 
 \subsection{Analysis of Simulated Data}
-Simulated data is drawn from the above model with the following parameter
+The simulation of data from the model presented in \S\ref{example:sec}
+and their analysis is implemented in Python and are available
+on GitHub\footnote{\url{git@github.com:AlexGKim/abc.git}}.
+
+The results that follow are based on the parameter
 choices:
 \begin{itemize}
 \item Cosmological parameters $\Omega_M=0.28$, $w=-1$.
-\item Type~Ia supernovae with intrinsic dispersion $\sigma_{Ia}=0.1$.
-\item Non-Ia supernovae 2 magnitudes fainter than SNe~Ia $\alpha_{\mathit{non-Ia}} = 10^{-2/2.5} \alpha_{Ia}$ with 
- $\sigma_{\mathit{non-Ia}}=1$.
-\item $\theta_r=0.8$.
+\item Type~Ia supernovae with intrinsic dispersion $\sigma_{SNIa}=0.1$.
+\item Non-Ia supernovae 2 magnitudes fainter than SNe~Ia with intrinsic
+dispersion $\sigma_{non-Ia}=1$.
+\item $\theta_r=0.8$ for a constant relative fraction of SNe~Ia.
 \item 200 supernovae uniformly distributed in the range $0.1<z<1$.
-\item $z_{min}=0.05$ and $z_{max}=1.5$ used for the range of possible true redshifts.
-\item $P_{host}=0.98$.
-\end{itemize}
-From a realization of these data, spectroscopic follow-up is
-accumulated: analysis is performed at 50\%, 75\%, and 100\% 
+\item $z_{min}=0.05$ and $z_{max}=1.5$ is the range of possible true redshifts.
+\item $P_{host}=0.98$ for the probability of correct host-galaxy assignment.
+\item Accumulated spectra at 50\%, 75\%, and 100\% spectroscopic
 completeness.
+\end{itemize}
 
-The simulated data is analyzed using \citet{pystan-software:2015},
-the Python interface to
-\citet{stan-software:2015}, a probabilistic programming language for
+The simulated data are analyzed using 
+\citet{stan-software:2015}, a
+a probabilistic programming language for
 inference of Bayesian models with Hamiltonian Monte Carlo.  There are
-four chains run, each with 50,000 samples then thinned by 50.
+four chains run, each with 50,000 samples then thinned by 50.  Half the links
+are used for burnin, so ultimately 2000 links are used as draws from the posterior.
+It took 2 days tor produce these results on my MacBook Air.  One chain, \#2
+in the 50\% run,  took the bulk of the time; presumably a different integration step size
+was determined during warmup.  As shown shortly, this chain samples
+a broader range of parameter space.
 
-\subsubsection{50\% Spectroscopic Confirmation}
-Results for the $\Omega_M$--$w$ posterior for the
-case where 50\% of the transients have a direct spectrum
-are shown in Figure~\ref{contour.100:fig}.
-As will be discussed shortly, the Stan run does not result in a Markov Chain Monte Carlo
-that has
-converged to a stationary solution.  Nevertheless, the results are presented here
-in the hope that they will spark progress in producing robust posteriors or at the
-least provide an alert to the computational challenge of the analysis.
-Despite their dubious quality, we can be consoled that the distributions
-look similar to those of JLA \citep{2014A&A...568A..22B} 
+\subsubsection{SN~Ia Only}
+A classical analysis would only include confirmed SNe~Ia with a definitive
+redshift. The realization of simulated data has 156 Type~Ia supernovae.
+Results of the analysis of a pure SN~Ia sample with no
+host misclassification are presented:  Figure~\ref{contour.100:fig}
+shows the posteriors for  $\Omega_M$--$w$ and Table~\ref{ia_only:tab} the
+credible equal-tailed intervals for $w$.  (Note that $w$ is the parameter
+of most interest for the experiment.)
+The distributions
+look similar to the latest results from real data \citep{2014A&A...568A..22B} 
 and so satisfy qualitative expectations.
 
 \begin{figure}[htbp] %  figure placement: here, top, bottom, or page
    \centering
-   \includegraphics[scale=0.6]{/Users/akim/project/abc/results/{contour.100}.pdf} 
-   \caption{Probability distribution function for $\Omega_M$--$w$  when 50\% of transients
-   get spectra while active.
+   \includegraphics[scale=0.55]{/Users/akim/project/abc/results/{contour..ia_only.200}.pdf} \newline
+   \includegraphics[scale=0.55]{/Users/akim/project/abc/results/{contour.100}.pdf} 
+   \includegraphics[scale=0.55]{/Users/akim/project/abc/results/{contour.200}.pdf}    \caption{Probability distribution function for $\Omega_M$--$w$ for: 156 SNe~Ia
+   with spectra (top);  SNe~Ia and non-Ia with 50\% (left),
+   and 100\% (right)  spectroscopic completeness.
    Solid lines represent the input cosmology.  Dashed lines in the
    histograms are the 0.16 and 0.86 quantiles. 
    \label{contour.100:fig}}
 \end{figure}
 
-A transient
-without a spectrum has uncertain type and uncertain redshift: the redshift
-of the associated host galaxy, and redshifts associated with SNe~Ia and non-Ia's
-at the observed magnitude, are viable but disjoint possibilities.  The initial condition
-for redshifts of transients without an active spectrum is near the true redshift
-for chains 0 and 2, and near the host redshift in chains 1 and 3.
+\begin{table}
+\centering
+\begin{tabular}{|c|cc|}
+\hline
+\%-ile & $w$ range & $\Delta$\\ \hline
+$0.68$ & $[-1.038, -0.648]$ & $0.389$ \\
+$0.90$ & $[-1.204, -0.577]$ & $0.627$ \\
+$0.95$ & $[-1.269, -0.556]$ & $0.713$ \\
+\hline
+\end{tabular}
+\caption{Credible intervals of $w$ using the 156 SNe~Ia only with spectroscopic
+observations.\label{ia_only:tab}}
+\end{table}
 
+\subsubsection{Full Sample: 50\% Spectroscopic Confirmation}
+We now turn to the full sample of SNe~Ia and non-Ia's.  Recall that our simple
+model treats the non-Ia's in the sample
+as standard candles with a large (1 mag) intrinsic dispersion.
+
+Results for the $\Omega_M$--$w$ posterior for the
+case of 50\% spectroscopic completeness
+are shown in Figure~\ref{contour.100:fig}.
+As will be discussed shortly, the Stan run does not result in a Markov Chain Monte Carlo
+that has
+converged to a stationary solution. 
+
+
+A transient
+without a spectrum has uncertain type and redshift: the redshift
+of the associated host galaxy, and redshifts expected based on the
+flux of the SN~Ia and non-Ia standard candles,
+are viable but disjoint possibilities for the posterior of
+the true underlying redshift.  To test the mixing of the chains,
+the initial conditions 
+for redshifts of transients without an active spectrum are
+selected to be near local optima: the true redshift
+for chains 0 and 2 and near the host redshift in chains 1 and 3.
+
+Two objects, one Type~Ia and the other
+non-Ia, are assigned incorrect redshifts (recall 50\% do not have
+an active spectrum and the 98\% host misclassification rate).
 Figure~\ref{missed_wrong.100:fig} shows draws
-for the redshift parameter for two transients: one is Type~Ia and the other is
-non-Ia, neither have a spectrum and both have an incorrect host galaxy association.
+for the redshift parameter for these two transients.
 The SN~Ia is placed at $z=0.95$ but is misassociated with a galaxy at
-$z=1.24$.  The posterior shows a preference for the input redshift, but as the analyzer
-must entertain the possibility it is non-Ia the posterior sometimes
-goes to lower redshifts. Although two of the chains start near the incorrect-host redshift,
-there are no such redshifts drawn.
+$z=1.24$.  The posterior shows a preference for the correct redshift, but sometimes
+drops to lower redshifts as if it were a non-Ia. Although two of the chains start near the incorrect-host redshift, they do not return to that area of parameter space after burnin.
 
 \begin{figure}[htbp] %  figure placement: here, top, bottom, or page
    \centering
-   \includegraphics[scale=0.6]{/Users/akim/project/abc/results/{missed_wrong.100}.pdf} 
-   \caption{Redshift posterior for a Type~Ia and a non-Ia that were not observed
-   spectroscopically and for whom the host-galaxy is misassociated.
-   The results of the four chains are
-   placed in sequence.   \label{missed_wrong.100:fig}}
+   \includegraphics[scale=0.55]{/Users/akim/project/abc/results/{missed_wrong.100}.pdf} 
+   \caption{Redshift draws for a Type~Ia and a non-Ia that were not observed
+   spectroscopically and for whom the host-galaxies are misidentified.
+   The draws of the four chains are appended in series.   \label{missed_wrong.100:fig}}
 \end{figure}
 
 The non-Ia is placed at $z=0.39$ and is misassociated with a galaxy at $z=0.48$.
 Three of the four chains stay in the neighborhood of the incorrect-host redshift.
 Chain 2, whose initial condition was at the true redshift, also accepts redshift solutions as
-if were a Type~Ia.  Clearly this chain does not mix with the others.
+if were a Type~Ia. This
+object is a source of bias as the region around the true redshift is never sampled.
 
-Figure~\ref{posterior.100:fig} shows the log-posteriors and histograms of
-the $w$-draws from Chain 2 compared to the others.
+Clearly Chain 2 does not mix with the others, so I compare some of its behavior with
+Chains 0, 1, and 3 combined.
+Figure~\ref{posterior.100:fig} shows the log-posteriors
+of the two sets; the values are consistent so neither can be discounted as being trapped
+in a local but not global optimum.
+The $w$ draws from
+Chains 0, 1, and 3, and those from Chain 2 are shown in Figure~\ref{posterior.100:fig},
+and credible intervals in Table~\ref{split:tab}.
+
 \begin{figure}[htbp] %  figure placement: here, top, bottom, or page
    \centering
-   \includegraphics[scale=0.5]{/Users/akim/project/abc/results/{posterior.100}.pdf} 
-   \includegraphics[scale=0.5]{/Users/akim/project/abc/results/{wsub.100}.pdf} 
-   \caption{Log-posterior and $w$-draws from  Chain 2 compared to the others.  \label{posterior.100:fig}}
+   \includegraphics[scale=0.55]{/Users/akim/project/abc/results/{posterior.100}.pdf} 
+   \includegraphics[scale=0.55]{/Users/akim/project/abc/results/{wsub.100}.pdf} 
+   \caption{Log-posteriors and $w$ draws from the grouping of Chains 0, 1, and 3, 
+and Chain 2. \label{posterior.100:fig}}
 \end{figure}
 
+\begin{table}[htbp] 
+\centering
+\begin{tabular}{|cc|cc|}
+\hline
+Chains & \%-ile & $w$ range & $\Delta$\\ \hline
+013& $0.68$ & $[-1.029, -0.649]$ & $0.379$ \\
+013& $0.90$ & $[-1.201, -0.579]$ & $0.623$ \\
+013& $0.95$ & $[-1.290, -0.557]$ & $0.733$ \\ \hline
+2& $0.68$ & $[-1.048, -0.673]$ & $0.375$ \\
+2& $0.90$ & $[-1.197, -0.600]$ & $0.597$ \\
+2& $0.95$ & $[-1.282, -0.575]$ & $0.707$ \\
+\hline
+\end{tabular}
+\caption{Credible intervals of $w$ for the draws from the grouping of Chains 0, 1, and 3, 
+and Chain 2.\label{split:tab}}
+\end{table}
+
+\subsubsection{Full Sample: Varying Spectroscopic Completeness}
+The $\Omega_M$--$w$ posterior for the
+case where all transients have a direct spectrum
+is shown in Figure~\ref{contour.100:fig}.  The credible intervals
+of $w$ for 50\%, 75\%, and 100\% spectroscopic completeness
+are given in Table~\ref{compare:tab}.
+
+\begin{table}[htbp] 
+\centering
+\begin{tabular}{|cc|cc|}
+\hline
+\% Spectra & \%-ile & $w$ range & $\Delta$\\ \hline
+ 50& $0.68$ & $[-1.036, -0.657]$ & $0.380$ \\
+ 50& $0.90$ & $[-1.201, -0.583]$ & $0.618$ \\
+ 50& $0.95$ & $[-1.287, -0.562]$ & $0.725$ \\ \hline
+ 75& $0.68$ & $[-1.000, -0.642]$ & $0.358$ \\
+ 75& $0.90$ & $[-1.146, -0.586]$ & $0.560$ \\
+ 75& $0.95$ & $[-1.229, -0.566]$ & $0.663$ \\ \hline
+100& $0.68$ & $[-1.024, -0.654]$ & $0.370$ \\
+100& $0.90$ & $[-1.188, -0.586]$ & $0.601$ \\
+100& $0.95$ & $[-1.257, -0.569]$ & $0.688$ \\
+\hline
+\end{tabular}
+\caption{Credible intervals of $w$  for the draws from the grouping of Chains 0, 1, and 3, 
+and Chain 2.\label{compare:tab}}
+\end{table}
+
+\subsection{Proto-Conclusions}
+\begin{itemize}
+\item Host-galaxy misclassification and multiple populations can produce disjoint local maxima
+in the posterior.  Sampling the space is a challenge.
+\item For the simple model considered, statistical uncertainties dominate for the case
+of 200 transients.
+\end{itemize}
+
+For the moment, the priority is to generate robust results rather than improve
+the fidelity of the model.
+\begin{itemize}
+\item Run with $\sim 1000$ transients, which is more in line with what DES will get long-term
+and will be less sensitive to realization fluctuations.
+\item Save $\gg 2000$ links  of the chain to improve the accuracy of the posterior.
+\item Achieve mixing of the chains within a reasonable compute time.  Possibilities
+include reparametrization, optimization of the Stan code (I have already put non-trivial
+effort into this), use of a different MCMC algorithm.
+%\item Explore effect of galaxy-misclassification rate.  Its value is fairly uncertain at the moment.
+\end{itemize}
 
 %
 %\section{Subsections of the Model}

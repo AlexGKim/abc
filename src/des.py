@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-import matplotlib
-matplotlib.use('Agg')
+#import matplotlib
+#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 import pystan
@@ -11,7 +11,7 @@ from astropy.cosmology import FlatLambdaCDM
 import pickle
 
 
-def genData(N_sn, N_s_obs, Ninit, seed):
+def genData(N_sn, N_s_obs, Ninit, seed, ia_only=False):
 
 	numpy.random.seed(seed)
 
@@ -56,9 +56,23 @@ def genData(N_sn, N_s_obs, Ninit, seed):
 	# s_obs_random : order in which supernovae get a spectrum
 	s_obs_random = numpy.arange(N_sn,dtype='int')
 	numpy.random.shuffle(s_obs_random)
-	s_obs = numpy.sort(s_obs_random[:N_s_obs]).tolist()
-	s_mis = numpy.sort(s_obs_random[N_s_obs:]).tolist()
 
+	s_obs=numpy.sort(s_obs_random[:N_s_obs])
+	s_mis= numpy.sort(s_obs_random[N_s_obs:])
+
+
+
+	if ia_only:
+		s_snIa = snIa[s_obs] ==1 
+		s_obs = s_obs[s_snIa]
+		s_snIa = snIa[s_mis] ==1 
+		s_mis = s_mis[s_snIa]
+		N_sn=snIa.sum()
+		N_s_obs = len(s_obs)
+
+
+	s_obs = s_obs.tolist()
+	s_mis = s_mis.tolist()
 
 	data = {'N_sn':N_sn,
 			'N_obs':N_s_obs,
@@ -126,22 +140,25 @@ def genData(N_sn, N_s_obs, Ninit, seed):
 def main():
 	Nchains=4
 	N_sn=200
-
+	ia_only=True
 	sm = pystan.StanModel(file='des.stan')
 
-	nspec = numpy.arange(100,N_sn+1,50)
+	nspec = numpy.arange(200,N_sn+1,50)
 	mn=[]
 	std=[]
 	for ns in nspec:
-		data, init, info = genData(N_sn,ns,Nchains,1)
+		data, init, info = genData(N_sn,ns,Nchains,1, ia_only=ia_only)
 
 		fit = sm.sampling(data=data, iter=50000, thin=50, chains=Nchains, init=init)
-		print fit
+		#print fit
 		#samples = fit.extract(['Omega_M','ainv_true_mis','w'])
 
 		logposterior = fit.get_logposterior()
 
-		with open('../results/model'+str(ns)+'.pkl', 'wb') as f:
+		app=''
+		if ia_only:
+			app+='.ia_only.'
+		with open('../results/model'+app+str(ns)+'.pkl', 'wb') as f:
 			pickle.dump([fit.extract(),info, logposterior], f)
 
 
