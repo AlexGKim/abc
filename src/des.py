@@ -90,6 +90,7 @@ def genData(N_sn, N_s_obs, Ninit, seed, ia_only=False):
 
 			'host_zs_obs': host_zs_random[s_obs], #zs[s_obs],
 			'host_zs_mis': host_zs_random[s_mis],
+			'host2_zs_mis': neighbor_zs_random[s_mis],
 
 			'n_int': 25,
 			'N_SNIa': snIa[s_obs].sum()
@@ -139,17 +140,17 @@ def genData(N_sn, N_s_obs, Ninit, seed, ia_only=False):
 
 def main():
 	Nchains=4
-	N_sn=200
-	ia_only=True
+	N_sn=500
+	ia_only=False
 	sm = pystan.StanModel(file='des.stan')
 
-	nspec = numpy.arange(200,N_sn+1,50)
+	nspec = numpy.arange(300,N_sn+1,100)
 	mn=[]
 	std=[]
 	for ns in nspec:
 		data, init, info = genData(N_sn,ns,Nchains,1, ia_only=ia_only)
 
-		fit = sm.sampling(data=data, iter=50000, thin=50, chains=Nchains, init=init)
+		fit = sm.sampling(data=data, iter=50000, thin=5, chains=Nchains, init=init)
 		#print fit
 		#samples = fit.extract(['Omega_M','ainv_true_mis','w'])
 

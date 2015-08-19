@@ -211,16 +211,21 @@ p(\mathit{ADU}, T_S=0 | z, \Omega_M, w, \theta_r, \alpha_{\mathit{non-Ia}},\sigm
 \mathcal{N}\left(\frac{\alpha_{\mathit{non-Ia}}}{d_L^2(z;\Omega_M, w)}, \frac{\ln{10}}{2.5}\sigma_{\mathit{non-Ia}}\right).
 \end{multline}
 \end{itemize}
-\item All transients are associated with a host galaxy with spectroscopic redshift $\theta_G$,
+\item All transients have a host with redshift $z$ and have a second
+galaxy at $z_N$ whose projection is close to the host, a potential source of ambiguity.
+The pdf for the redshift of the second galaxy is approximately uniform in volume:
 \begin{equation}
-p(\theta_G|z) =
-	P_{host} \ln{\mathcal{N}}(\theta_G;\ln(1+z),0.001) + (1-P_{host})\left(\frac{3 \theta_G^2}{z_{max}^3 - z_{min}^3}\right).
+\frac{3 z_N^2}{z_{max}^3 - z_{min}^3}.
 \end{equation}
-The host is determined correctly with probability $P_{host}$ in which case the
-host redshift is determined from a log-normal distribution centered around the true redshift
-with 0.001 fractional uncertainty.   Otherwise the redshift is drawn from the ``uniform in volume'' term on the right.
-[Note: to speed the cacluation, I only consider host-galaxy measurements
-of the {\it mis} set.]
+
+The host assignment $\theta_{G1}$ and that of the perceived neighbor
+$\theta_{G2}$ are drawn from
+\begin{equation}
+P(\theta_{G1},\theta_{G2}|z, z_N) =
+	P_{host}\delta(z-\theta_{G1})\delta(z_N-\theta_{G2}) +
+	(1-P_{host}) \delta(z-\theta_{G2})\delta(z_N-\theta_{G1}).
+\end{equation}
+
 \item This simple example does not consider data $\theta_S$, $\tau$ or $Z$, i.e.
 spectroscopic parameters, sample-selection effects, and calibration.
 \end{itemize}
@@ -249,11 +254,10 @@ choices:
 \item Non-Ia supernovae 2 magnitudes fainter than SNe~Ia with intrinsic
 dispersion $\sigma_{non-Ia}=1$.
 \item $\theta_r=0.8$ for a constant relative fraction of SNe~Ia.
-\item 200 supernovae uniformly distributed in the range $0.1<z<1$.
+\item 500 transients uniformly distributed in the range $0.1<z<1$.
 \item $z_{min}=0.05$ and $z_{max}=1.5$ is the range of possible true redshifts.
 \item $P_{host}=0.98$ for the probability of correct host-galaxy assignment.
-\item Accumulated spectra at 50\%, 75\%, and 100\% spectroscopic
-completeness.
+\item Accumulated spectra for 300, 400, and 500 transients.
 \end{itemize}
 
 The simulated data are analyzed using 
@@ -397,16 +401,16 @@ are given in Table~\ref{compare:tab}.
 \centering
 \begin{tabular}{|cc|cc|}
 \hline
-\% Spectra & \%-ile & $w$ range & $\Delta$\\ \hline
- 50& $0.68$ & $[-1.036, -0.657]$ & $0.380$ \\
- 50& $0.90$ & $[-1.201, -0.583]$ & $0.618$ \\
- 50& $0.95$ & $[-1.287, -0.562]$ & $0.725$ \\ \hline
- 75& $0.68$ & $[-1.000, -0.642]$ & $0.358$ \\
- 75& $0.90$ & $[-1.146, -0.586]$ & $0.560$ \\
- 75& $0.95$ & $[-1.229, -0.566]$ & $0.663$ \\ \hline
-100& $0.68$ & $[-1.024, -0.654]$ & $0.370$ \\
-100& $0.90$ & $[-1.188, -0.586]$ & $0.601$ \\
-100& $0.95$ & $[-1.257, -0.569]$ & $0.688$ \\
+\# Spectra & \%-ile & $w$ range & $\Delta$\\ \hline
+300& $0.68$ & $[-1.235, -0.943]$ & $0.292$ \\
+300& $0.90$ & $[-1.330, -0.852]$ & $0.478$ \\
+300& $0.95$ & $[-1.373, -0.806]$ & $0.568$ \\
+400& $0.68$ & $[-1.237, -0.946]$ & $0.291$ \\
+400& $0.90$ & $[-1.332, -0.858]$ & $0.474$ \\
+400& $0.95$ & $[-1.379, -0.819]$ & $0.560$ \\
+500& $0.68$ & $[-1.227, -0.945]$ & $0.282$ \\
+500& $0.90$ & $[-1.324, -0.838]$ & $0.486$ \\
+500& $0.95$ & $[-1.375, -0.785]$ & $0.590$ \\
 \hline
 \end{tabular}
 \caption{Credible intervals of $w$  for the draws from the grouping of Chains 0, 1, and 3, 
