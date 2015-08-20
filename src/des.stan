@@ -105,63 +105,71 @@ data{
   vector[N_obs] trans_ainv_obs;
   int<lower=0, upper=1> snIa_obs[N_obs];
 
-  vector[N_obs] host_zs_obs;
-
-  vector[N_sn-N_obs] host_zs_mis;  // need to do this way in case N_mis =0, transformed data is used
-  vector[N_sn-N_obs] host2_zs_mis;  // need to do this way in case N_mis =0, transformed data is used
+  vector[N_obs] host_zs_obs;  # not used for now
+  vector[N_sn-N_obs] host_zs_mis; 
+  vector[N_sn-N_obs] host2_zs_mis; 
   
-  int n_int;
+//  int n_int;
 }
 
 transformed data {
 
   int N_mis;
 
-  real ainv_int[n_int];
+//  real ainv_int[n_int];
 
+  //oft used numbers calculated once
   real ln10d25;
+  real loggalaxyProb;
+  real lognotgalaxyProb;
 
+  //conditions needed for the integration
   real x_r[0];
   real ainv0;
 
-  real zmin3;
-  real zmax3;
+  # real zmin3;
+  # real zmax3;
 
+  // containers for subsets of typed Ia and non-Ia
   vector[N_SNIa] adu_SNIa;
   vector[N_obs-N_SNIa] adu_nonIa;
   int index_SNIa[N_SNIa];
   int index_nonIa[N_obs-N_SNIa];
 
-  real loggalaxyProb;
-  real lognotgalaxyProb;
+  //containers for all redshifts used for calculation of distances.  More efficient if sorted.
+  real ainv_all[N_obs+ 2*(N_sn-N_obs)];  
+  int ainv_all_ind_obs[N_obs] ;  
+  int ainv_all_ind_mis[N_sn-N_obs];  
+  int ainv2_all_ind_mis[N_sn-N_obs];  
 
-  vector[N_sn-N_obs] ainv_zs_mis;  // need to do this way in case N_mis =0, transformed data is used
-  vector[N_sn-N_obs] ainv2_zs_mis;  // need to do this way in case N_mis =0, transformed data is used
+//  vector[N_sn-N_obs] ainv_zs_mis;  // need to do this way in case N_mis =0, transformed data is used
+//  vector[N_sn-N_obs] ainv2_zs_mis;  // need to do this way in case N_mis =0, transformed data is used
 
-  ainv_zs_mis <- 1+host_zs_mis;
-  ainv2_zs_mis <- 1+host2_zs_mis;
+//  ainv_zs_mis <- 1+host_zs_mis;
+//  ainv2_zs_mis <- 1+host2_zs_mis;
 
 //  real logvolumedensity;
 
 //  vector[N_sn-N_obs] lp_gal_mis_2;
 
+  N_mis <- N_sn-N_obs;
+
+  ln10d25 <- log(10.)/2.5;
   loggalaxyProb <- log(0.98);
   lognotgalaxyProb <- log(0.02);
   
 
-  zmin3 <-(zmin*0.5)^3;
-  zmax3 <-(zmax*1.5)^3;
+  # zmin3 <-(zmin*0.5)^3;
+  # zmax3 <-(zmax*1.5)^3;
 
   ainv0 <- 1;
 
-  ln10d25 <- log(10.)/2.5;
-
-  N_mis <- N_sn-N_obs;
-
   // redshift nodes for interpolation
+  /*
   for (i in 1:n_int){
     ainv_int[i] <- (1+zmin*.1) + (zmax*1.5-zmin*.1)/(n_int-1)*(i-1);
   }
+*/
 
   /*  Was for uniform volume probability for second redshift
   logvolumedensity <- 4./3*pi()*((zmax*1.5)^3 - (zmin*.5)^3);
@@ -186,6 +194,30 @@ transformed data {
         adu_nonIa[noniaindex] <- adu_obs[i][1];
         index_nonIa[noniaindex] <- i;
         noniaindex <- noniaindex+1;
+      }
+    }
+  }
+
+  //sorting of all redshifts and identification with original arrays for efficient integration
+  {
+    int so[N_obs+2*(N_mis)];
+    for (i in 1:N_obs){
+      ainv_all[i] <- trans_ainv_obs[i];
+    }
+    for (i in 1:N_mis){
+      ainv_all[N_obs+i] <- 1+host_zs_mis[i];
+      ainv_all[N_obs+N_mis+i] <- 1+host2_zs_mis[i];
+    } 
+    so <- sort_indices_asc(ainv_all);
+    ainv_all <- sort_asc(ainv_all);
+
+    for (i in 1:N_obs+2*(N_mis)){
+      if (so[i] <= N_obs){
+        ainv_all_ind_obs[so[i]]<-i;
+      } else if (so[i] <= (N_obs+N_mis)){
+        ainv_all_ind_mis[so[i]-N_obs]<-i;
+      } else {
+        ainv2_all_ind_mis[so[i]-(N_obs+N_mis)]<-i;
       }
     }
   }
@@ -234,8 +266,9 @@ transformed parameters{
 
 
   {
-    real luminosity_distance_int_s[n_int];
-    real y2[n_int];
+//    real luminosity_distance_int_s[n_int];
+    real luminosity_distance[N_obs+2*N_mis,1];
+//    real y2[n_int];
 
     real adu_true_mis;
     vector[2] logsnIa_rate;
@@ -243,29 +276,47 @@ transformed parameters{
 #    vector[N_mis] ainv_true_mis;
 #    vector[N_mis] logainv_true_mis;
 
-
-
-
-
     // get luminosity distance at nodes
     {
       real theta[3];
 
       int x_i[0];
       real r0[1];
-      real luminosity_distance_int[n_int,1];
+      //real luminosity_distance_int[n_int,1];
        // the initial condition for solving the cosmology ODE
       r0[1] <- 0;
 
       theta[1] <- Omega_M;
       theta[2] <- (1-Omega_M);
       theta[3] <- w;
+
+      /*
+      old integration
       luminosity_distance_int <- integrate_ode(friedmann, r0, ainv0, ainv_int, theta, x_r, x_i);
       for (m in 1:n_int){
         luminosity_distance_int_s[m] <- ainv_int[m]*luminosity_distance_int[m,1];
       }
+      */
+
+      //new direct integration
+      luminosity_distance <- integrate_ode(friedmann, r0, ainv0, ainv_all, theta, x_r, x_i);
+      for (m in 1:N_obs+2*N_mis){
+        luminosity_distance[m,1] <- ainv_all[m]*luminosity_distance[m,1];
+      }
     }
 
+    for (s in 1:N_SNIa){
+//      adu_true_SNIa[s] <- splint(ainv_int, luminosity_distance_int_s, y2, n_int, trans_ainv_obs[index_SNIa[s]])^(-2);
+      adu_true_SNIa[s] <- luminosity_distance[ainv_all_ind_obs[index_SNIa[s]],1]^(-2);  //powers do not seem to be vectorized in Stan
+    }
+
+    for (s in 1:(N_obs-N_SNIa)){
+//      adu_true_nonIa[s] <- splint(ainv_int, luminosity_distance_int_s, y2, n_int, trans_ainv_obs[index_nonIa[s]])^(-2);
+      adu_true_nonIa[s] <- luminosity_distance[ainv_all_ind_obs[index_nonIa[s]],1]^(-2);
+    }
+ 
+/*
+  old integration
     // get spline at the desired coordinates
     // should work well in 1+z vs d_L since the relationship is linear
     y2 <- spline(ainv_int, luminosity_distance_int_s,n_int, 0., 0.);
@@ -278,21 +329,22 @@ transformed parameters{
     for (s in 1:(N_obs-N_SNIa)){
       adu_true_nonIa[s] <- splint(ainv_int, luminosity_distance_int_s, y2, n_int, trans_ainv_obs[index_nonIa[s]])^(-2);
     }
- 
+ */
     
     logsnIa_rate <- log(snIa_rate);
     for (s in 1:N_mis){
 
       //the case for correct galaxy attribution
-      adu_true_mis  <- splint(ainv_int, luminosity_distance_int_s, y2, n_int, ainv_zs_mis[s])^(-2);
+#      adu_true_mis  <- splint(ainv_int, luminosity_distance_int_s, y2, n_int, ainv_zs_mis[s])^(-2); 
+      adu_true_mis  <- luminosity_distance[ainv_all_ind_mis[s],1]^(-2);
      // marginalize over type
       lp_mis[s][1] <- normal_log(adu_mis[s][1], adu_true_mis*alpha_Ia,  adu_true_mis*alpha_Ia*sigma_Ia*ln10d25) + logsnIa_rate[1] + loggalaxyProb;
       lp_mis[s][2] <- normal_log(adu_mis[s][1], adu_true_mis*alpha_nonIa, adu_true_mis*alpha_nonIa*sigma_nonIa*ln10d25)+ logsnIa_rate[2] + loggalaxyProb;
 
-      adu_true_mis  <- splint(ainv_int, luminosity_distance_int_s, y2, n_int, ainv2_zs_mis[s])^(-2);      
+ #     adu_true_mis  <- splint(ainv_int, luminosity_distance_int_s, y2, n_int, ainv2_zs_mis[s])^(-2); 
+      adu_true_mis  <- luminosity_distance[ainv2_all_ind_mis[s],1]^(-2); 
       lp_mis[s][3] <- normal_log(adu_mis[s][1], adu_true_mis*alpha_Ia,  adu_true_mis*alpha_Ia*sigma_Ia*ln10d25) + logsnIa_rate[1] + lognotgalaxyProb;
       lp_mis[s][4] <- normal_log(adu_mis[s][1], adu_true_mis*alpha_nonIa, adu_true_mis*alpha_nonIa*sigma_nonIa*ln10d25)+ logsnIa_rate[2] + lognotgalaxyProb;
-
 
       // marginalize over possible hosts
       # lp_gal_mis[s][1] <- lognormal_log(1+host_zs_mis[s], logainv_true_mis[s], 0.001) + loggalaxyProb;
