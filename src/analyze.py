@@ -20,20 +20,32 @@ def individual(N_s, ia_only = False):
 	if ia_only:
 		app+='.ia_only.'
 	[extract, info, logposterior] = pickle.load(file('../results/model'+app+str(N_s)+'.pkl','rb'))
-
+	print numpy.abs((extract['w'] < -1).sum()*1. / len(extract['w'])-0.5)*2
 	n_samples = len(extract[extract.keys()[0]])
-	samples=numpy.zeros((n_samples,7))
-	samples[:,0] = extract['Omega_M']
-	samples[:,1] = extract['w']
-	samples[:,2] = extract['alpha_Ia']
-	samples[:,3] = extract['sigma_Ia']
-	samples[:,4] = extract['alpha_nonIa']
-	samples[:,5] = extract['sigma_nonIa']
-	samples[:,6] = extract['snIa_rate'][:,0]
-	figure = triangle.corner(samples, labels=[r"$\Omega_M$", r"$w$", r"$\alpha_{Ia}$", r"$\sigma_{Ia}$", r"$\alpha_{non-Ia}$", r"$\sigma_{Ia}$", r"SN Ia Rate"],truths=[0.28,-1, 2.,0.1,2*10**(-2./2.5),1,0.8],
-		quantiles=[0.16, 0.5, 0.84], plot_datapoints=False,plot_density=True)
-	plt.savefig('../results/contour.'+app+str(N_s)+'.pdf')
-	plt.clf()
+
+	if ia_only:
+		samples=numpy.zeros((n_samples,4))
+		samples[:,0] = extract['Omega_M']
+		samples[:,1] = extract['w']
+		samples[:,2] = extract['alpha_Ia']
+		samples[:,3] = extract['sigma_Ia']
+		figure = triangle.corner(samples, labels=[r"$\Omega_M$", r"$w$", r"$\alpha_{Ia}$", r"$\sigma_{Ia}$"],truths=[0.28,-1, 2.,0.1],
+			quantiles=[0.16, 0.5, 0.84], plot_datapoints=False,plot_density=True)
+		plt.savefig('../results/contour.'+app+str(N_s)+'.pdf')
+		plt.clf()
+	else:
+		samples=numpy.zeros((n_samples,7))
+		samples[:,0] = extract['Omega_M']
+		samples[:,1] = extract['w']
+		samples[:,2] = extract['alpha_Ia']
+		samples[:,3] = extract['sigma_Ia']
+		samples[:,4] = extract['alpha_nonIa']
+		samples[:,5] = extract['sigma_nonIa']
+		samples[:,6] = extract['snIa_rate'][:,0]
+		figure = triangle.corner(samples, labels=[r"$\Omega_M$", r"$w$", r"$\alpha_{Ia}$", r"$\sigma_{Ia}$", r"$\alpha_{non-Ia}$", r"$\sigma_{non-Ia}$", r"SN Ia Rate"],truths=[0.28,-1, 2.,0.1,2*10**(-2./2.5),1,0.8],
+			quantiles=[0.16, 0.5, 0.84], plot_datapoints=False,plot_density=True)
+		plt.savefig('../results/contour.'+app+str(N_s)+'.pdf')
+		plt.clf()
 
 
 	plt.plot(logposterior[0][500:],label=0)
@@ -134,7 +146,9 @@ def group(nspec):
 		wsort = numpy.sort(extract['w'])
 		ans[ind,:] = wsort[numpy.round(levels*len(wsort)).astype(int)]
 		for i in xrange(len(levels)/2):
-			deltas[ind,i] = ans[ind,-1-i]-ans[ind,i] 
+			deltas[ind,i] = ans[ind,-1-i]-ans[ind,i]
+
+		print numpy.abs((wsort < -1).sum()*1. / len(wsort)-0.5)*2
 		ind +=1
 
 
@@ -144,8 +158,10 @@ def group(nspec):
 
 
 def main():
-	# individual(500,ia_only=False)
-	group([300,400,500])
+	individual(500,ia_only=True)
+#	individual(500,ia_only=False)
+	wefew
+	group([200,350,500])
 
 if __name__ == "__main__":
     main()
