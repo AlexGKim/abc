@@ -96,11 +96,13 @@ data{
 
   int<lower=1> N_SNIa;
 
+  real ADU0;
+
   real<lower=0> zmin;
   real<lower=zmin> zmax;
 
-  vector[N_adu_max] adu_obs[N_obs];
-  vector[N_adu_max] adu_mis[N_sn-N_obs];
+  vector<lower = ADU0>[N_adu_max] adu_obs[N_obs];
+  vector<lower = ADU0>[N_adu_max] adu_mis[N_sn-N_obs];
 
   vector[N_obs] trans_ainv_obs;
   int<lower=0, upper=1> snIa_obs[N_obs];
@@ -108,7 +110,7 @@ data{
   vector[N_obs] host_zs_obs;  # not used for now
   vector[N_sn-N_obs] host_zs_mis; 
   vector[N_sn-N_obs] host2_zs_mis; 
-  
+
 //  int n_int;
 }
 
@@ -140,7 +142,9 @@ transformed data {
   real ainv_all[N_obs+ 2*(N_sn-N_obs)];  
   int ainv_all_ind_obs[N_obs] ;  
   int ainv_all_ind_mis[N_sn-N_obs];  
-  int ainv2_all_ind_mis[N_sn-N_obs];  
+  int ainv2_all_ind_mis[N_sn-N_obs]; 
+
+  real galaxyProb;
 
 //  vector[N_sn-N_obs] ainv_zs_mis;  // need to do this way in case N_mis =0, transformed data is used
 //  vector[N_sn-N_obs] ainv2_zs_mis;  // need to do this way in case N_mis =0, transformed data is used
@@ -154,9 +158,10 @@ transformed data {
 
   N_mis <- N_sn-N_obs;
 
+  galaxyProb <- 0.98; 
   ln10d25 <- log(10.)/2.5;
-  loggalaxyProb <- log(0.98);
-  lognotgalaxyProb <- log(0.02);
+  loggalaxyProb <- log(galaxyProb);
+  lognotgalaxyProb <- log(1-galaxyProb);
   
 
   # zmin3 <-(zmin*0.5)^3;
@@ -238,7 +243,8 @@ parameters{
   real <lower=-2, upper=0> w;
 
   // relative rate parameter
-  simplex[2] snIa_rate;
+  simplex[2] snIa_rate_0;
+  simplex[2] snIa_rate_1;
 
   // true redshifts
   //in principle observed guys have redshift uncertainty but for efficiency ignore for the moment
@@ -271,7 +277,15 @@ transformed parameters{
 //    real y2[n_int];
 
     real adu_true_mis;
-    vector[2] logsnIa_rate;
+    real adu_true_mis2;
+    real rate0;
+    real rate1;
+    real rate2;
+    real rate3;
+    # vector[2] logsnIa_rate_0;
+    # vector[2] logsnIa_rate_1;
+
+    real renorm;
 
 #    vector[N_mis] ainv_true_mis;
 #    vector[N_mis] logainv_true_mis;
@@ -330,21 +344,42 @@ transformed parameters{
       adu_true_nonIa[s] <- splint(ainv_int, luminosity_distance_int_s, y2, n_int, trans_ainv_obs[index_nonIa[s]])^(-2);
     }
  */
-    
-    logsnIa_rate <- log(snIa_rate);
+    /*
+    logsnIa_rate_0 <- log(snIa_rate_0);
+    logsnIa_rate_1 <- log(snIa_rate_1);
+    */
+
     for (s in 1:N_mis){
 
       //the case for correct galaxy attribution
 #      adu_true_mis  <- splint(ainv_int, luminosity_distance_int_s, y2, n_int, ainv_zs_mis[s])^(-2); 
+#     adu_true_mis  <- splint(ainv_int, luminosity_distance_int_s, y2, n_int, ainv2_zs_mis[s])^(-2); 
+ 
       adu_true_mis  <- luminosity_distance[ainv_all_ind_mis[s],1]^(-2);
-     // marginalize over type
-      lp_mis[s][1] <- normal_log(adu_mis[s][1], adu_true_mis*alpha_Ia,  adu_true_mis*alpha_Ia*sigma_Ia*ln10d25) + logsnIa_rate[1] + loggalaxyProb;
-      lp_mis[s][2] <- normal_log(adu_mis[s][1], adu_true_mis*alpha_nonIa, adu_true_mis*alpha_nonIa*sigma_nonIa*ln10d25)+ logsnIa_rate[2] + loggalaxyProb;
+      adu_true_mis2  <- luminosity_distance[ainv2_all_ind_mis[s],1]^(-2); 
 
- #     adu_true_mis  <- splint(ainv_int, luminosity_distance_int_s, y2, n_int, ainv2_zs_mis[s])^(-2); 
-      adu_true_mis  <- luminosity_distance[ainv2_all_ind_mis[s],1]^(-2); 
-      lp_mis[s][3] <- normal_log(adu_mis[s][1], adu_true_mis*alpha_Ia,  adu_true_mis*alpha_Ia*sigma_Ia*ln10d25) + logsnIa_rate[1] + lognotgalaxyProb;
-      lp_mis[s][4] <- normal_log(adu_mis[s][1], adu_true_mis*alpha_nonIa, adu_true_mis*alpha_nonIa*sigma_nonIa*ln10d25)+ logsnIa_rate[2] + lognotgalaxyProb;
+#   snIa_rate_0 rate at z=0, snIa_rate_1 rate at zmax
+#   [1] for sn Ia, [2] for nonIa
+      rate0 <- snIa_rate_0[1]+ (ainv_all_ind_mis[s]-1)/zmax*(snIa_rate_1[1]-snIa_rate_0[1]); //SN Ia good z
+      rate1 <- snIa_rate_0[2]+ (ainv_all_ind_mis[s]-1)/zmax*(snIa_rate_1[2]-snIa_rate_0[2]);  //non-Ia good z
+      rate2 <- snIa_rate_0[1]+ (ainv2_all_ind_mis[s]-1)/zmax*(snIa_rate_1[1]-snIa_rate_0[1]);
+      rate3 <- snIa_rate_0[2]+ (ainv2_all_ind_mis[s]-1)/zmax*(snIa_rate_1[2]-snIa_rate_0[2]);
+      // explicit handling of normalization of truncated distribution
+      renorm <-  galaxyProb*
+        (rate0*erfc((ADU0-adu_true_mis*alpha_Ia)/sqrt(2)/(adu_true_mis*alpha_Ia*sigma_Ia*ln10d25))
+          + rate1*erfc((ADU0-adu_true_mis*alpha_nonIa)/sqrt(2)/(adu_true_mis*alpha_nonIa*sigma_nonIa*ln10d25)));
+      renorm <-  renorm + (1-galaxyProb)*
+        (rate2*erfc((ADU0-adu_true_mis2*alpha_Ia)/sqrt(2)/(adu_true_mis2*alpha_Ia*sigma_Ia*ln10d25))
+          + rate3*erfc((ADU0-adu_true_mis2*alpha_nonIa)/sqrt(2)/(adu_true_mis2*alpha_nonIa*sigma_nonIa*ln10d25)));
+      renorm <- renorm/2;
+      renorm <- -log(renorm);
+
+     // marginalize over type
+      lp_mis[s][1] <- normal_log(adu_mis[s][1], adu_true_mis*alpha_Ia,  adu_true_mis*alpha_Ia*sigma_Ia*ln10d25) + log(rate0) + loggalaxyProb + renorm;
+      lp_mis[s][2] <- normal_log(adu_mis[s][1], adu_true_mis*alpha_nonIa, adu_true_mis*alpha_nonIa*sigma_nonIa*ln10d25)+ log(rate1) + loggalaxyProb + renorm;
+
+      lp_mis[s][3] <- normal_log(adu_mis[s][1], adu_true_mis2*alpha_Ia,  adu_true_mis2*alpha_Ia*sigma_Ia*ln10d25) + log(rate2) + lognotgalaxyProb + renorm;
+      lp_mis[s][4] <- normal_log(adu_mis[s][1], adu_true_mis2*alpha_nonIa, adu_true_mis2*alpha_nonIa*sigma_nonIa*ln10d25)+ log(rate3) + lognotgalaxyProb + renorm;
 
       // marginalize over possible hosts
       # lp_gal_mis[s][1] <- lognormal_log(1+host_zs_mis[s], logainv_true_mis[s], 0.001) + loggalaxyProb;
@@ -364,12 +399,16 @@ model{
 
   //collect classified SNe and vectorize accordingly
   // P(ADU, Ts | rate) = P(ADU| SNIa) P(SNIa|rate) for guys with Ts=1
-  adu_SNIa ~ normal(adu_true_SNIa*alpha_Ia, adu_true_SNIa*alpha_Ia*sigma_Ia*ln10d25);
-  increment_log_prob(N_SNIa*log(snIa_rate[1]));
+  for (s in 1:N_SNIa){
+    adu_SNIa[s] ~ normal(adu_true_SNIa[s]*alpha_Ia, adu_true_SNIa[s]*alpha_Ia*sigma_Ia*ln10d25) T[ADU0,]; //trancated only works on univariate
+  }
+  increment_log_prob(N_SNIa*log(snIa_rate_0[1]));
 
   if (N_obs-N_SNIa > 0){
-    adu_nonIa ~ normal(adu_true_nonIa*alpha_nonIa, adu_true_nonIa*alpha_nonIa*sigma_nonIa*ln10d25);
-    increment_log_prob((N_obs-N_SNIa)*log(snIa_rate[2]));
+    for (s in 1:N_obs-N_SNIa){ 
+      adu_nonIa[s] ~ normal(adu_true_nonIa[s]*alpha_nonIa, adu_true_nonIa[s]*alpha_nonIa*sigma_nonIa*ln10d25) T[ADU0,];
+    }
+    increment_log_prob((N_obs-N_SNIa)*log(snIa_rate_0[2]));
   }
   
   # from Stan manual 30.1 no speed benefit from vectorization of increment_log_prob 

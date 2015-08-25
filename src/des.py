@@ -11,7 +11,7 @@ from astropy.cosmology import FlatLambdaCDM
 import pickle
 
 
-def genData(N_sn, N_s_obs, Ninit, seed, ia_only=False):
+def genData(N_sn, N_s_obs, Ninit, seed, ia_only=False, ADU0=None):
 
 	numpy.random.seed(seed)
 
@@ -26,13 +26,16 @@ def genData(N_sn, N_s_obs, Ninit, seed, ia_only=False):
 
 	alpha_snIa=2.
 	alpha_nonIa=alpha_snIa*10**(-2./2.5)
-	frac_Ia=.8
+	frac_Ia_0=.8
+	frac_Ia_1=.5
 
 	# zs : the true redshifts
 	zs = numpy.sort(numpy.random.uniform(zmin,zmax,N_sn))
 
 	# snIa : the true types
-	snIa = numpy.random.binomial(1, frac_Ia, size=N_sn)
+#	snIa = numpy.random.binomial(1, frac_Ia, size=N_sn)	
+	snIa = numpy.random.uniform(size=N_sn)
+	snIa = numpy.less_equal(snIa, frac_Ia_0 + (frac_Ia_1-frac_Ia_0)*zs/zmax)
 
 	wsnIa = numpy.where(snIa)[0]
 	wnonIa = numpy.where(numpy.logical_not(snIa))[0]
@@ -60,15 +63,26 @@ def genData(N_sn, N_s_obs, Ninit, seed, ia_only=False):
 	s_obs=numpy.sort(s_obs_random[:N_s_obs])
 	s_mis= numpy.sort(s_obs_random[N_s_obs:])
 
+	if ADU0 is None:
+		found = numpy.zeros(len(adu),dtype='bool')
+		found[:]=True
+		ADU0=0
+	else:
+		found  = adu>=ADU0
 
 
 	if ia_only:
-		s_snIa = snIa[s_obs] ==1 
+		s_snIa = numpy.logical_and(snIa[s_obs] ==1, found[s_obs]) 
 		s_obs = s_obs[s_snIa]
-		s_snIa = snIa[s_mis] ==1 
+		s_snIa = numpy.logical_and(snIa[s_mis] ==1, found[s_mis]) 
 		s_mis = s_mis[s_snIa]
-		N_sn=snIa.sum()
+		N_sn= numpy.logical_and(snIa==1,found).sum()
 		N_s_obs = len(s_obs)
+	else:
+		s_obs=s_obs[found[s_obs]]
+		s_mis=s_mis[found[s_mis]]
+		N_sn = len(s_obs)+len(s_mis)
+		N_s_obs=len(s_obs)
 
 
 	s_obs = s_obs.tolist()
@@ -92,7 +106,8 @@ def genData(N_sn, N_s_obs, Ninit, seed, ia_only=False):
 			'host_zs_mis': host_zs_random[s_mis],
 			'host2_zs_mis': neighbor_zs_random[s_mis],
 
-			'n_int': 25,
+			'ADU0': ADU0,
+#			'n_int': 25,
 			'N_SNIa': snIa[s_obs].sum()
 			}
 
@@ -141,16 +156,17 @@ def genData(N_sn, N_s_obs, Ninit, seed, ia_only=False):
 def main():
 	Nchains=4
 	N_sn=500
+	ADU0=0.25
 	ia_only=False
 	sm = pystan.StanModel(file='des.stan')
 
-	nspec = numpy.arange(300,N_sn+1,100)
+	nspec = numpy.arange(150,N_sn+1,750)
 	mn=[]
 	std=[]
 	for ns in nspec:
-		data, init, info = genData(N_sn,ns,Nchains,1, ia_only=ia_only)
+		data, init, info = genData(N_sn,ns,Nchains,1, ia_only=ia_only, ADU0=ADU0)
 
-		fit = sm.sampling(data=data, iter=50000, thin=5, chains=Nchains, init=init)
+		fit = sm.sampling(data=data, iter=1000, thin=1, n_jobs=-1, chains=Nchains, init=init)
 		#print fit
 		#samples = fit.extract(['Omega_M','ainv_true_mis','w'])
 
@@ -159,9 +175,8 @@ def main():
 		app=''
 		if ia_only:
 			app+='.ia_only.'
-		with open('../results/model'+app+str(ns)+'.pkl', 'wb') as f:
+		with open('../results/temp/model'+app+str(ns)+'.pkl', 'wb') as f:
 			pickle.dump([fit.extract(),info, logposterior], f)
-
 
 if __name__ == "__main__":
     main()
