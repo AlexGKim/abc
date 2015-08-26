@@ -360,10 +360,13 @@ transformed parameters{
 
 #   snIa_rate_0 rate at z=0, snIa_rate_1 rate at zmax
 #   [1] for sn Ia, [2] for nonIa
-      rate0 <- snIa_rate_0[1]+ (ainv_all_ind_mis[s]-1)/zmax*(snIa_rate_1[1]-snIa_rate_0[1]); //SN Ia good z
-      rate1 <- snIa_rate_0[2]+ (ainv_all_ind_mis[s]-1)/zmax*(snIa_rate_1[2]-snIa_rate_0[2]);  //non-Ia good z
-      rate2 <- snIa_rate_0[1]+ (ainv2_all_ind_mis[s]-1)/zmax*(snIa_rate_1[1]-snIa_rate_0[1]);
-      rate3 <- snIa_rate_0[2]+ (ainv2_all_ind_mis[s]-1)/zmax*(snIa_rate_1[2]-snIa_rate_0[2]);
+      rate0 <- snIa_rate_0[1]+ host_zs_mis[s]/(1.5*zmax)*(snIa_rate_1[1]-snIa_rate_0[1]);   //SN Ia good z
+      rate1 <- snIa_rate_0[2]+ host_zs_mis[s]/(1.5*zmax)*(snIa_rate_1[2]-snIa_rate_0[2]);   //non-Ia good z
+      rate2 <- snIa_rate_0[1]+ host2_zs_mis[s]/(1.5*zmax)*(snIa_rate_1[1]-snIa_rate_0[1]);  //SN Ia bad z
+      rate3 <- snIa_rate_0[2]+ host2_zs_mis[s]/(1.5*zmax)*(snIa_rate_1[2]-snIa_rate_0[2]);  //non-Ia bad z
+
+      # print(adu_true_mis*alpha_Ia," ",rate0," ",erfc((ADU0-adu_true_mis*alpha_Ia)/sqrt(2)/(adu_true_mis*alpha_Ia*sigma_Ia*ln10d25))," ",adu_true_mis*alpha_nonIa," ",
+      #   rate1," ",erfc((ADU0-adu_true_mis*alpha_nonIa)/sqrt(2)/(adu_true_mis*alpha_nonIa*sigma_nonIa*ln10d25)));
       // explicit handling of normalization of truncated distribution
       renorm <-  galaxyProb*
         (rate0*erfc((ADU0-adu_true_mis*alpha_Ia)/sqrt(2)/(adu_true_mis*alpha_Ia*sigma_Ia*ln10d25))
@@ -391,6 +394,12 @@ transformed parameters{
 }
 
 model{
+
+  real renorm;
+  real rate0;
+  real rate1;
+  real z;
+
   // magnitude zeropoint constrained by a prior of nearby SNe
   alpha_Ia ~ lognormal(log(2.),0.02*ln10d25);
 
@@ -400,15 +409,35 @@ model{
   //collect classified SNe and vectorize accordingly
   // P(ADU, Ts | rate) = P(ADU| SNIa) P(SNIa|rate) for guys with Ts=1
   for (s in 1:N_SNIa){
-    adu_SNIa[s] ~ normal(adu_true_SNIa[s]*alpha_Ia, adu_true_SNIa[s]*alpha_Ia*sigma_Ia*ln10d25) T[ADU0,]; //trancated only works on univariate
+    z <- ainv_all[ainv_all_ind_obs[index_SNIa[s]]]-1;
+    rate0 <- snIa_rate_0[1]+ z/(1.5*zmax)*(snIa_rate_1[1]-snIa_rate_0[1]);   //SN Ia good z
+    rate1 <- snIa_rate_0[2]+ z/(1.5*zmax)*(snIa_rate_1[2]-snIa_rate_0[2]);   //non-Ia good z
+
+    renorm <- rate0*erfc((ADU0-adu_true_SNIa[s]*alpha_Ia)/sqrt(2)/(adu_true_SNIa[s]*alpha_Ia*sigma_Ia*ln10d25))
+          + rate1*erfc((ADU0-adu_true_SNIa[s]*alpha_nonIa)/sqrt(2)/(adu_true_SNIa[s]*alpha_nonIa*sigma_nonIa*ln10d25));
+
+   // adu_SNIa[s] ~ normal(adu_true_SNIa[s]*alpha_Ia, adu_true_SNIa[s]*alpha_Ia*sigma_Ia*ln10d25); //trancated only works on univariate
+    increment_log_prob(log(rate0/renorm));
   }
-  increment_log_prob(N_SNIa*log(snIa_rate_0[1]));
+  adu_SNIa ~ normal(adu_true_SNIa*alpha_Ia, adu_true_SNIa*alpha_Ia*sigma_Ia*ln10d25);
+
+//  increment_log_prob(N_SNIa*log(snIa_rate_0[1]));
 
   if (N_obs-N_SNIa > 0){
     for (s in 1:N_obs-N_SNIa){ 
-      adu_nonIa[s] ~ normal(adu_true_nonIa[s]*alpha_nonIa, adu_true_nonIa[s]*alpha_nonIa*sigma_nonIa*ln10d25) T[ADU0,];
+      z <- ainv_all[ainv_all_ind_obs[index_nonIa[s]]]-1;
+      rate0 <- snIa_rate_0[1]+ z/(1.5*zmax)*(snIa_rate_1[1]-snIa_rate_0[1]);   //SN Ia good z
+      rate1 <- snIa_rate_0[2]+ z/(1.5*zmax)*(snIa_rate_1[2]-snIa_rate_0[2]);   //non-Ia good z
+
+      renorm <- rate0*erfc((ADU0-adu_true_nonIa[s]*alpha_Ia)/sqrt(2)/(adu_true_nonIa[s]*alpha_Ia*sigma_Ia*ln10d25))
+          + rate1*erfc((ADU0-adu_true_nonIa[s]*alpha_nonIa)/sqrt(2)/(adu_true_nonIa[s]*alpha_nonIa*sigma_nonIa*ln10d25));
+
+    //  adu_nonIa[s] ~ normal(adu_true_nonIa[s]*alpha_nonIa, adu_true_nonIa[s]*alpha_nonIa*sigma_nonIa*ln10d25);
+      increment_log_prob(log(rate1/renorm));
     }
-    increment_log_prob((N_obs-N_SNIa)*log(snIa_rate_0[2]));
+    adu_nonIa ~ normal(adu_true_nonIa*alpha_nonIa, adu_true_nonIa*alpha_nonIa*sigma_nonIa*ln10d25);
+
+//    increment_log_prob((N_obs-N_SNIa)*log(snIa_rate_0[2]));
   }
   
   # from Stan manual 30.1 no speed benefit from vectorization of increment_log_prob 
