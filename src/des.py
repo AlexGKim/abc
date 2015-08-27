@@ -190,5 +190,5 @@ def main():
 			pickle.dump([fit.extract(), logposterior], f)
 
 if __name__ == "__main__":
-	dataPlot();
-#    main()
+#	dataPlot();
+    main()
