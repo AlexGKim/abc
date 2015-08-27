@@ -189,6 +189,7 @@ For transients in set {\it mis} without active spectroscopy:
 p(\mathit{ADU}| z, \Omega_M, w, \theta_r, \alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}})=\\
 \theta_r\mathcal{N}\left(\frac{\alpha_{Ia}}{d_L^2(z;\Omega_M, w)}, \frac{\ln{10}}{2.5}\sigma_{Ia}\right)+\left(1-\theta_r\right)
 \mathcal{N}\left(\frac{\alpha_{\mathit{non-Ia}}}{d_L^2(z;\Omega_M, w)}, \frac{\ln{10}}{2.5}\sigma_{\mathit{non-Ia}}\right).
+\label{adumis:eqn}
 \end{multline}
 The luminosity distance $d_L$ is for a flat universe.  
 \item The transients of subset {\it obs} have spectroscopic observations of type $T_S$ and redshift
@@ -203,14 +204,22 @@ p(z_S|z) = \delta(z_S-z)
 \begin{equation}
 p(\mathit{ADU}, T_S=1 | z, \Omega_M, w, \theta_r, \alpha_{Ia},\sigma_{Ia})=
 \theta_r\mathcal{N}\left(\frac{\alpha_{Ia}}{d_L^2(z;\Omega_M, w)}, \frac{\ln{10}}{2.5}\sigma_{Ia}\right).
+\label{adusnIa:eqn}
 \end{equation}
 \item For transients in set $T_S=0$:
 \begin{multline}
 p(\mathit{ADU}, T_S=0 | z, \Omega_M, w, \theta_r, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}})= \\
 \left(1-\theta_r\right)
 \mathcal{N}\left(\frac{\alpha_{\mathit{non-Ia}}}{d_L^2(z;\Omega_M, w)}, \frac{\ln{10}}{2.5}\sigma_{\mathit{non-Ia}}\right).
+\label{adunonIa:eqn}
 \end{multline}
 \end{itemize}
+\item The ADU likelihoods in Equations~\ref{adumis:eqn}, \ref{adusnIa:eqn}, and
+\ref{adunonIa:eqn} are appropriate when there is no count-based sample selection.
+In practice the distribution will be truncated, as only transients that pass a brightness
+threshold $\mathit{ADU}_0$ make it into the sample.  The area of the truncated
+distribution in Equation~\ref{adumis:eqn} $\int_{\mathit{ADU}_0}^{\infty} p(\mathit{ADU})d\mathit{ADU}$
+normalizes the above ADU likelihoods.
 \item All transients have a host with redshift $z$ and have a second
 galaxy at $z_N$ whose projection is close to the host, a potential source of ambiguity.
 The pdf for the redshift of the second galaxy is approximately uniform in volume:
