@@ -23,7 +23,7 @@ class Data(object):
 		self.cosmo=FlatLambdaCDM(70,self.omega_M)
 
 		self.zmin=0.1
-		self.zmax=1.
+		self.zmax=1.4
 
 		self.sigma_snIa=0.1
 		self.sigma_nonIa=1
@@ -64,10 +64,10 @@ class Data(object):
 		self.adu = adu
 
 	def hosts_(self):
-		host_choice = numpy.random.binomial(1,0.98,size=self.N_sn)
+		self.host_choice = numpy.random.binomial(1,0.98,size=self.N_sn)
 		self.neighbor_zs=numpy.random.uniform((1+self.zmin/1.5)**3,(1+self.zmax*1.5)**3,size=self.N_sn)**(1./3)-1
-		self.host_zs_random = self.zs*host_choice + self.neighbor_zs*(1-host_choice)
-		self.neighbor_zs_random = self.zs*(1-host_choice) + self.neighbor_zs*host_choice
+		self.host_zs_random = self.zs*self.host_choice + self.neighbor_zs*(1-self.host_choice)
+		self.neighbor_zs_random = self.zs*(1-self.host_choice) + self.neighbor_zs*self.host_choice
 
 	def found(self, ADU0):
 		self.ADU0 =ADU0
@@ -89,14 +89,14 @@ class Data(object):
 	def dict(self):
 		return 	{'N_sn': self.found.sum(),
 			'N_obs': len(self.s_obs),
-
+			'N_SNIa': self.snIa[self.s_obs].sum(),
 			'N_adu_max':1,
 
 			'zmin':self.zmin,
 			'zmax':self.zmax,
 
-			'adu_obs': self.adu[self.s_obs,None],
-			'adu_mis': self.adu[self.s_mis,None],
+			'adu_obs': self.adu[self.s_obs],
+			'adu_mis': self.adu[self.s_mis],
 
 			'trans_ainv_obs': 1+self.zs[self.s_obs],
 			'snIa_obs': self.snIa[self.s_obs],
@@ -105,9 +105,9 @@ class Data(object):
 			'host_zs_mis': self.host_zs_random[self.s_mis],
 			'host2_zs_mis': self.neighbor_zs_random[self.s_mis],
 
-			'ADU0': self.ADU0,
+			'ADU0': self.ADU0
 #			'n_int': 25,
-			'N_SNIa': self.snIa[self.s_obs].sum()
+
 			}
 
 	def init(self, n):
@@ -124,7 +124,7 @@ class Data(object):
 			  	'alpha_Ia': numpy.random.normal(self.alpha_snIa,0.1),
 			 	'alpha_nonIa': numpy.random.normal(self.alpha_nonIa,0.1),
 			  	'sigma_Ia': numpy.random.lognormal(numpy.log(self.sigma_snIa),0.05),
-			  	'sigma_nonIa':numpy.random.lognormal(numpy.log(self.sigma_nonIa),0.5),
+			  	'sigma_nonIa':numpy.random.lognormal(numpy.log(self.sigma_nonIa),0.1),
 			  	'snIa_rate_0': [rate,1-rate],
 			  	'snIa_rate_1': [rate1,1-rate1]
 				})
@@ -143,6 +143,10 @@ class Data(object):
 		     plt.scatter(self.zs[self.snIa ==1], -2.5*numpy.log10(self.adu[self.snIa ==1]),alpha=0.1,color='b')
 		     plt.scatter(self.zs[self.snIa ==0], -2.5*numpy.log10(self.adu[self.snIa ==0]),alpha=0.1,color='r')
 		     plt.scatter(self.zs[self.s_obs_random[:self.N_s_obs]], -2.5*numpy.log10(self.adu[self.s_obs_random[:self.N_s_obs]]),marker='+',color='k',label='Spectrum',s=40)
+		     w  = self.s_obs_random[self.N_s_obs:]
+		     w2 = numpy.logical_and(numpy.logical_not(self.host_choice[w]), self.found[w])
+		     plt.scatter(self.host_zs_random[w[w2]], -2.5*numpy.log10(self.adu[w[w2]]),marker='x',color='g',label='Wrong Host',s=40)
+
 		     ax=plt.gca()
 		     ax.invert_yaxis()
 		     plt.legend()
@@ -301,10 +305,13 @@ def main():
 
 	data= Data(N_sn, 1, ia_only=ia_only)
 	data.found(ADU0)
+	# data.spectrum(0.2)
+	# data.plot()
+	# wefe
 
 	sm = pystan.StanModel(file='des.stan')
 
-	fracspec = numpy.arange(.2,1.01,.4)
+	fracspec = numpy.arange(.2,1.01,4)
 	for ns in fracspec:
 		data.spectrum(ns)
 

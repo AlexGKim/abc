@@ -19,7 +19,7 @@ def individual(N_s, ia_only = False):
 	app = ''
 	if ia_only:
 		app+='.ia_only.'
-	[extract, info, logposterior] = pickle.load(file('../results/model'+app+str(N_s)+'.pkl','rb'))
+	[extract,logposterior] = pickle.load(file('../results/temp/model'+app+str(N_s)+'.pkl','rb'))
 	print numpy.abs((extract['w'] < -1).sum()*1. / len(extract['w'])-0.5)*2
 	n_samples = len(extract[extract.keys()[0]])
 
@@ -31,20 +31,21 @@ def individual(N_s, ia_only = False):
 		samples[:,3] = extract['sigma_Ia']
 		figure = triangle.corner(samples, labels=[r"$\Omega_M$", r"$w$", r"$\alpha_{Ia}$", r"$\sigma_{Ia}$"],truths=[0.28,-1, 2.,0.1],
 			quantiles=[0.16, 0.5, 0.84], plot_datapoints=False,plot_density=True)
-		plt.savefig('../results/contour.'+app+str(N_s)+'.pdf')
+		plt.savefig('../results/temp/contour.'+app+str(N_s)+'.pdf')
 		plt.clf()
 	else:
-		samples=numpy.zeros((n_samples,7))
+		samples=numpy.zeros((n_samples,8))
 		samples[:,0] = extract['Omega_M']
 		samples[:,1] = extract['w']
 		samples[:,2] = extract['alpha_Ia']
 		samples[:,3] = extract['sigma_Ia']
 		samples[:,4] = extract['alpha_nonIa']
 		samples[:,5] = extract['sigma_nonIa']
-		samples[:,6] = extract['snIa_rate'][:,0]
-		figure = triangle.corner(samples, labels=[r"$\Omega_M$", r"$w$", r"$\alpha_{Ia}$", r"$\sigma_{Ia}$", r"$\alpha_{non-Ia}$", r"$\sigma_{non-Ia}$", r"SN Ia Rate"],truths=[0.28,-1, 2.,0.1,2*10**(-2./2.5),1,0.8],
+		samples[:,6] = extract['snIa_rate_0'][:,0]
+		samples[:,7] = extract['snIa_rate_1'][:,0]
+		figure = triangle.corner(samples, labels=[r"$\Omega_M$", r"$w$", r"$\alpha_{Ia}$", r"$\sigma_{Ia}$", r"$\alpha_{non-Ia}$", r"$\sigma_{non-Ia}$", r"SN Ia Rate 0", r"SN Ia Rate1"],truths=[0.28,-1, 2.,0.1,2*10**(-2./2.5),1,0.5,0.1],
 			quantiles=[0.16, 0.5, 0.84], plot_datapoints=False,plot_density=True)
-		plt.savefig('../results/contour.'+app+str(N_s)+'.pdf')
+		plt.savefig('../results/temp/contour.'+app+str(N_s)+'.pdf')
 		plt.clf()
 
 
@@ -56,7 +57,7 @@ def individual(N_s, ia_only = False):
 	plt.xlabel('link')
 	plt.legend(loc=3,prop={'size':9})
 	plt.tight_layout()
-	plt.savefig('../results/posterior.'+app+str(N_s)+'.pdf')
+	plt.savefig('../results/temp/posterior.'+app+str(N_s)+'.pdf')
 	plt.clf()
 
 
@@ -64,13 +65,13 @@ def individual(N_s, ia_only = False):
 	plt.ylabel(r'$w$')
 	plt.xlabel('link')
 	plt.tight_layout()
-	plt.savefig('../results/w.'+app+str(N_s)+'.pdf')
+	plt.savefig('../results/temp/w.'+app+str(N_s)+'.pdf')
 
 	# plt.hist(extract['w'],normed=True)
 	# plt.xlabel(r'$w$')
 	# plt.legend(loc=2)
 	# plt.tight_layout()
-	# plt.savefig('../results/w.'+app+str(N_s)+'.pdf')
+	# plt.savefig('../results/temp/w.'+app+str(N_s)+'.pdf')
 
 	# plt.clf()
 
@@ -110,7 +111,7 @@ def individual(N_s, ia_only = False):
 	# plt.xlabel(r'$w$')
 	# # plt.hist(extract['w'][1000:1500],label='Chain 2')
 	# plt.tight_layout()
-	# plt.savefig('../results/wsub.'+app+str(N_s)+'.pdf')
+	# plt.savefig('../results/temp/wsub.'+app+str(N_s)+'.pdf')
 	# plt.clf()
 
 	# missed_wrong = info['host_choice'][info['s_mis']] == 0
@@ -128,7 +129,7 @@ def individual(N_s, ia_only = False):
 	# 	plt.ylabel(r'$z$')
 	# 	plt.xlabel('link')
 	# 	plt.tight_layout()
-	# 	plt.savefig('../results/missed_wrong.'+app+str(N_s)+'.pdf')
+	# 	plt.savefig('../results/temp/missed_wrong.'+app+str(N_s)+'.pdf')
 	# 	plt.clf()
 	# 	# plt.plot(extract['zs_true_mis'][:,missed_wrong] - info['host_zs_random'][info['s_mis']][missed_wrong])
 	# 	# plt.show()
@@ -142,7 +143,7 @@ def group(nspec):
 	deltas = numpy.zeros((len(nspec),len(levels)/2))
 	ind=0
 	for n in nspec:
-		[extract, info, logposterior] = pickle.load(file('../results/model'+str(n)+'.pkl','rb'))
+		[extract, logposterior] = pickle.load(file('../results/temp/model'+str(n)+'.pkl','rb'))
 		wsort = numpy.sort(extract['w'])
 		ans[ind,:] = wsort[numpy.round(levels*len(wsort)).astype(int)]
 		for i in xrange(len(levels)/2):
@@ -158,7 +159,7 @@ def group(nspec):
 
 
 def main():
-	individual(500,ia_only=True)
+	individual(0.2,ia_only=False)
 #	individual(500,ia_only=False)
 	wefew
 	group([200,350,500])
