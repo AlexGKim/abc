@@ -29,6 +29,21 @@ functions{
     return 1;
   }
 
+  vector transrate(int type, vector zs, vector snIa_rate_0, vector snIa_rate_1, real zmax){
+    real slope;
+    int index;
+    vector[num_elements(zs)] rate;
+    if (type ==1){
+      index <- 1;
+    } else {
+      index <- 2;
+    }
+    slope <- (snIa_rate_1[index]-snIa_rate_0[index])/(1.5*zmax);
+    rate <- snIa_rate_0[index]+ zs*slope; 
+    return rate;
+  }
+
+
   real[] spline(real[] x, real[] y, int n, real yp1, real ypn){
     real y2[n];
     real u[n-1];
@@ -360,10 +375,17 @@ transformed parameters{
   #   [1] for sn Ia, [2] for nonIa
       slope_Ia <- (snIa_rate_1[1]-snIa_rate_0[1])/(1.5*zmax);
       slope_nonIa <- (snIa_rate_1[2]-snIa_rate_0[2])/(1.5*zmax);
-      rate_Ia <- snIa_rate_0[1]+ host_zs_mis*slope_Ia;   //SN Ia good z
-      rate_nonIa <- snIa_rate_0[2]+ host_zs_mis*slope_nonIa;   //non-Ia good z
-      rate_Ia_neighbor <- snIa_rate_0[1]+ host2_zs_mis*slope_Ia;  //SN Ia bad z
-      rate_nonIa_neighbor <- snIa_rate_0[2]+ host2_zs_mis*slope_nonIa;  //non-Ia bad z
+
+
+      rate_Ia <- transrate(1,host_zs_mis,snIa_rate_0,snIa_rate_1,zmax);
+      rate_nonIa <- 1-rate_Ia;
+      rate_Ia_neighbor <- transrate(1,host2_zs_mis,snIa_rate_0,snIa_rate_1,zmax);  //SN Ia bad z
+      rate_nonIa_neighbor <- 1-rate_Ia_neighbor;
+
+      # rate_Ia <- snIa_rate_0[1]+ host_zs_mis*slope_Ia;   //SN Ia good z
+      # rate_nonIa <- snIa_rate_0[2]+ host_zs_mis*slope_nonIa;   //non-Ia good z
+      # rate_Ia_neighbor <- snIa_rate_0[1]+ host2_zs_mis*slope_Ia;  //SN Ia bad z
+      # rate_nonIa_neighbor <- snIa_rate_0[2]+ host2_zs_mis*slope_nonIa;  //non-Ia bad z
 
       for (s in 1:N_mis){
         adu_true_mis[s]  <- luminosity_distance[ainv_all_ind_mis[s],1]^(-2);
@@ -428,8 +450,10 @@ model{
     vector[N_SNIa] erfc_Ia;
     vector[N_SNIa] erfc_nonIa;
 
-    rate_Ia <- snIa_rate_0[1]+ z_SNIa/(1.5*zmax)*(snIa_rate_1[1]-snIa_rate_0[1]);
-    rate_nonIa <- snIa_rate_0[2]+ z_SNIa/(1.5*zmax)*(snIa_rate_1[2]-snIa_rate_0[2]);
+    rate_Ia <- transrate(1,z_SNIa, snIa_rate_0, snIa_rate_1, zmax);
+    rate_nonIa <- (1-rate_Ia);
+    # rate_Ia <- snIa_rate_0[1]+ z_SNIa/(1.5*zmax)*(snIa_rate_1[1]-snIa_rate_0[1]);
+    # rate_nonIa <- snIa_rate_0[2]+ z_SNIa/(1.5*zmax)*(snIa_rate_1[2]-snIa_rate_0[2]);
 
     erfc_Ia <- (ADU0-adu_true_SNIa*alpha_Ia)/sqrt(2) ./ (adu_true_SNIa*alpha_Ia*sigma_Ia*ln10d25);
     erfc_nonIa <- (ADU0-adu_true_SNIa*alpha_nonIa)/sqrt(2) ./ (adu_true_SNIa*alpha_nonIa*sigma_nonIa*ln10d25);
@@ -471,8 +495,11 @@ model{
     vector[N_nonIa] erfc_nonIa;
 
     if (N_nonIa > 0){
-      rate_Ia <- snIa_rate_0[1]+ z_nonIa/(1.5*zmax)*(snIa_rate_1[1]-snIa_rate_0[1]);
-      rate_nonIa <- snIa_rate_0[2]+ z_nonIa/(1.5*zmax)*(snIa_rate_1[2]-snIa_rate_0[2]);
+      rate_Ia <- transrate(1,z_nonIa, snIa_rate_0, snIa_rate_1, zmax);
+      rate_nonIa <- transrate(0,z_nonIa, snIa_rate_0, snIa_rate_1, zmax);
+
+      # rate_Ia <- snIa_rate_0[1]+ z_nonIa/(1.5*zmax)*(snIa_rate_1[1]-snIa_rate_0[1]);
+      # rate_nonIa <- snIa_rate_0[2]+ z_nonIa/(1.5*zmax)*(snIa_rate_1[2]-snIa_rate_0[2]);
 
       erfc_Ia <- (ADU0-adu_true_nonIa*alpha_Ia)/sqrt(2) ./ (adu_true_nonIa*alpha_Ia*sigma_Ia*ln10d25);
       erfc_nonIa <- (ADU0-adu_true_nonIa*alpha_nonIa)/sqrt(2) ./ (adu_true_nonIa*alpha_nonIa*sigma_nonIa*ln10d25);
