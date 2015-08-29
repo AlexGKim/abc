@@ -153,7 +153,6 @@ class Data(object):
 
 
 def dataPlot():
-	Nchains=4
 	N_sn=2000
 	ADU0=.5
 	ia_only=False
@@ -166,7 +165,7 @@ def dataPlot():
 def main():
 	Nchains=4
 	N_sn=2000
-	ADU0=1.
+	ADU0=0.2 #0.2
 	ia_only=False
 
 	data= Data(N_sn, 1, ia_only=ia_only)
@@ -175,11 +174,11 @@ def main():
 
 	sm = pystan.StanModel(file='des.stan')
 
-	fracspec = numpy.arange(.2,1.01,.4)
+	fracspec = numpy.arange(.2,1.01,4)
 	for ns in fracspec:
 		data.spectrum(ns)
 
-		fit = sm.sampling(data=data.dict(), iter=2000, thin=1, n_jobs=-1, chains=Nchains, init=data.init(Nchains))
+		fit = sm.sampling(data=data.dict(), iter=10000, thin=2, n_jobs=-1, chains=Nchains, init=data.init(Nchains))
 
 		logposterior = fit.get_logposterior()
 

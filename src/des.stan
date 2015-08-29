@@ -43,6 +43,26 @@ functions{
     return rate;
   }
 
+  vector myerfc(real ADU0, vector adu, real alpha, real sigma, real ln10d25){
+    vector[num_elements(adu)] ans;
+    ans <- adu * alpha;
+    ans <- (ADU0 - ans)/sqrt(2.) ./ (ans*sigma*ln10d25);
+    for (s in 1:num_elements(adu)){
+      ans[s]<-erfc(ans[s]);
+    }
+    ans <- ans/2;
+    return ans;
+  }
+
+  vector lp_term(vector adu, vector adu_true, real alpha, real sigma, vector rate, real loggalaxyProb, vector renorm, real ln10d25){
+    vector[num_elements(adu)] lp;
+    lp <- adu_true*alpha;
+    for (s in 1:num_elements(adu)){
+      lp[s] <- normal_log(adu[s], lp[s], lp[s]*sigma*ln10d25);
+    }
+    lp <- lp + log(rate) + loggalaxyProb + renorm;
+    return lp;
+  }
 
   real[] spline(real[] x, real[] y, int n, real yp1, real ypn){
     real y2[n];
@@ -365,10 +385,10 @@ transformed parameters{
       vector[N_mis] erfc_Ia_neighbor;
       vector[N_mis] erfc_nonIa_neighbor;
 
+      vector[N_mis] lp_holder[4];
+
       real slope_Ia;
       real slope_nonIa;
-
-      vector[N_mis] lp_mis_T[4];
 
 
   #   snIa_rate_0 rate at z=0, snIa_rate_1 rate at zmax
@@ -382,53 +402,29 @@ transformed parameters{
       rate_Ia_neighbor <- transrate(1,host2_zs_mis,snIa_rate_0,snIa_rate_1,zmax);  //SN Ia bad z
       rate_nonIa_neighbor <- 1-rate_Ia_neighbor;
 
-      # rate_Ia <- snIa_rate_0[1]+ host_zs_mis*slope_Ia;   //SN Ia good z
-      # rate_nonIa <- snIa_rate_0[2]+ host_zs_mis*slope_nonIa;   //non-Ia good z
-      # rate_Ia_neighbor <- snIa_rate_0[1]+ host2_zs_mis*slope_Ia;  //SN Ia bad z
-      # rate_nonIa_neighbor <- snIa_rate_0[2]+ host2_zs_mis*slope_nonIa;  //non-Ia bad z
-
       for (s in 1:N_mis){
         adu_true_mis[s]  <- luminosity_distance[ainv_all_ind_mis[s],1]^(-2);
         adu_true_mis2[s]  <- luminosity_distance[ainv2_all_ind_mis[s],1]^(-2);
       }
 
-      erfc_Ia <-(ADU0-adu_true_mis*alpha_Ia)/sqrt(2.)./(adu_true_mis*alpha_Ia*sigma_Ia*ln10d25);
-      erfc_nonIa <-(ADU0-adu_true_mis*alpha_nonIa)/sqrt(2.)./(adu_true_mis*alpha_nonIa*sigma_nonIa*ln10d25);
-      erfc_Ia_neighbor <-(ADU0-adu_true_mis2*alpha_Ia)/sqrt(2.)./(adu_true_mis2*alpha_Ia*sigma_Ia*ln10d25);
-      erfc_nonIa_neighbor <-(ADU0-adu_true_mis2*alpha_nonIa)/sqrt(2.)./(adu_true_mis2*alpha_nonIa*sigma_nonIa*ln10d25);
-
-     for (s in 1:N_mis){      
-        erfc_Ia[s]<-erfc(erfc_Ia[s]);
-        erfc_nonIa[s]<-erfc(erfc_nonIa[s]);
-        erfc_Ia_neighbor[s]<-erfc(erfc_Ia_neighbor[s]);
-        erfc_nonIa_neighbor[s]<-erfc(erfc_nonIa_neighbor[s]);
-      }
-
-      erfc_Ia <- erfc_Ia/2;
-      erfc_nonIa <- erfc_nonIa/2;
-      erfc_Ia_neighbor <- erfc_Ia_neighbor/2;
-      erfc_nonIa_neighbor <- erfc_nonIa_neighbor/2;
+      erfc_Ia <- myerfc(ADU0, adu_true_mis, alpha_Ia, sigma_Ia,ln10d25);
+      erfc_nonIa <- myerfc(ADU0, adu_true_mis, alpha_nonIa, sigma_nonIa,ln10d25);
+      erfc_Ia_neighbor <- myerfc(ADU0, adu_true_mis2, alpha_Ia, sigma_Ia,ln10d25);
+      erfc_nonIa_neighbor <- myerfc(ADU0, adu_true_mis2, alpha_nonIa, sigma_nonIa,ln10d25);
 
       // explicit handling of normalization of truncated distribution
       renorm <-  galaxyProb*(rate_Ia .* erfc_Ia + rate_nonIa .* erfc_nonIa) + (1-galaxyProb)*(rate_Ia_neighbor .* erfc_Ia_neighbor + rate_nonIa_neighbor .* erfc_nonIa_neighbor);
       renorm <- -log(renorm);
 
-      lp_mis_T[1] <-  normal_log(adu_mis, adu_true_mis*alpha_Ia,  adu_true_mis*alpha_Ia*sigma_Ia*ln10d25) + log(rate_Ia) + loggalaxyProb+renorm;
-      lp_mis_T[2] <-  normal_log(adu_mis, adu_true_mis*alpha_nonIa, adu_true_mis*alpha_nonIa*sigma_nonIa*ln10d25)+ log(rate_nonIa)+ loggalaxyProb + renorm;
-      lp_mis_T[3] <-  normal_log(adu_mis, adu_true_mis2*alpha_Ia,  adu_true_mis2*alpha_Ia*sigma_Ia*ln10d25) + log(rate_Ia_neighbor) + lognotgalaxyProb + renorm;
-      lp_mis_T[4] <-  normal_log(adu_mis, adu_true_mis2*alpha_nonIa, adu_true_mis2*alpha_nonIa*sigma_nonIa*ln10d25) + log(rate_nonIa_neighbor) + lognotgalaxyProb + renorm;
+      lp_holder[1] <- lp_term(adu_mis,adu_true_mis,alpha_Ia,sigma_Ia, rate_Ia, loggalaxyProb, renorm,ln10d25);
+      lp_holder[2] <- lp_term(adu_mis,adu_true_mis,alpha_nonIa,sigma_nonIa, rate_nonIa, loggalaxyProb, renorm,ln10d25);
+      lp_holder[3] <- lp_term(adu_mis,adu_true_mis2,alpha_Ia,sigma_Ia, rate_Ia_neighbor, lognotgalaxyProb, renorm,ln10d25);
+      lp_holder[4] <- lp_term(adu_mis,adu_true_mis2,alpha_nonIa,sigma_nonIa, rate_nonIa_neighbor, lognotgalaxyProb, renorm,ln10d25);
+
       for (s in 1:N_mis){
-       // marginalize over type
-        # lp_mis[s][1] <- normal_log(adu_mis[s][1], adu_true_mis[s]*alpha_Ia,  adu_true_mis[s]*alpha_Ia*sigma_Ia*ln10d25) + rate_Ia[s] + loggalaxyProb + renorm[s];
-        # lp_mis[s][2] <- normal_log(adu_mis[s][1], adu_true_mis[s]*alpha_nonIa, adu_true_mis[s]*alpha_nonIa*sigma_nonIa*ln10d25)+ rate_nonIa[s]+ loggalaxyProb + renorm[s];
-
-        # lp_mis[s][3] <- normal_log(adu_mis[s][1], adu_true_mis2[s]*alpha_Ia,  adu_true_mis2[s]*alpha_Ia*sigma_Ia*ln10d25) + rate_Ia_neighbor[s] + lognotgalaxyProb + renorm[s];
-        # lp_mis[s][4] <- normal_log(adu_mis[s][1], adu_true_mis2[s]*alpha_nonIa, adu_true_mis2[s]*alpha_nonIa*sigma_nonIa*ln10d25)+ rate_nonIa_neighbor[s] + lognotgalaxyProb + renorm[s];
-
-        lp_mis[s][1] <- lp_mis_T[1][s];
-        lp_mis[s][2] <- lp_mis_T[2][s];
-        lp_mis[s][3] <- lp_mis_T[3][s];
-        lp_mis[s][4] <- lp_mis_T[4][s];
+        for (t in 1:4){
+          lp_mis[s][t] <-  lp_holder[t][s];
+        }
       }
     }
   }
@@ -437,7 +433,7 @@ transformed parameters{
 model{
   // magnitude zeropoint and intrinsic dispersion constrained by a prior of nearby SNe
   alpha_Ia ~ lognormal(log(2.),0.02*ln10d25);
-  sigma_Ia ~ lognormal(log(.1),0.02);
+  sigma_Ia ~ lognormal(log(.1),0.1);
 
   /*
    p(ADU, T=1| ....) are truncated normal distributions
@@ -452,17 +448,9 @@ model{
 
     rate_Ia <- transrate(1,z_SNIa, snIa_rate_0, snIa_rate_1, zmax);
     rate_nonIa <- (1-rate_Ia);
-    # rate_Ia <- snIa_rate_0[1]+ z_SNIa/(1.5*zmax)*(snIa_rate_1[1]-snIa_rate_0[1]);
-    # rate_nonIa <- snIa_rate_0[2]+ z_SNIa/(1.5*zmax)*(snIa_rate_1[2]-snIa_rate_0[2]);
 
-    erfc_Ia <- (ADU0-adu_true_SNIa*alpha_Ia)/sqrt(2) ./ (adu_true_SNIa*alpha_Ia*sigma_Ia*ln10d25);
-    erfc_nonIa <- (ADU0-adu_true_SNIa*alpha_nonIa)/sqrt(2) ./ (adu_true_SNIa*alpha_nonIa*sigma_nonIa*ln10d25);
-    for (s in 1:N_SNIa){
-      erfc_Ia[s] <- erfc(erfc_Ia[s]);
-      erfc_nonIa[s] <- erfc(erfc_nonIa[s]);
-    }
-    erfc_Ia <- erfc_Ia/2;
-    erfc_nonIa <- erfc_nonIa/2;
+    erfc_Ia <- myerfc(ADU0, adu_true_SNIa, alpha_Ia, sigma_Ia,ln10d25);
+    erfc_nonIa <- myerfc(ADU0, adu_true_SNIa, alpha_nonIa, sigma_nonIa,ln10d25);
 
     renorm <- rate_Ia .* erfc_Ia + rate_nonIa .* erfc_nonIa;
     increment_log_prob(log(rate_Ia ./ renorm));
@@ -478,7 +466,6 @@ model{
     #   renorm <- renorm/2;
 
     #  // adu_SNIa[s] ~ normal(adu_true_SNIa[s]*alpha_Ia, adu_true_SNIa[s]*alpha_Ia*sigma_Ia*ln10d25); //trancated only works on univariate
-    #   increment_log_prob(log(rate_Ia/renorm));
     # }
 
   }
@@ -496,19 +483,10 @@ model{
 
     if (N_nonIa > 0){
       rate_Ia <- transrate(1,z_nonIa, snIa_rate_0, snIa_rate_1, zmax);
-      rate_nonIa <- transrate(0,z_nonIa, snIa_rate_0, snIa_rate_1, zmax);
+      rate_nonIa <- (1-rate_Ia);
 
-      # rate_Ia <- snIa_rate_0[1]+ z_nonIa/(1.5*zmax)*(snIa_rate_1[1]-snIa_rate_0[1]);
-      # rate_nonIa <- snIa_rate_0[2]+ z_nonIa/(1.5*zmax)*(snIa_rate_1[2]-snIa_rate_0[2]);
-
-      erfc_Ia <- (ADU0-adu_true_nonIa*alpha_Ia)/sqrt(2) ./ (adu_true_nonIa*alpha_Ia*sigma_Ia*ln10d25);
-      erfc_nonIa <- (ADU0-adu_true_nonIa*alpha_nonIa)/sqrt(2) ./ (adu_true_nonIa*alpha_nonIa*sigma_nonIa*ln10d25);
-      for (s in 1:N_nonIa){
-        erfc_Ia[s] <- erfc(erfc_Ia[s]);
-        erfc_nonIa[s] <- erfc(erfc_nonIa[s]);
-      }
-      erfc_Ia <- erfc_Ia/2;
-      erfc_nonIa <- erfc_nonIa/2;
+      erfc_Ia <- myerfc(ADU0, adu_true_nonIa, alpha_Ia, sigma_Ia,ln10d25);
+      erfc_nonIa <- myerfc(ADU0, adu_true_nonIa, alpha_nonIa, sigma_nonIa,ln10d25);
 
       renorm <- rate_Ia .* erfc_Ia+ rate_nonIa .* erfc_nonIa;
 
@@ -527,7 +505,6 @@ model{
       # //  adu_nonIa[s] ~ normal(adu_true_nonIa[s]*alpha_nonIa, adu_true_nonIa[s]*alpha_nonIa*sigma_nonIa*ln10d25);
       #   increment_log_prob(log(rate_nonIa/renorm));
       # }
-  //    increment_log_prob((N_nonIa)*log(snIa_rate_0[2]));
     }
     
 
@@ -537,7 +514,6 @@ model{
     # from Stan manual 30.1 no speed benefit from vectorization of increment_log_prob 
     for (s in 1:N_mis){
       increment_log_prob(log_sum_exp(lp_mis[s]));
-  #    increment_log_prob(log_sum_exp(lp_gal_mis[s]));
     }
   }
 }
