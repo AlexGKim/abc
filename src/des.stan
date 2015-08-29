@@ -455,19 +455,6 @@ model{
     renorm <- rate_Ia .* erfc_Ia + rate_nonIa .* erfc_nonIa;
     increment_log_prob(log(rate_Ia ./ renorm));
     increment_log_prob(normal_log(adu_SNIa, adu_true_SNIa*alpha_Ia, adu_true_SNIa*alpha_Ia*sigma_Ia*ln10d25));
-    # adu_SNIa ~ normal(adu_true_SNIa*alpha_Ia, adu_true_SNIa*alpha_Ia*sigma_Ia*ln10d25);
-    # for (s in 1:N_SNIa){
-    #   z <- ainv_all[ainv_all_ind_obs[index_SNIa[s]]]-1;
-    #   rate_Ia <- snIa_rate_0[1]+ z/(1.5*zmax)*(snIa_rate_1[1]-snIa_rate_0[1]);   //SN Ia good z
-    #   rate_nonIa <- snIa_rate_0[2]+ z/(1.5*zmax)*(snIa_rate_1[2]-snIa_rate_0[2]);   //non-Ia good z
-
-    #   renorm <- rate_Ia*erfc((ADU0-adu_true_SNIa[s]*alpha_Ia)/sqrt(2)/(adu_true_SNIa[s]*alpha_Ia*sigma_Ia*ln10d25))
-    #         + rate_nonIa*erfc((ADU0-adu_true_SNIa[s]*alpha_nonIa)/sqrt(2)/(adu_true_SNIa[s]*alpha_nonIa*sigma_nonIa*ln10d25));
-    #   renorm <- renorm/2;
-
-    #  // adu_SNIa[s] ~ normal(adu_true_SNIa[s]*alpha_Ia, adu_true_SNIa[s]*alpha_Ia*sigma_Ia*ln10d25); //trancated only works on univariate
-    # }
-
   }
 
   /*
@@ -492,19 +479,6 @@ model{
 
       increment_log_prob(log(rate_nonIa ./ renorm));
       increment_log_prob(normal_log(adu_nonIa, adu_true_nonIa*alpha_nonIa, adu_true_nonIa*alpha_nonIa*sigma_nonIa*ln10d25));
-      # adu_nonIa ~ normal(adu_true_nonIa*alpha_nonIa, adu_true_nonIa*alpha_nonIa*sigma_nonIa*ln10d25);
-      # for (s in 1:N_nonIa){ 
-      #   z <- ainv_all[ainv_all_ind_obs[index_nonIa[s]]]-1;
-      #   rate_Ia <- snIa_rate_0[1]+ z/(1.5*zmax)*(snIa_rate_1[1]-snIa_rate_0[1]);   //SN Ia good z
-      #   rate_nonIa <- snIa_rate_0[2]+ z/(1.5*zmax)*(snIa_rate_1[2]-snIa_rate_0[2]);   //non-Ia good z
-
-      #   renorm <- rate_Ia*erfc((ADU0-adu_true_nonIa[s]*alpha_Ia)/sqrt(2)/(adu_true_nonIa[s]*alpha_Ia*sigma_Ia*ln10d25))
-      #       + rate_nonIa*erfc((ADU0-adu_true_nonIa[s]*alpha_nonIa)/sqrt(2)/(adu_true_nonIa[s]*alpha_nonIa*sigma_nonIa*ln10d25));
-      #   renorm <- renorm/2;
-
-      # //  adu_nonIa[s] ~ normal(adu_true_nonIa[s]*alpha_nonIa, adu_true_nonIa[s]*alpha_nonIa*sigma_nonIa*ln10d25);
-      #   increment_log_prob(log(rate_nonIa/renorm));
-      # }
     }
     
 
