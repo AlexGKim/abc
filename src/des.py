@@ -174,7 +174,7 @@ def main():
 
 	sm = pystan.StanModel(file='des.stan')
 
-	fracspec = numpy.arange(.2,1.01,4)
+	fracspec = numpy.arange(.2,1.01,.4)
 	for ns in fracspec:
 		data.spectrum(ns)
 
