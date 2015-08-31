@@ -30,8 +30,8 @@ class Data(object):
 
 		self.alpha_snIa=2.
 		self.alpha_nonIa=self.alpha_snIa*10**(-2./2.5)
-		self.frac_Ia_0=.5
-		self.frac_Ia_1=.1
+		self.frac_Ia_0=.95
+		self.frac_Ia_1=.2
 		numpy.random.seed(seed)
 		self.initialize_()
 
@@ -65,6 +65,13 @@ class Data(object):
 
 	def hosts_(self):
 		self.host_choice = numpy.random.binomial(1,0.98,size=self.N_sn)
+
+		# zs : the true redshifts
+#		volume_zero = self.cosmo.comoving_volume(self.zmin/1.1).value
+#		volume_norm = self.cosmo.comoving_volume(self.zmax*1.1).value- volume_zero
+#		self.neighbor_zs = numpy.sort(numpy.random.uniform(size=self.N_sn))
+#		for i in xrange(len(self.zs)):
+#			self.neighbor_zs[i]=scipy.optimize.newton(lambda z: (self.cosmo.comoving_volume(z).value - volume_zero)/volume_norm-self.zs[i], 0.5)		
 		self.neighbor_zs=numpy.random.uniform((1+self.zmin/1.1)**3,(1+self.zmax*1.1)**3,size=self.N_sn)**(1./3)-1
 		self.host_zs_random = self.zs*self.host_choice + self.neighbor_zs*(1-self.host_choice)
 		self.neighbor_zs_random = self.zs*(1-self.host_choice) + self.neighbor_zs*self.host_choice
@@ -178,7 +185,7 @@ def main():
 	for ns in fracspec:
 		data.spectrum(ns)
 
-		fit = sm.sampling(data=data.dict(), iter=10000, thin=2, n_jobs=-1, chains=Nchains, init=data.init(Nchains))
+		fit = sm.sampling(data=data.dict(), iter=2000, thin=1, n_jobs=-1, chains=Nchains, init=data.init(Nchains))
 
 		logposterior = fit.get_logposterior()
 
@@ -189,5 +196,5 @@ def main():
 			pickle.dump([fit.extract(), logposterior], f)
 
 if __name__ == "__main__":
-#	dataPlot();
+#	dataPlot()
     main()
