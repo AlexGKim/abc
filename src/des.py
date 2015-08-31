@@ -143,6 +143,15 @@ class Data(object):
 		     plt.legend()
 		     pdf.savefig(fig)
 		     fig = plt.figure()
+		     w  = self.s_obs_random[:self.N_s_obs]
+		     w2 = numpy.logical_and(self.snIa[w]==1, self.found[w])
+		     plt.scatter(self.zs[w[w2]], -2.5*numpy.log10(self.adu[w[w2]]),color='b',label='Spectroscopic Typed SNe Ia',facecolors='none')
+		     plt.scatter(self.zs[w[w2]], -2.5*numpy.log10(self.adu[w[w2]]),marker='.',s=20,color='k')
+		     plt.ylim((-6,2))
+		     plt.xlim((0,1.5))
+		     plt.legend(loc=4)
+		     pdf.savefig(fig)
+		     fig = plt.figure()
 		     plt.scatter(self.zs[numpy.logical_and(self.found, self.snIa ==1)], -2.5*numpy.log10(self.adu[numpy.logical_and(self.found, self.snIa ==1)]),label='SN Ia',color='b',facecolors='none')
 		     plt.scatter(self.zs[numpy.logical_and(self.found, self.snIa ==0)], -2.5*numpy.log10(self.adu[numpy.logical_and(self.found, self.snIa ==0)]),label='non-Ia',color='r',facecolors='none')
 		     plt.scatter(self.zs[self.snIa ==1], -2.5*numpy.log10(self.adu[self.snIa ==1]),alpha=0.1,color='b')
@@ -153,7 +162,7 @@ class Data(object):
 		     plt.scatter(self.host_zs_random[w[w2]], -2.5*numpy.log10(self.adu[w[w2]]),marker='x',color='g',label='Wrong Host',s=40)
 		     plt.ylim((-6,2))
 		     plt.xlim((0,1.5))
-		     ax=plt.gca()
+#		     ax=plt.gca()
 #		     ax.invert_yaxis()
 		     plt.legend(loc=4)
 		     pdf.savefig(fig)
@@ -196,5 +205,5 @@ def main():
 			pickle.dump([fit.extract(), logposterior], f)
 
 if __name__ == "__main__":
-#	dataPlot()
-    main()
+	dataPlot()
+#    main()
