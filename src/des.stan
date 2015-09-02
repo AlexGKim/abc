@@ -43,15 +43,19 @@ functions{
     return rate;
   }
 
-  vector myerfc(real ADU0, vector adu, real alpha, real sigma, real ln10d25){
+  vector myPhi(real ADU0, vector adu, real alpha, real sigma, real ln10d25){
     vector[num_elements(adu)] ans;
     ans <- adu * alpha;
     ans <- (ADU0 - ans)/sqrt(2.) ./ (ans*sigma*ln10d25);
-    for (s in 1:num_elements(adu)){
-      ans[s]<-erfc(ans[s]);
-    }
-    ans <- ans/2;
-    return ans;
+    # for (s in 1:num_elements(adu)){
+    #   ans[s]<-erfc(ans[s]);
+    # }
+    # ans <- ans/2;
+
+    // use fast approximation
+    ans <-(0.07056 * ans .* ans + 1.5976) .* ans;
+    ans <- 1.+exp(-ans);  #inverse logit
+    return 1.-1. ./ ans;
   }
 
   vector lp_term(vector adu, vector adu_true, real alpha, real sigma, vector rate, real loggalaxyProb, vector renorm, real ln10d25){
@@ -407,10 +411,10 @@ transformed parameters{
         adu_true_mis2[s]  <- luminosity_distance[ainv2_all_ind_mis[s],1]^(-2);
       }
 
-      erfc_Ia <- myerfc(ADU0, adu_true_mis, alpha_Ia, sigma_Ia,ln10d25);
-      erfc_nonIa <- myerfc(ADU0, adu_true_mis, alpha_nonIa, sigma_nonIa,ln10d25);
-      erfc_Ia_neighbor <- myerfc(ADU0, adu_true_mis2, alpha_Ia, sigma_Ia,ln10d25);
-      erfc_nonIa_neighbor <- myerfc(ADU0, adu_true_mis2, alpha_nonIa, sigma_nonIa,ln10d25);
+      erfc_Ia <- myPhi(ADU0, adu_true_mis, alpha_Ia, sigma_Ia,ln10d25);
+      erfc_nonIa <- myPhi(ADU0, adu_true_mis, alpha_nonIa, sigma_nonIa,ln10d25);
+      erfc_Ia_neighbor <- myPhi(ADU0, adu_true_mis2, alpha_Ia, sigma_Ia,ln10d25);
+      erfc_nonIa_neighbor <- myPhi(ADU0, adu_true_mis2, alpha_nonIa, sigma_nonIa,ln10d25);
 
       // explicit handling of normalization of truncated distribution
       renorm <-  galaxyProb*(rate_Ia .* erfc_Ia + rate_nonIa .* erfc_nonIa) + (1-galaxyProb)*(rate_Ia_neighbor .* erfc_Ia_neighbor + rate_nonIa_neighbor .* erfc_nonIa_neighbor);
@@ -449,8 +453,8 @@ model{
     rate_Ia <- transrate(1,z_SNIa, snIa_rate_0, snIa_rate_1, zmax);
     rate_nonIa <- (1-rate_Ia);
 
-    erfc_Ia <- myerfc(ADU0, adu_true_SNIa, alpha_Ia, sigma_Ia,ln10d25);
-    erfc_nonIa <- myerfc(ADU0, adu_true_SNIa, alpha_nonIa, sigma_nonIa,ln10d25);
+    erfc_Ia <- myPhi(ADU0, adu_true_SNIa, alpha_Ia, sigma_Ia,ln10d25);
+    erfc_nonIa <- myPhi(ADU0, adu_true_SNIa, alpha_nonIa, sigma_nonIa,ln10d25);
 
     renorm <- rate_Ia .* erfc_Ia + rate_nonIa .* erfc_nonIa;
     increment_log_prob(log(rate_Ia ./ renorm));
@@ -472,8 +476,8 @@ model{
       rate_Ia <- transrate(1,z_nonIa, snIa_rate_0, snIa_rate_1, zmax);
       rate_nonIa <- (1-rate_Ia);
 
-      erfc_Ia <- myerfc(ADU0, adu_true_nonIa, alpha_Ia, sigma_Ia,ln10d25);
-      erfc_nonIa <- myerfc(ADU0, adu_true_nonIa, alpha_nonIa, sigma_nonIa,ln10d25);
+      erfc_Ia <- myPhi(ADU0, adu_true_nonIa, alpha_Ia, sigma_Ia,ln10d25);
+      erfc_nonIa <- myPhi(ADU0, adu_true_nonIa, alpha_nonIa, sigma_nonIa,ln10d25);
 
       renorm <- rate_Ia .* erfc_Ia+ rate_nonIa .* erfc_nonIa;
 
