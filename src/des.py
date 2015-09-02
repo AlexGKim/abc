@@ -13,11 +13,10 @@ import pickle
 
 class Data(object):
 	"""docstring for Data"""
-	def __init__(self, N_sn, seed, ia_only=False):
+	def __init__(self, N_sn, seed):
 		super(Data, self).__init__()
 		self.N_sn = N_sn
 		self.seed = seed
-		self.ia_only = ia_only
 
 		self.omega_M=0.28
 		self.cosmo=FlatLambdaCDM(70,self.omega_M)
@@ -86,34 +85,60 @@ class Data(object):
 		self.N_s_obs = frac_obs*self.found.sum()
 		s_obs=numpy.sort(self.s_obs_random[:self.N_s_obs])
 		s_mis= numpy.sort(self.s_obs_random[self.N_s_obs:])
-		self.s_obs = s_obs.tolist()
-		self.s_mis = s_mis.tolist()
+		self.s_obs = s_obs
+		self.s_mis = s_mis
 
 	def observe(self, ADU0, frac_obs):
 		data.found(ADU0)
 		data.spectrum(frac_obs)
 
-	def dict(self):
-		return 	{'N_sn': self.found.sum(),
-			'N_obs': len(self.s_obs),
-			'N_SNIa': self.snIa[self.s_obs].sum(),
-			'N_adu_max':1,
+	def dict(self, ia_only = False):
 
-			'zmin':self.zmin,
-			'zmax':self.zmax,
+		if ia_only:
+			s_obs = self.s_obs[self.snIa[self.s_obs]==1]
+			return 	{'N_sn': self.snIa[s_obs].sum(),
+				'N_obs': self.snIa[s_obs].sum(),
+				'N_SNIa': self.snIa[s_obs].sum(),
+				'N_adu_max':1,
 
-			'adu_obs': self.adu[self.s_obs],
-			'adu_mis': self.adu[self.s_mis],
+				'zmin':self.zmin,
+				'zmax':self.zmax,
 
-			'trans_ainv_obs': 1+self.zs[self.s_obs],
-			'snIa_obs': self.snIa[self.s_obs],
+				'adu_obs': self.adu[s_obs],
+				'adu_mis': [],
 
-			'host_zs_obs': self.host_zs_random[self.s_obs], #zs[s_obs],
-			'host_zs_mis': self.host_zs_random[self.s_mis],
-			'host2_zs_mis': self.neighbor_zs_random[self.s_mis],
+				'trans_ainv_obs': 1+self.zs[s_obs],
+				'snIa_obs': self.snIa[s_obs],
 
-			'ADU0': self.ADU0
+				'host_zs_obs': self.host_zs_random[s_obs], #zs[s_obs],
+				'host_zs_mis': [],
+				'host2_zs_mis': [],
+
+				'ADU0': self.ADU0
 			}
+		else:
+			self.s_obs = self.s_obs.tolist()
+			self.s_mis = self.s_mis.tolist()
+			return 	{'N_sn': self.found.sum(),
+				'N_obs': len(self.s_obs),
+				'N_SNIa': self.snIa[self.s_obs].sum(),
+				'N_adu_max':1,
+
+				'zmin':self.zmin,
+				'zmax':self.zmax,
+
+				'adu_obs': self.adu[self.s_obs],
+				'adu_mis': self.adu[self.s_mis],
+
+				'trans_ainv_obs': 1+self.zs[self.s_obs],
+				'snIa_obs': self.snIa[self.s_obs],
+
+				'host_zs_obs': self.host_zs_random[self.s_obs], #zs[s_obs],
+				'host_zs_mis': self.host_zs_random[self.s_mis],
+				'host2_zs_mis': self.neighbor_zs_random[self.s_mis],
+
+				'ADU0': self.ADU0
+				}
 
 	def init(self, n):
 		ans=[]
@@ -149,6 +174,8 @@ class Data(object):
 		     plt.scatter(self.zs[w[w2]], -2.5*numpy.log10(self.adu[w[w2]]),marker='.',s=20,color='k')
 		     plt.ylim((-6,2))
 		     plt.xlim((0,1.5))
+		     plt.xlabel(r'$z$')
+		     plt.ylabel(r'$m$')
 		     plt.legend(loc=4)
 		     pdf.savefig(fig)
 		     fig = plt.figure()
@@ -162,6 +189,8 @@ class Data(object):
 		     plt.scatter(self.host_zs_random[w[w2]], -2.5*numpy.log10(self.adu[w[w2]]),marker='x',color='g',label='Wrong Host',s=40)
 		     plt.ylim((-6,2))
 		     plt.xlim((0,1.5))
+		     plt.xlabel(r'$z$')
+		     plt.ylabel(r'$m$')			
 #		     ax=plt.gca()
 #		     ax.invert_yaxis()
 		     plt.legend(loc=4)
@@ -170,10 +199,10 @@ class Data(object):
 
 def dataPlot():
 	N_sn=2000
-	ADU0=.5
+	ADU0=.2
 	ia_only=False
 
-	data= Data(N_sn, 1, ia_only=ia_only)
+	data= Data(N_sn, 1)
 	data.found(ADU0)
 	data.spectrum(0.2)
 	data.plot()
@@ -182,19 +211,19 @@ def main():
 	Nchains=4
 	N_sn=2000
 	ADU0=0.2 #0.2
-	ia_only=False
+	ia_only=True
 
-	data= Data(N_sn, 1, ia_only=ia_only)
+	data= Data(N_sn, 1)
 	data.found(ADU0)
 
 
 	sm = pystan.StanModel(file='des.stan')
 
-	fracspec = numpy.arange(.2,1.01,.4)
+	fracspec = numpy.arange(1,1.01,.4)
 	for ns in fracspec:
 		data.spectrum(ns)
 
-		fit = sm.sampling(data=data.dict(), iter=2000, thin=1, n_jobs=-1, chains=Nchains, init=data.init(Nchains))
+		fit = sm.sampling(data=data.dict(ia_only=ia_only), iter=1000, thin=1, n_jobs=-1, chains=Nchains, init=data.init(Nchains))
 
 		logposterior = fit.get_logposterior()
 
@@ -205,5 +234,5 @@ def main():
 			pickle.dump([fit.extract(), logposterior], f)
 
 if __name__ == "__main__":
-	dataPlot()
-#    main()
+#	dataPlot()
+    main()
