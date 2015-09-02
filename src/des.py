@@ -143,8 +143,8 @@ class Data(object):
 	def init(self, n):
 		ans=[]
 		for i in xrange(n):
-			rate = numpy.random.lognormal(numpy.log(self.frac_Ia_0),0.1)
-			rate1 = numpy.random.lognormal(numpy.log(self.frac_Ia_1),0.1)
+			rate = min(numpy.random.lognormal(numpy.log(self.frac_Ia_0),0.1),.99)
+			rate1 = min(numpy.random.lognormal(numpy.log(self.frac_Ia_1),0.1),.99)
 			ans.append( {
 				'Omega_M':numpy.random.normal(self.omega_M,0.1),
 				'Omega_L':1-self.omega_M,
@@ -211,7 +211,7 @@ def main():
 	Nchains=4
 	N_sn=2000
 	ADU0=0.2 #0.2
-	ia_only=True
+	ia_only=False
 
 	data= Data(N_sn, 1)
 	data.found(ADU0)
@@ -219,7 +219,7 @@ def main():
 
 	sm = pystan.StanModel(file='des.stan')
 
-	fracspec = numpy.arange(1,1.01,.4)
+	fracspec = numpy.arange(0.6,1.01,.4)
 	for ns in fracspec:
 		data.spectrum(ns)
 

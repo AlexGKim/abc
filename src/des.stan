@@ -284,8 +284,8 @@ parameters{
   // transient parameters
   real <lower=0> alpha_Ia;
   real <lower=0> alpha_nonIa;
-  real <lower=0> sigma_Ia;  //these sigmas are in log space
-  real <lower=0> sigma_nonIa;
+  real <lower=0, upper=10> sigma_Ia;  //these sigmas are in log space
+  real <lower=0, upper=50> sigma_nonIa;
 
 
   // cosmology parameters
