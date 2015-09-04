@@ -462,7 +462,6 @@ transformed parameters{
 
 model{
 
-
   // magnitude zeropoint and intrinsic dispersion constrained by a prior of nearby SNe
   alpha_Ia ~ lognormal(log(2.),0.02*ln10d25);
   sigma_Ia ~ lognormal(log(.1),0.1);
@@ -473,10 +472,10 @@ model{
 
   {
     vector[N_SNIa] renorm;
-    vector[N_SNIa] rate_Ia;
-    vector[N_SNIa] rate_nonIa;
+    # vector[N_SNIa] rate_Ia;
+    # vector[N_SNIa] rate_nonIa;
     vector[N_SNIa] erfc_Ia;
-    vector[N_SNIa] erfc_nonIa;
+    # vector[N_SNIa] erfc_nonIa;
 
     # rate_Ia <- transrate(1,z_SNIa, snIa_rate_0, snIa_rate_1, zmax);
     # rate_nonIa <- (1-rate_Ia);
@@ -500,9 +499,9 @@ model{
 
   {
     vector[N_nonIa] renorm;
-    vector[N_nonIa] rate_Ia;
-    vector[N_nonIa] rate_nonIa;
-    vector[N_nonIa] erfc_Ia;
+    # vector[N_nonIa] rate_Ia;
+    # vector[N_nonIa] rate_nonIa;
+    # vector[N_nonIa] erfc_Ia;
     vector[N_nonIa] erfc_nonIa;
 
     if (N_nonIa > 0){
@@ -521,13 +520,24 @@ model{
   }
 
   { 
+    vector[N_obs] renorm;
     vector[N_obs] rate;
+    vector[N_obs] erfc_Ia;
+    vector[N_obs] erfc_nonIa;
+    vector[N_obs] adu_true;
+
+    for (s in 1:N_SNIa){
+      adu_true[index_SNIa[s]] <- adu_true_SNIa[s];
+    }
+    for (s in 1:N_nonIa){
+      adu_true[index_nonIa[s]] <-adu_true_nonIa[s];
+    }
+
     rate <- transrate(1,trans_ainv_obs-1, snIa_rate_0, snIa_rate_1, zmax);
-    # for (s in 1:N_obs){
-    #   rate[s] <- logit(rate[s]);
-    # }
-    # snIa_obs ~ bernoulli_logit(rate);
-    snIa_obs ~ bernoulli(rate);
+    erfc_Ia <- myRenorm(ADU0, adu_true, alpha_Ia, sigma_Ia, ln10d25);
+    erfc_nonIa <- myRenorm(ADU0, adu_true, alpha_nonIa, sigma_nonIa, ln10d25);
+    renorm <- rate .* erfc_Ia+ (1-rate) .* erfc_nonIa;
+    snIa_obs ~ bernoulli(rate ./ renorm);
   }
 
 
@@ -535,7 +545,7 @@ model{
       p(ADU|...) of guys without spectra is constructed in transformed parameters section 
   */    
     # from Stan manual 30.1 no speed benefit from vectorization of increment_log_prob 
-    {
+  {
     for (s in 1:N_mis){
       increment_log_prob(log_sum_exp(lp_mis[s]));
     }
