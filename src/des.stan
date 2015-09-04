@@ -38,10 +38,12 @@ functions{
     } else {
       index <- 2;
     }
-    slope <- (snIa_rate_1[index]-snIa_rate_0[index])/(1.5*zmax);
+    slope <- (snIa_rate_1[index]-snIa_rate_0[index])/(1.1*zmax);
     rate <- snIa_rate_0[index]+ zs*slope; 
     return rate;
   }
+
+
 
   vector myPhi(real ADU0, vector adu, real alpha, real sigma, real ln10d25){
     vector[num_elements(adu)] ans;
@@ -58,11 +60,30 @@ functions{
     return 1.-1. ./ ans;
   }
 
+  vector myRenorm(real ADU0, vector adu, real alpha, real sigma, real ln10d25){
+    vector[num_elements(adu)] ans;
+
+    if (ADU0 <=0.){
+      for (s in 1:num_elements(adu)){
+        ans[s] <- 1.;
+      }
+    } else {
+      ans <- adu * alpha;
+      ans <- log(ans);
+      for (s in 1:num_elements(adu)){
+        ans[s] <- lognormal_ccdf_log(ADU0, ans[s], sigma*ln10d25);
+      }
+      ans <- exp(ans);
+    }
+    return ans;
+  }
+
   vector lp_term(vector adu, vector adu_true, real alpha, real sigma, vector rate, real loggalaxyProb, vector renorm, real ln10d25){
     vector[num_elements(adu)] lp;
     lp <- adu_true*alpha;
+    lp <- log(lp);
     for (s in 1:num_elements(adu)){
-      lp[s] <- normal_log(adu[s], lp[s], lp[s]*sigma*ln10d25);
+      lp[s] <- lognormal_log(adu[s], lp[s], sigma* ln10d25);
     }
     lp <- lp + log(rate) + loggalaxyProb + renorm;
     return lp;
@@ -227,6 +248,7 @@ transformed data {
   N_mis <- N_sn-N_obs;
   N_nonIa <- N_obs-N_SNIa;
 
+
   galaxyProb <- 0.98; 
   ln10d25 <- log(10.)/2.5;
   loggalaxyProb <- log(galaxyProb);
@@ -300,6 +322,9 @@ parameters{
   // relative rate parameter
   simplex[2] snIa_rate_0;
   simplex[2] snIa_rate_1;
+
+  # real snIa_rate_0_logit;
+  # real snIa_rate_1_logit;
 
   // true redshifts
   //in principle observed guys have redshift uncertainty but for efficiency ignore for the moment
@@ -394,40 +419,41 @@ transformed parameters{
       real slope_Ia;
       real slope_nonIa;
 
+      if (N_mis > 0){
+    #   snIa_rate_0 rate at z=0, snIa_rate_1 rate at zmax
+    #   [1] for sn Ia, [2] for nonIa
+        slope_Ia <- (snIa_rate_1[1]-snIa_rate_0[1])/(1.5*zmax);
+        slope_nonIa <- (snIa_rate_1[2]-snIa_rate_0[2])/(1.5*zmax);
 
-  #   snIa_rate_0 rate at z=0, snIa_rate_1 rate at zmax
-  #   [1] for sn Ia, [2] for nonIa
-      slope_Ia <- (snIa_rate_1[1]-snIa_rate_0[1])/(1.5*zmax);
-      slope_nonIa <- (snIa_rate_1[2]-snIa_rate_0[2])/(1.5*zmax);
 
+        rate_Ia <- transrate(1,host_zs_mis,snIa_rate_0,snIa_rate_1,zmax);
+        rate_nonIa <- 1-rate_Ia;
+        rate_Ia_neighbor <- transrate(1,host2_zs_mis,snIa_rate_0,snIa_rate_1,zmax);  //SN Ia bad z
+        rate_nonIa_neighbor <- 1-rate_Ia_neighbor;
 
-      rate_Ia <- transrate(1,host_zs_mis,snIa_rate_0,snIa_rate_1,zmax);
-      rate_nonIa <- 1-rate_Ia;
-      rate_Ia_neighbor <- transrate(1,host2_zs_mis,snIa_rate_0,snIa_rate_1,zmax);  //SN Ia bad z
-      rate_nonIa_neighbor <- 1-rate_Ia_neighbor;
+        for (s in 1:N_mis){
+          adu_true_mis[s]  <- luminosity_distance[ainv_all_ind_mis[s],1]^(-2);
+          adu_true_mis2[s]  <- luminosity_distance[ainv2_all_ind_mis[s],1]^(-2);
+        }
 
-      for (s in 1:N_mis){
-        adu_true_mis[s]  <- luminosity_distance[ainv_all_ind_mis[s],1]^(-2);
-        adu_true_mis2[s]  <- luminosity_distance[ainv2_all_ind_mis[s],1]^(-2);
-      }
+        erfc_Ia <- myRenorm(ADU0, adu_true_mis, alpha_Ia, sigma_Ia, ln10d25);
+        erfc_nonIa <- myRenorm(ADU0, adu_true_mis, alpha_nonIa, sigma_nonIa, ln10d25);
+        erfc_Ia_neighbor <- myRenorm(ADU0, adu_true_mis2, alpha_Ia, sigma_Ia, ln10d25);
+        erfc_nonIa_neighbor <- myRenorm(ADU0, adu_true_mis2, alpha_nonIa, sigma_nonIa, ln10d25);
 
-      erfc_Ia <- myPhi(ADU0, adu_true_mis, alpha_Ia, sigma_Ia,ln10d25);
-      erfc_nonIa <- myPhi(ADU0, adu_true_mis, alpha_nonIa, sigma_nonIa,ln10d25);
-      erfc_Ia_neighbor <- myPhi(ADU0, adu_true_mis2, alpha_Ia, sigma_Ia,ln10d25);
-      erfc_nonIa_neighbor <- myPhi(ADU0, adu_true_mis2, alpha_nonIa, sigma_nonIa,ln10d25);
+        // explicit handling of normalization of truncated distribution
+        renorm <-  galaxyProb*(rate_Ia .* erfc_Ia + rate_nonIa .* erfc_nonIa) + (1-galaxyProb)*(rate_Ia_neighbor .* erfc_Ia_neighbor + rate_nonIa_neighbor .* erfc_nonIa_neighbor);
+        renorm <- -log(renorm);
 
-      // explicit handling of normalization of truncated distribution
-      renorm <-  galaxyProb*(rate_Ia .* erfc_Ia + rate_nonIa .* erfc_nonIa) + (1-galaxyProb)*(rate_Ia_neighbor .* erfc_Ia_neighbor + rate_nonIa_neighbor .* erfc_nonIa_neighbor);
-      renorm <- -log(renorm);
+        lp_holder[1] <- lp_term(adu_mis,adu_true_mis,alpha_Ia,sigma_Ia, rate_Ia, loggalaxyProb, renorm, ln10d25);
+        lp_holder[2] <- lp_term(adu_mis,adu_true_mis,alpha_nonIa,sigma_nonIa, rate_nonIa, loggalaxyProb, renorm, ln10d25);
+        lp_holder[3] <- lp_term(adu_mis,adu_true_mis2,alpha_Ia,sigma_Ia, rate_Ia_neighbor, lognotgalaxyProb, renorm, ln10d25);
+        lp_holder[4] <- lp_term(adu_mis,adu_true_mis2,alpha_nonIa,sigma_nonIa, rate_nonIa_neighbor, lognotgalaxyProb, renorm, ln10d25);
 
-      lp_holder[1] <- lp_term(adu_mis,adu_true_mis,alpha_Ia,sigma_Ia, rate_Ia, loggalaxyProb, renorm,ln10d25);
-      lp_holder[2] <- lp_term(adu_mis,adu_true_mis,alpha_nonIa,sigma_nonIa, rate_nonIa, loggalaxyProb, renorm,ln10d25);
-      lp_holder[3] <- lp_term(adu_mis,adu_true_mis2,alpha_Ia,sigma_Ia, rate_Ia_neighbor, lognotgalaxyProb, renorm,ln10d25);
-      lp_holder[4] <- lp_term(adu_mis,adu_true_mis2,alpha_nonIa,sigma_nonIa, rate_nonIa_neighbor, lognotgalaxyProb, renorm,ln10d25);
-
-      for (s in 1:N_mis){
-        for (t in 1:4){
-          lp_mis[s][t] <-  lp_holder[t][s];
+        for (s in 1:N_mis){
+          for (t in 1:4){
+            lp_mis[s][t] <-  lp_holder[t][s];
+          }
         }
       }
     }
@@ -435,6 +461,8 @@ transformed parameters{
 }
 
 model{
+
+
   // magnitude zeropoint and intrinsic dispersion constrained by a prior of nearby SNe
   alpha_Ia ~ lognormal(log(2.),0.02*ln10d25);
   sigma_Ia ~ lognormal(log(.1),0.1);
@@ -450,15 +478,20 @@ model{
     vector[N_SNIa] erfc_Ia;
     vector[N_SNIa] erfc_nonIa;
 
-    rate_Ia <- transrate(1,z_SNIa, snIa_rate_0, snIa_rate_1, zmax);
-    rate_nonIa <- (1-rate_Ia);
+    # rate_Ia <- transrate(1,z_SNIa, snIa_rate_0, snIa_rate_1, zmax);
+    # rate_nonIa <- (1-rate_Ia);
 
-    erfc_Ia <- myPhi(ADU0, adu_true_SNIa, alpha_Ia, sigma_Ia,ln10d25);
-    erfc_nonIa <- myPhi(ADU0, adu_true_SNIa, alpha_nonIa, sigma_nonIa,ln10d25);
+    # erfc_Ia <- myRenorm(ADU0, adu_true_SNIa, alpha_Ia, sigma_Ia, ln10d25);
+    # erfc_nonIa <- myRenorm(ADU0, adu_true_SNIa, alpha_nonIa, sigma_nonIa, ln10d25);
 
-    renorm <- rate_Ia .* erfc_Ia + rate_nonIa .* erfc_nonIa;
-    increment_log_prob(log(rate_Ia ./ renorm));
-    increment_log_prob(normal_log(adu_SNIa, adu_true_SNIa*alpha_Ia, adu_true_SNIa*alpha_Ia*sigma_Ia*ln10d25));
+    # renorm <- rate_Ia .* erfc_Ia + rate_nonIa .* erfc_nonIa;
+
+
+    erfc_Ia <- myRenorm(ADU0, adu_true_SNIa, alpha_Ia, sigma_Ia, ln10d25);
+    renorm <- erfc_Ia;
+
+    # increment_log_prob(log(rate_Ia ./ renorm));
+    increment_log_prob(lognormal_log(adu_SNIa, log(adu_true_SNIa*alpha_Ia), sigma_Ia*ln10d25));
   }
 
   /*
@@ -473,23 +506,36 @@ model{
     vector[N_nonIa] erfc_nonIa;
 
     if (N_nonIa > 0){
-      rate_Ia <- transrate(1,z_nonIa, snIa_rate_0, snIa_rate_1, zmax);
-      rate_nonIa <- (1-rate_Ia);
+      # rate_Ia <- transrate(1,z_nonIa, snIa_rate_0, snIa_rate_1, zmax);
+      # rate_nonIa <- (1-rate_Ia);
 
-      erfc_Ia <- myPhi(ADU0, adu_true_nonIa, alpha_Ia, sigma_Ia,ln10d25);
-      erfc_nonIa <- myPhi(ADU0, adu_true_nonIa, alpha_nonIa, sigma_nonIa,ln10d25);
+      # erfc_Ia <- myRenorm(ADU0, adu_true_nonIa, alpha_Ia, sigma_Ia, ln10d25);
+      # erfc_nonIa <- myRenorm(ADU0, adu_true_nonIa, alpha_nonIa, sigma_nonIa, ln10d25);
 
-      renorm <- rate_Ia .* erfc_Ia+ rate_nonIa .* erfc_nonIa;
-
-      increment_log_prob(log(rate_nonIa ./ renorm));
-      increment_log_prob(normal_log(adu_nonIa, adu_true_nonIa*alpha_nonIa, adu_true_nonIa*alpha_nonIa*sigma_nonIa*ln10d25));
+      # renorm <- rate_Ia .* erfc_Ia+ rate_nonIa .* erfc_nonIa;
+      # increment_log_prob(log(rate_nonIa ./ renorm));
+      erfc_nonIa <- myRenorm(ADU0, adu_true_nonIa, alpha_nonIa, sigma_nonIa, ln10d25);
+      renorm <- erfc_nonIa;
+      increment_log_prob(lognormal_log(adu_nonIa, log(adu_true_nonIa*alpha_nonIa), sigma_nonIa*ln10d25));
     }
-    
+  }
+
+  { 
+    vector[N_obs] rate;
+    rate <- transrate(1,trans_ainv_obs-1, snIa_rate_0, snIa_rate_1, zmax);
+    # for (s in 1:N_obs){
+    #   rate[s] <- logit(rate[s]);
+    # }
+    # snIa_obs ~ bernoulli_logit(rate);
+    snIa_obs ~ bernoulli(rate);
+  }
+
 
   /*
       p(ADU|...) of guys without spectra is constructed in transformed parameters section 
   */    
     # from Stan manual 30.1 no speed benefit from vectorization of increment_log_prob 
+    {
     for (s in 1:N_mis){
       increment_log_prob(log_sum_exp(lp_mis[s]));
     }

@@ -25,7 +25,7 @@ class Data(object):
 		self.zmax=1.4
 
 		self.sigma_snIa=0.1
-		self.sigma_nonIa=1
+		self.sigma_nonIa=1.
 
 		self.alpha_snIa=2.
 		self.alpha_nonIa=self.alpha_snIa*10**(-2./2.5)
@@ -51,7 +51,7 @@ class Data(object):
 
 	def types_(self):
 		self.snIa = numpy.random.uniform(size=self.N_sn)
-		self.snIa = numpy.less_equal(self.snIa, self.frac_Ia_0 + (self.frac_Ia_1-self.frac_Ia_0)*self.zs/self.zmax/1.5).astype(int)
+		self.snIa = numpy.less_equal(self.snIa, self.frac_Ia_0 + (self.frac_Ia_1-self.frac_Ia_0)*self.zs/self.zmax/1.1).astype(int)
 
 	def adus_(self):
 		adu = 1/(self.cosmo.luminosity_distance(self.zs).value/self.cosmo.hubble_distance.value)**2
@@ -143,8 +143,8 @@ class Data(object):
 	def init(self, n):
 		ans=[]
 		for i in xrange(n):
-			rate = min(numpy.random.lognormal(numpy.log(self.frac_Ia_0),0.1),.99)
-			rate1 = min(numpy.random.lognormal(numpy.log(self.frac_Ia_1),0.1),.99)
+			rate = min(numpy.random.lognormal(numpy.log(self.frac_Ia_0),0.05),.99)
+			rate1 = min(numpy.random.lognormal(numpy.log(self.frac_Ia_1),0.05),.99)
 			ans.append( {
 				'Omega_M':numpy.random.normal(self.omega_M,0.1),
 				'Omega_L':1-self.omega_M,
@@ -157,6 +157,8 @@ class Data(object):
 			  	'sigma_nonIa':numpy.random.lognormal(numpy.log(self.sigma_nonIa),0.1),
 			  	'snIa_rate_0': [rate,1-rate],
 			  	'snIa_rate_1': [rate1,1-rate1]
+			  	# 'snIa_rate_0_logit': numpy.log(rate/(1-rate))
+			  	# 'snIa_rate_1_logit': numpy.log(rate1/(1-rate1))
 				})
 		return ans
 
@@ -210,16 +212,16 @@ def dataPlot():
 def main():
 	Nchains=4
 	N_sn=2000
-	ADU0=0.2 #0.2
+	ADU0=0. #0.2 #0.2
 	ia_only=False
 
-	data= Data(N_sn, 1)
+	data= Data(N_sn, 2)
 	data.found(ADU0)
 
 
 	sm = pystan.StanModel(file='des.stan')
 
-	fracspec = numpy.arange(0.6,1.01,.4)
+	fracspec = numpy.arange(1.,1.01,4)
 	for ns in fracspec:
 		data.spectrum(ns)
 
@@ -230,6 +232,8 @@ def main():
 		app=''
 		if ia_only:
 			app+='.ia_only.'
+		if ADU0 == 0.:
+			app+='.noMalm.'
 		with open('../results/temp/model'+app+str(ns)+'.pkl', 'wb') as f:
 			pickle.dump([fit.extract(), logposterior], f)
 

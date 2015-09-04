@@ -15,10 +15,12 @@ import triangle
 
 levels = numpy.array([0.025, 0.05, 0.16, 1-0.16, 1-0.05, 1-.025])
 
-def individual(N_s, ia_only = False):
+def individual(N_s, ia_only = False, ADU0=None):
 	app = ''
 	if ia_only:
 		app+='.ia_only.'
+	if ADU0 == 0.:
+			app+='.noMalm.'
 	[extract,logposterior] = pickle.load(file('../results/temp/model'+app+str(N_s)+'.pkl','rb'))
 #	print numpy.abs((extract['w'] < -1).sum()*1. / len(extract['w'])-0.5)*2
 	n_samples = len(extract[extract.keys()[0]])
@@ -43,9 +45,11 @@ def individual(N_s, ia_only = False):
 		samples[:,5] = extract['sigma_nonIa']
 		samples[:,6] = extract['snIa_rate_0'][:,0]
 		samples[:,7] = extract['snIa_rate_1'][:,0]
+
+		kwargs = {'levels':1.0 - numpy.exp(-0.5 * numpy.arange(1, 3.1, 1) ** 2)}
 		figure = triangle.corner(samples, labels=[r"$\Omega_M$", r"$w$", r"$\alpha_{Ia}$", r"$\sigma_{Ia}$", r"$\alpha_{non-Ia}$", r"$\sigma_{non-Ia}$", r"SN Ia Rate 0", r"SN Ia Rate1"],
 			truths=[0.28,-1, 2.,0.1,2*10**(-2./2.5),1,0.95,0.2],
-			quantiles=[0.16, 0.5, 0.84], plot_datapoints=False,plot_density=True)
+			quantiles=[0.16, 0.5, 0.84], plot_datapoints=False,plot_density=True, **kwargs)
 		plt.savefig('../results/temp/contour.'+app+str(N_s)+'.pdf')
 		plt.clf()
 
@@ -160,7 +164,7 @@ def group(nspec):
 
 
 def main():
-	individual(0.2,ia_only=False)
+	individual(1.0,ia_only=False,ADU0=None)
 #	individual(500,ia_only=False)
 	wefew
 	group([200,350,500])
