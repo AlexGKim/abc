@@ -157,7 +157,7 @@ is modeled within our analysis.
 \label{example:sec}
 A simplified version of the above model,
 \begin{equation}
-p(\mathit{ADU}, {{T}}_S,{{z}}_S, \theta_G| z, \Omega_M, w, \theta_r,\alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}}),
+p(\mathit{ADU}, {{T}}_S,{{z}}_S, \theta_G|  \Omega_M, w, \theta_r,\alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}}),
 \end{equation}
 is examined in this section.
 The measurements: 
@@ -168,100 +168,159 @@ The measurements:
 \end{itemize}
 The model parameters:
 \begin{itemize}
-\item $z$ is the cosmological redshift.
 \item $\Omega_M$, $w$ are the parameters of a flat dark-energy cosmology.
-\item $\theta_r$ is the fraction of transients that are SN~Ia, independent
-of host-galaxy properties and redshift.
+\item $\theta_r$ describe the fraction of transients that are SN~Ia, independent
+of host-galaxy properties.
 \item $\alpha_{Ia}$, $\sigma_{Ia}$, $\alpha_{\mathit{non-Ia}}$, $\sigma_{\mathit{non-Ia}}$ are
 the luminosity (times $4\pi$) and intrinsic dispersion for SNe~Ia and non-Ia at peak.
 Light-curve shape and color are not considered in this simple model.
 \end{itemize}
 
+In addition to the above, there are latent model parameters for each transient used internally
+by the model:
+\begin{itemize}
+\item $z$ are the cosmological redshifts.
+\item $T$ are the type, SN~Ia or non-Ia.
+\end{itemize}
+
 The transients are divided into samples defined by available data: {\it obs} are transients observed spectroscopically while active, from which $T_S=1$ are those typed
 as SN~Ia and $T_S=0$ as non-Ia.  {\it mis} transients are not observed
-spectroscopically when active.  The same SN~Ia and non-Ia parameters are taken to
-apply to both {\it obs} and {\it mis} samples.
+spectroscopically when active.  The  {\it obs} and {\it mis} samples
+are assumed to be drawn from the same underlying distribution, so that 
+same SN~Ia and non-Ia parameters apply for both sets.
 
-\begin{itemize}
-\item All transients have measured counts at peak brightness $\mathit{ADU}$.
-For transients in set {\it mis} without active spectroscopy:
-\begin{multline}
-p(\mathit{ADU}| z, \Omega_M, w, \theta_r, \alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}})=\\
-\theta_r\mathcal{N}\left(\frac{\alpha_{Ia}}{d_L^2(z;\Omega_M, w)}, \frac{\ln{10}}{2.5}\sigma_{Ia}\right)+\left(1-\theta_r\right)
-\mathcal{N}\left(\frac{\alpha_{\mathit{non-Ia}}}{d_L^2(z;\Omega_M, w)}, \frac{\ln{10}}{2.5}\sigma_{\mathit{non-Ia}}\right).
-\label{adumis:eqn}
-\end{multline}
-The luminosity distance $d_L$ is for a flat universe.  
-\item The transients of subset {\it obs} have spectroscopic observations of type $T_S$ and redshift
-$z_S$, which are taken to be unambiguous.
-\begin{itemize}
-\item A direct association of $z_S=z$ is made.
-\begin{equation}
-p(z_S|z) = \delta(z_S-z)
+\subsubsection{Model for the {\it obs} set data}
+The modeling of data from the {\it obs} set, which has
+spectroscopic observations $T_S$ and redshift
+$z_S$, is described as follows.  We are interested in
+\begin{align}
+p(\mathit{ADU}, {{T}}_S,{{z}}_S|  \Omega_M, w, \theta_r,\alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}})  &=\sum_T \int_z dz\,
+p(\mathit{ADU}, {{T}}_S,{{z}}_S, T, z| \ldots)\\
+&= \sum_T \int_z dz\,
+p(\mathit{ADU}, {{T}}_S,{{z}}_S| T, z,\dots) P(T,z | \ldots)
+\end{align}
+
+A direct association of spectroscopic redshift and type are made so that
+\begin{align}
+p(z_S|z) &= \delta(z_S-z)\\
+p(T_S|T) &= \delta(T_S-T),
 \label{specz:eqn}
+\end{align}
+so that
+\begin{align}
+p(\mathit{ADU}, {{T}}_S,{{z}}_S|  \ldots) &= 
+p(\mathit{ADU}| T_S, z_s,\dots) P(T_S,z_S | \ldots)
+\end{align}
+
+The first term: Given the redshift
+and transient type, the brightness of the underlying population
+is modeled as being drawn from a standard candle
+with luminosity $4\pi\alpha_X$ and intrinsic magnitude dispersion  $\sigma_X$:
+\begin{equation}
+\mathit{ADU}| T_S, \Omega_M, w, \theta_r, \alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}} \sim \mathcal{N}_{\ln}\left(\ln{\left(\frac{\alpha_{T_S}}{d_L^2(z_S;\Omega_M, w)}\right)}, \frac{\ln{10}}{2.5}\sigma_{T_S}\right),
 \end{equation}
+where $\mathcal{N}_{\ln}$ is the log-normal distribution and $d_L$ is the luminosity distance.
+
+The subset of objects that enters our analysis comes from a truncated distribution:
+\begin{itemize}
 \item For transients in set $T_S=1$:
 \begin{equation}
-p(\mathit{ADU}, T_S=1 | z, \Omega_M, w, \theta_r, \alpha_{Ia},\sigma_{Ia})=
-\theta_r\mathcal{N}\left(\frac{\alpha_{Ia}}{d_L^2(z;\Omega_M, w)}, \frac{\ln{10}}{2.5}\sigma_{Ia}\right).
+\mathit{ADU} | \Omega_M, w, \alpha_{Ia},\sigma_{Ia} \sim
+\frac{\mathcal{N}_{\ln}\left(\ln{\left(\frac{\alpha_{Ia}}{d_L^2(z_S;\Omega_M, w)}\right)}, \frac{\ln{10}}{2.5}\sigma_{Ia}\right)}{P_{Ia}(\mathit{ADU} > \mathit{ADU}_0)}.
 \label{adusnIa:eqn}
 \end{equation}
 \item For transients in set $T_S=0$:
-\begin{multline}
-p(\mathit{ADU}, T_S=0 | z, \Omega_M, w, \theta_r, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}})= \\
-\left(1-\theta_r\right)
-\mathcal{N}\left(\frac{\alpha_{\mathit{non-Ia}}}{d_L^2(z;\Omega_M, w)}, \frac{\ln{10}}{2.5}\sigma_{\mathit{non-Ia}}\right).
-\label{adunonIa:eqn}
-\end{multline}
-\end{itemize}
-\item The ADU likelihoods in Equations~\ref{adumis:eqn}, \ref{adusnIa:eqn}, and
-\ref{adunonIa:eqn} are appropriate when there is no count-based sample selection.
-In practice the distribution will be truncated, as only transients that pass a brightness
-threshold $\mathit{ADU}_0$ make it into the sample.  The area of the truncated
-distribution in Equation~\ref{adumis:eqn} $\int_{\mathit{ADU}_0}^{\infty} p(\mathit{ADU})d\mathit{ADU}$
-normalizes the above ADU likelihoods.
-\item All transients have a host with redshift $z$ and have a second
-galaxy at $z_N$ whose projection is close to the host, a potential source of ambiguity.
-The pdf for the redshift of the second galaxy is approximately uniform in volume:
 \begin{equation}
-\frac{3 z_N^2}{z_{max}^3 - z_{min}^3}.
+\mathit{ADU} | \Omega_M, w, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}}\sim 
+\frac{\mathcal{N}_{\ln}\left(\ln{\left(\frac{\alpha_{\mathit{non-Ia}}}{d_L^2(z_S;\Omega_M, w)}\right)}, \frac{\ln{10}}{2.5}\sigma_{\mathit{non-Ia}}\right)}{P_{non-Ia}(\mathit{ADU} > \mathit{ADU}_0)},
+\label{adunonIa:eqn}
 \end{equation}
-The distribution of these galaxies is different from than the distribution of transient redshifts,
-which can lead to bias.
+\end{itemize}
+where the normalization factor is the complementary cumulative distribution function
+for the corresponding log-normal distribution.
+It is understood that $p(\mathit{ADU}<\mathit{ADU}_0)=0$ is never evaluated.
 
-The host assignment $\theta_{G1}$ and that of the perceived neighbor
-$\theta_{G2}$ are drawn from
+The second term is redshift and type probabilities.  In our model we adopt
+a flat prior on the redshift distribution.
+The underlying relative rates between SNe~Ia and non-Ia are modeled
+as being linear in redshift parameterized by the
+its value at $z=0$ and $1.1 \times z_{max}$, 
+\begin{equation}
+\hat{\theta}_{r}=\theta_{r0}+z\left(\frac{\theta_{r1}-\theta_{r0}}{1.1 \times z_{max}}\right).
+\end{equation}
+The relative rate for SN~Ia discovery is then
+\begin{equation}
+\theta_{r}=\frac{\hat{\theta}_{r}}{\hat{\theta}_{r}P_{Ia}(\mathit{ADU} > \mathit{ADU}_0) + (1-\hat{\theta}_{r})P_{non-Ia}(\mathit{ADU} > \mathit{ADU}_0)}.
+\end{equation}
+The spectroscopic classifications are drawn from
+\begin{equation}
+T_S | \theta_{r0}, \theta_{r1} \sim \text{Bernoulli}(\theta_r).
+\end{equation}
+
+\subsubsection{Model for the {\it mis} set data}
+
+We now consider the modeling of data from the  {\it mis}
+set that has no spectroscopic confirmation.
+The redshift measurement is treated as follows:
+For each transient there are two galaxies identified as
+the potential host, one ($\theta_{G1}$) with high probability $P_{host}$
+of being the host and the other
+($\theta_{G2}$) at lower $(1-P_{host})$ probability.
+In the model, the
+true host redshift is $z$ and that of the interloping galaxy is $z_N$.
 \begin{equation}
 P(\theta_{G1},\theta_{G2}|z, z_N) =
 	P_{host}\delta(z-\theta_{G1})\delta(z_N-\theta_{G2}) +
 	(1-P_{host}) \delta(z-\theta_{G2})\delta(z_N-\theta_{G1}).
 \end{equation}
 
-\item This simple example does not consider data $\theta_S$, $\tau$ or $Z$, i.e.
-spectroscopic parameters, sample-selection effects, and calibration.
-\item A prior is applied to the SN~Ia absolute magnitude
-\begin{equation}
-\alpha_{SNIa} \sim \ln\mathcal{N}\left(\ln\left(\alpha^0_{SNIa}\right),\frac{\ln{10}}{2.5}0.02\right),
-\end{equation}
-where $\alpha^0_{SNIa}$ is the true input luminosity.
-\end{itemize}
+The underlying distribution for counts at peak brightness $\mathit{ADU}$
+is
+\begin{multline}
+p(\mathit{ADU}, \theta_{G1}, \theta_{G2} | \Omega_M, w, \theta_r, \alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}}) \\
+ \sum_{z, T}  p(\mathit{ADU, \theta_{G1}, \theta_{G2}}| z , z_H, T \ldots)P(z, T|\ldots).
+\label{adumis:eqn}
+\end{multline}
 
-I highlight the treatment of redshift in this model; the cosmological redshift
-$z$ is set to the values of the
-observed redshifts through $\delta$-functions.  This choice was made specifically to aid
-in the convergence of the Monte Carlo: the discrete possibilities for redshift allow
-for their marginalized likelihood to be used in the calculation of the posterior.
-A more general model would replace the $\delta$-functions
-with coming from a continuous PDF's.
-Peculiar velocities, redshift measurement errors (particularly from
-photometric redshifts) justify this generalization.
-A transient
-without a spectrum has uncertain type and redshift: the redshift
-of the associated host galaxy, and redshifts expected based on the
-flux of the SN~Ia and non-Ia standard candles,
-are viable but disjoint possibilities for the posterior of
-the true underlying redshift. My runs of this scenario produce chains
-that do not mix so I resorted to the simplified treatment presented here.
+The marginalization of Eqn.~\ref{adumis:eqn} thus gives for a transient with $\theta_{G1}$,
+$\theta_{G2}$ an underlying distribution of counts of
+ \begin{multline}
+\mathit{ADU}| \Omega_M, w, \theta_r, \alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}} \\
+ \sim  P_{host} \left[\theta_r \mathcal{N}_{\ln}\left(\ln{\left(\frac{\alpha_{Ia}}{d_L^2(\theta_{G1})}\right)}, \frac{\ln{10}}{2.5}\sigma_{Ia}\right)
++\left(1-\theta_r\right)
+\mathcal{N}_{\ln}\left(\ln{\left(\frac{\alpha_{\mathit{non-Ia}}}{d_L^2(\theta_{G1})}\right)}, \frac{\ln{10}}{2.5}\sigma_{\mathit{non-Ia}}\right) \right] \\
+ + (1-P_{host})\left[ \theta_r \mathcal{N}_{\ln}\left(\ln{\left(\frac{\alpha_{Ia}}{d_L^2(\theta_{G2})}\right)}, \frac{\ln{10}}{2.5}\sigma_{Ia}\right) 
+ + \left(1-\theta_r\right)
+\mathcal{N}_{\ln}\left(\ln{\left(\frac{\alpha_{\mathit{non-Ia}}}{d_L^2(\theta_{G2})}\right)}, \frac{\ln{10}}{2.5}\sigma_{\mathit{non-Ia}}\right) \right],
+\label{adumis2:eqn}
+\end{multline}
+where again we adopt a flat prior in redshift.
+
+The distribution of $\mathit{ADU}$ for our sample is a truncated version of the
+underlying distribution.  
+For our analysis, we use the distribution in  Eqn.~\ref{adumis2:eqn} normalized by
+the complementary cumulative distribution function
+\begin{equation}
+P(\mathit{ADU}>\mathit{ADU}_0|\ldots) = \int_{\mathit{ADU}_0}^{\infty} p(\mathit{ADU}|\Omega_M, w, \theta_r, \alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}})d\mathit{ADU}
+\end{equation}
+for a detection threshold of $\mathit{ADU}_0$.
+
+%I highlight the treatment of redshift in this model; the cosmological redshift
+%$z$ is set to the values of the
+%observed redshifts through $\delta$-functions.  This choice was made specifically to aid
+%in the convergence of the Monte Carlo: the discrete possibilities for redshift allow
+%for their marginalized likelihood to be used in the calculation of the posterior.
+%A more general model would replace the $\delta$-functions
+%with coming from a continuous PDF's.
+%Peculiar velocities, redshift measurement errors (particularly from
+%photometric redshifts) justify this generalization.
+%A transient
+%without a spectrum has uncertain type and redshift: the redshift
+%of the associated host galaxy, and redshifts expected based on the
+%flux of the SN~Ia and non-Ia standard candles,
+%are viable but disjoint possibilities for the posterior of
+%the true underlying redshift. My runs of this scenario produce chains
+%that do not mix so I resorted to the simplified treatment presented here.
 
 \subsection{Analysis of Simulated Data}
 The simulation of data from the model presented in \S\ref{example:sec}
@@ -275,13 +334,28 @@ choices:
 \item Type~Ia supernovae with intrinsic dispersion $\sigma_{SNIa}=0.1$.
 \item Non-Ia supernovae 2 magnitudes fainter than SNe~Ia with intrinsic
 dispersion $\sigma_{non-Ia}=1$.
-\item $\theta_r=0.8$ for a constant relative fraction of SNe~Ia.
-\item 500 transients uniformly distributed in the range $0.1<z<1$.
-\item $z_{min}=0.05$ and $z_{max}=1.5$ is the range of possible misassigned
+\item $\theta_r=r_0 + (r_1-r_0)z/2.1$ for a constant relative fraction of SNe~Ia where $r_1=0.2$,
+$r_0=0.95$.
+\item 2000 transients distributed by co-moving volume in the range $0.1<z<1.4$.
+\item Detection threshold at approximately the mean brightness SN~Ia at $z=1.2$.
+\item $z_{min}=0.1/1.1$ and $z_{max}=1.4\times 1.1$ is the range of possible misassigned
 host redshift.
 \item $P_{host}=0.98$ for the probability of correct host-galaxy assignment.
-\item Accumulated spectra for 200, 350, and 500 transients.
+\item Accumulated spectra for 20\%, 60\%, and 100\% of discovered transients.
 \end{itemize}
+
+
+In our simulated data sets, the
+pdf for the redshift of the second galaxy is approximately uniform in volume:
+\begin{equation}
+\frac{3 z_N^2}{z_{max}^3 - z_{min}^3}.
+\end{equation}
+
+A prior is applied to the SN~Ia absolute magnitude
+\begin{equation}
+\alpha_{SNIa} \sim \ln\mathcal{N}\left(\ln\left(\alpha^0_{SNIa}\right),\frac{\ln{10}}{2.5}0.02\right),
+\end{equation}
+where $\alpha^0_{SNIa}$ is the true input luminosity.
 
 The simulated data are analyzed using 
 \citet{stan-software:2015}, a
