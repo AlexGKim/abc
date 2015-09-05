@@ -175,6 +175,16 @@ functions{
     drdainv[1] <- sqrt(1/drdainv[1]);
     return drdainv;
   }
+
+  vector logdifferentialVolume(real Omega_M, real w, vector adu_true, vector ainv){
+    vector[num_elements(ainv)] logdifferentialVolume;
+    logdifferentialVolume <-  Omega_M * ainv .* ainv .* ainv;
+    for (s in 1:num_elements(ainv)){
+      logdifferentialVolume[s] <- logdifferentialVolume[s] + (1- Omega_M)*ainv[s]^(3*(1+w));
+    }
+    logdifferentialVolume <- -0.5*log(logdifferentialVolume) -log(adu_true) -2*log(ainv);
+    return logdifferentialVolume;
+  }
 }
 
 data{
@@ -415,6 +425,7 @@ transformed parameters{
       vector[N_mis] erfc_nonIa_neighbor;
 
       vector[N_mis] lp_holder[4];
+      vector[N_mis] logdifferentialVolumeholder;
 
       real slope_Ia;
       real slope_nonIa;
@@ -449,6 +460,14 @@ transformed parameters{
         lp_holder[2] <- lp_term(adu_mis,adu_true_mis,alpha_nonIa,sigma_nonIa, rate_nonIa, loggalaxyProb, renorm, ln10d25);
         lp_holder[3] <- lp_term(adu_mis,adu_true_mis2,alpha_Ia,sigma_Ia, rate_Ia_neighbor, lognotgalaxyProb, renorm, ln10d25);
         lp_holder[4] <- lp_term(adu_mis,adu_true_mis2,alpha_nonIa,sigma_nonIa, rate_nonIa_neighbor, lognotgalaxyProb, renorm, ln10d25);
+
+        // the host and neighbor probabilities
+        logdifferentialVolumeholder<- logdifferentialVolume(Omega_M, w, adu_true_mis, host_zs_mis) + 2*log(host2_zs_mis);
+        lp_holder[1] <- lp_holder[1] + logdifferentialVolumeholder;
+        lp_holder[2] <- lp_holder[2] + logdifferentialVolumeholder;
+        logdifferentialVolumeholder<- logdifferentialVolume(Omega_M, w, adu_true_mis2, host2_zs_mis) + 2*log(host_zs_mis);
+        lp_holder[3] <- lp_holder[3] + logdifferentialVolumeholder;
+        lp_holder[4] <- lp_holder[4] + logdifferentialVolumeholder;
 
         for (s in 1:N_mis){
           for (t in 1:4){
@@ -525,6 +544,7 @@ model{
     vector[N_obs] erfc_Ia;
     vector[N_obs] erfc_nonIa;
     vector[N_obs] adu_true;
+    vector[N_obs] ldv;
 
     for (s in 1:N_SNIa){
       adu_true[index_SNIa[s]] <- adu_true_SNIa[s];
@@ -538,9 +558,19 @@ model{
     erfc_nonIa <- myRenorm(ADU0, adu_true, alpha_nonIa, sigma_nonIa, ln10d25);
     renorm <- rate .* erfc_Ia+ (1-rate) .* erfc_nonIa;
     snIa_obs ~ bernoulli(rate ./ renorm);
+  
+  /*
+   * Redshift probability
+   *
+   *  differential volume ~ D_L^2 * a^2 / sqrt(Om a^3 + OL)
+
+   * log  2 log(D_L) + 2 log a - 0.5 log(Om a^3 + Ol)
+   */
+   // at this point ADU true is 1/d_L^2
+   // 2log(D_L) = -log(ADU)
+   ldv <- logdifferentialVolume(Omega_M, w, adu_true, trans_ainv_obs);
+   increment_log_prob( ldv);
   }
-
-
   /*
       p(ADU|...) of guys without spectra is constructed in transformed parameters section 
   */    
