@@ -38,7 +38,7 @@ functions{
     } else {
       index <- 2;
     }
-    slope <- (snIa_rate_1[index]-snIa_rate_0[index])/(1.1*zmax);
+    slope <- (snIa_rate_1[index]-snIa_rate_0[index])/(zmax*1.1);
     rate <- snIa_rate_0[index]+ zs*slope; 
     return rate;
   }
@@ -176,15 +176,31 @@ functions{
     return drdainv;
   }
 
-  vector logdifferentialVolume(real Omega_M, real w, vector adu_true, vector ainv){
-    vector[num_elements(ainv)] logdifferentialVolume;
-    logdifferentialVolume <-  Omega_M * ainv .* ainv .* ainv;
-    for (s in 1:num_elements(ainv)){
-      logdifferentialVolume[s] <- logdifferentialVolume[s] + (1- Omega_M)*ainv[s]^(3*(1+w));
-    }
-    logdifferentialVolume <- -0.5*log(logdifferentialVolume) -log(adu_true) -2*log(ainv);
-    return logdifferentialVolume;
-  }
+  # vector logdifferentialVolume(real Omega_M, real w, vector adu_true, vector ainv, real adu_min, real ainv_min, real adu_max,
+  #       real adu_max, real ainv_min){
+  #   vector[num_elements(ainv)] logdifferentialVolume;
+ 
+  #   //for already calculated redshifts
+  #   logdifferentialVolume <-  Omega_M * ainv .* ainv .* ainv;
+  #   for (s in 1:num_elements(ainv)){
+  #     logdifferentialVolume[s] <- logdifferentialVolume[s] + (1- Omega_M)*ainv[s]^(3*(1+w));
+  #   }
+  #   logdifferentialVolume <- -0.5*log(logdifferentialVolume) -log(adu_true) -2*log(ainv);
+
+  #   /*
+  #   Calculation of the normalization factor
+  #   */
+  #   return logdifferentialVolume;
+  # }
+
+  # real[] dndz(real ainv,
+  #         real[] r,
+  #         real[] theta,
+  #         real[] x_r,
+  #         int[] i_r)
+  # {
+  #   return ainv*ainv * ccdf;
+  # }
 }
 
 data{
@@ -244,6 +260,9 @@ transformed data {
 
   int N_nonIa;
 
+  real ainvmin;
+  real ainvmax;
+
 
 //  vector[N_sn-N_obs] ainv_zs_mis;  // need to do this way in case N_mis =0, transformed data is used
 //  vector[N_sn-N_obs] ainv2_zs_mis;  // need to do this way in case N_mis =0, transformed data is used
@@ -254,6 +273,9 @@ transformed data {
 //  real logvolumedensity;
 
 //  vector[N_sn-N_obs] lp_gal_mis_2;
+
+  ainvmin <- 1+zmin/1.1;
+  ainvmax <- 1+zmax*1.1;
 
   N_mis <- N_sn-N_obs;
   N_nonIa <- N_obs-N_SNIa;
@@ -355,6 +377,9 @@ transformed parameters{
   vector[N_SNIa] adu_true_SNIa;
   vector[N_obs-N_SNIa] adu_true_nonIa;
 
+  # real[] adu_min;
+  # real[] adu_max;
+
   {
 //    real luminosity_distance_int_s[n_int];
     real luminosity_distance[N_obs+2*N_mis,1];
@@ -393,6 +418,10 @@ transformed parameters{
       for (m in 1:N_obs+2*N_mis){
         luminosity_distance[m,1] <- ainv_all[m]*luminosity_distance[m,1];
       }
+
+      # adu_min <- integrate_ode(friedmann, r0, ainv0, ainvmin, theta, x_r, x_i);
+      # adu_max <- integrate_ode(friedmann, r0, ainv0, ainvmax, theta, x_r, x_i);
+
     }
 
     /*
@@ -405,6 +434,10 @@ transformed parameters{
     for (s in 1:(N_nonIa)){
       adu_true_nonIa[s] <- luminosity_distance[ainv_all_ind_obs[index_nonIa[s]],1]^(-2);
     }
+
+    # adu_min[1,1] <- adu_min[1,1]^(-2);
+    # adu_max[1,1] <- adu_max[1,1]^(-2);
+
 
     /*
       p(ADU|...) of guys without spectra calculated marginalizing out type and host galaxy from trancation of
@@ -425,7 +458,7 @@ transformed parameters{
       vector[N_mis] erfc_nonIa_neighbor;
 
       vector[N_mis] lp_holder[4];
-      vector[N_mis] logdifferentialVolumeholder;
+//      vector[N_mis] logdifferentialVolumeholder;
 
       real slope_Ia;
       real slope_nonIa;
@@ -461,13 +494,17 @@ transformed parameters{
         lp_holder[3] <- lp_term(adu_mis,adu_true_mis2,alpha_Ia,sigma_Ia, rate_Ia_neighbor, lognotgalaxyProb, renorm, ln10d25);
         lp_holder[4] <- lp_term(adu_mis,adu_true_mis2,alpha_nonIa,sigma_nonIa, rate_nonIa_neighbor, lognotgalaxyProb, renorm, ln10d25);
 
+        // need to add host and neighbor redshift probabilities
+        // neighbor is independent of parameter and can be left out
+        // host redshift probability dn/dz ccdf(z) / norm
+
         // the host and neighbor probabilities
-        logdifferentialVolumeholder<- logdifferentialVolume(Omega_M, w, adu_true_mis, host_zs_mis) + 2*log(host2_zs_mis);
-        lp_holder[1] <- lp_holder[1] + logdifferentialVolumeholder;
-        lp_holder[2] <- lp_holder[2] + logdifferentialVolumeholder;
-        logdifferentialVolumeholder<- logdifferentialVolume(Omega_M, w, adu_true_mis2, host2_zs_mis) + 2*log(host_zs_mis);
-        lp_holder[3] <- lp_holder[3] + logdifferentialVolumeholder;
-        lp_holder[4] <- lp_holder[4] + logdifferentialVolumeholder;
+        # logdifferentialVolumeholder<- logdifferentialVolume(Omega_M, w, adu_true_mis, host_zs_mis, adu_min[1,1], ainvmin, adu_max[1,1], ainvmax);
+        # lp_holder[1] <- lp_holder[1] + logdifferentialVolumeholder;
+        # lp_holder[2] <- lp_holder[2] + logdifferentialVolumeholder;
+        # logdifferentialVolumeholder<- logdifferentialVolume(Omega_M, w, adu_true_mis2, host2_zs_mis, adu_min[1,1], ainvmin, adu_max[1,1], ainvmax);
+        # lp_holder[3] <- lp_holder[3] + logdifferentialVolumeholder;
+        # lp_holder[4] <- lp_holder[4] + logdifferentialVolumeholder;
 
         for (s in 1:N_mis){
           for (t in 1:4){
@@ -557,19 +594,15 @@ model{
     erfc_Ia <- myRenorm(ADU0, adu_true, alpha_Ia, sigma_Ia, ln10d25);
     erfc_nonIa <- myRenorm(ADU0, adu_true, alpha_nonIa, sigma_nonIa, ln10d25);
     renorm <- rate .* erfc_Ia+ (1-rate) .* erfc_nonIa;
-    snIa_obs ~ bernoulli(rate ./ renorm);
+    snIa_obs ~ bernoulli(rate);
   
   /*
    * Redshift probability
    *
-   *  differential volume ~ D_L^2 * a^2 / sqrt(Om a^3 + OL)
-
-   * log  2 log(D_L) + 2 log a - 0.5 log(Om a^3 + Ol)
+   *  Need to give dNdz \propto z^2 ccdf(z) / normalization
    */
-   // at this point ADU true is 1/d_L^2
-   // 2log(D_L) = -log(ADU)
-   ldv <- logdifferentialVolume(Omega_M, w, adu_true, trans_ainv_obs);
-   increment_log_prob( ldv);
+
+
   }
   /*
       p(ADU|...) of guys without spectra is constructed in transformed parameters section 
