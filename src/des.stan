@@ -215,6 +215,7 @@ functions{
       }
       ainvs <- ainvs-1;
 
+
       rates <-transrate(1,ainvs,snIa_rate_0,snIa_rate_1,zmax);
 
       ans <- rates .* myRenorm(ADU0, adus, alpha, sigma, ln10d25);
@@ -302,8 +303,8 @@ transformed data {
 
 //  vector[N_sn-N_obs] lp_gal_mis_2;
 
-  ainvmin[1] <- 1+zmin/1.1;
-  ainvmax[1] <- 1+zmax*1.1;
+  ainvmin[1] <- 1+zmin;
+  ainvmax[1] <- 1+zmax;
 
   N_mis <- N_sn-N_obs;
   N_nonIa <- N_obs-N_SNIa;
@@ -370,8 +371,8 @@ parameters{
   // transient parameters
   real <lower=0> alpha_Ia;
   real <lower=0> alpha_nonIa;
-  real <lower=0, upper=10> sigma_Ia;  //these sigmas are in log space
-  real <lower=0, upper=50> sigma_nonIa;
+  real <lower=0, upper=1> sigma_Ia;  //these sigmas are in log space
+  real <lower=0, upper=10> sigma_nonIa;
 
 
   // cosmology parameters
@@ -633,7 +634,7 @@ model{
     //third term P(zs|...) 
     if (ADU0 !=0){
       increment_log_prob(log(renorm)); // z^2 is independent of parameters
-      increment_log_prob(-zPDFrenorm);
+      increment_log_prob(-N_obs*zPDFrenorm);
     }
 
     // first term  P(ADU| zs, Tz, ...)
