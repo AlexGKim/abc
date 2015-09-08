@@ -47,10 +47,12 @@ class Data(object):
 
 		# self.zs = numpy.sort(numpy.random.uniform(size=self.N_sn))
 
-		self.zs=numpy.sort(numpy.random.uniform((1+self.zmin)**3,(1+self.zmax)**3,size=self.N_sn)**(1./3)-1)
-
+		#self.zs=numpy.sort(numpy.random.uniform((1+self.zmin)**3,(1+self.zmax)**3,size=self.N_sn)**(1./3)-1)
+		#self.zs=numpy.sort(numpy.random.uniform((1+self.zmin)**3,(1+self.zmax)**3,size=self.N_sn)**(1./3)-1)
 		# for i in xrange(len(self.zs)):
 		# 	self.zs[i]=scipy.optimize.newton(lambda z: (self.cosmo.comoving_volume(z).value - volume_zero)/volume_norm-self.zs[i], 0.5)		
+		self.zs = numpy.sort(numpy.random.uniform(self.zmin**3, self.zmax**3,size=self.N_sn)**(1./3))
+
 
 	def types_(self):
 		self.snIa = numpy.random.uniform(size=self.N_sn)
@@ -74,7 +76,8 @@ class Data(object):
 #		self.neighbor_zs = numpy.sort(numpy.random.uniform(size=self.N_sn))
 #		for i in xrange(len(self.zs)):
 #			self.neighbor_zs[i]=scipy.optimize.newton(lambda z: (self.cosmo.comoving_volume(z).value - volume_zero)/volume_norm-self.zs[i], 0.5)		
-		self.neighbor_zs=numpy.random.uniform((1+self.zmin/1.1)**3,(1+self.zmax*1.1)**3,size=self.N_sn)**(1./3)-1
+		# self.neighbor_zs=numpy.random.uniform((1+self.zmin/1.1)**3,(1+self.zmax*1.1)**3,size=self.N_sn)**(1./3)-1
+		self.neighbor_zs=numpy.random.uniform((self.zmin/1.1)**3, (self.zmax*1.1)**3,size=self.N_sn)**(1./3)
 		self.host_zs_random = self.zs*self.host_choice + self.neighbor_zs*(1-self.host_choice)
 		self.neighbor_zs_random = self.zs*(1-self.host_choice) + self.neighbor_zs*self.host_choice
 
@@ -146,22 +149,20 @@ class Data(object):
 	def init(self, n):
 		ans=[]
 		for i in xrange(n):
-			rate = min(numpy.random.lognormal(numpy.log(self.frac_Ia_0),0.05),.99)
-			rate1 = min(numpy.random.lognormal(numpy.log(self.frac_Ia_1),0.05),.99)
+			rate = min(numpy.random.lognormal(numpy.log(self.frac_Ia_0),0.01),.99)
+			rate1 = min(numpy.random.lognormal(numpy.log(self.frac_Ia_1),0.01),.99)
 			ans.append( {
-				'Omega_M':numpy.random.normal(self.omega_M,0.1),
+				'Omega_M':numpy.random.normal(self.omega_M,0.05),
 				'Omega_L':1-self.omega_M,
-				'w': numpy.random.normal(-0.9,0.1),
+				'w': numpy.random.normal(-1.,0.05),
 				# 'ainv_true_obs': 1+zs[s_obs],
 			 #  	'ainv_true_mis': (i % 2)*(1+host_zs_random[s_mis]) + (1-(i%2))*(1+zs[s_mis]), #host_zs_mis_init,
-			  	'alpha_Ia': numpy.random.normal(self.alpha_snIa,0.1),
-			 	'alpha_nonIa': numpy.random.normal(self.alpha_nonIa,0.1),
+			  	'alpha_Ia': numpy.random.normal(self.alpha_snIa,0.05),
+			 	'alpha_nonIa': numpy.random.normal(self.alpha_nonIa,0.05),
 			  	'sigma_Ia': numpy.random.lognormal(numpy.log(self.sigma_snIa),0.05),
-			  	'sigma_nonIa':numpy.random.lognormal(numpy.log(self.sigma_nonIa),0.1),
-			  	'snIa_rate_0': [rate,1-rate],
-			  	'snIa_rate_1': [rate1,1-rate1]
-			  	# 'snIa_rate_0_logit': numpy.log(rate/(1-rate))
-			  	# 'snIa_rate_1_logit': numpy.log(rate1/(1-rate1))
+			  	'sigma_nonIa':numpy.random.lognormal(numpy.log(self.sigma_nonIa),0.05),
+			  	'snIa_rate_0': rate,
+			  	'snIa_rate_1': rate1
 				})
 		return ans
 
@@ -215,36 +216,39 @@ def dataPlot():
 def main():
 	Nchains=4
 	N_sn=2000
-	ADU0=0.2 #0.2 #0.2
+
 	ia_only=False
 
 	data= Data(N_sn, 2)
-	data.found(ADU0)
-
 
 	sm = pystan.StanModel(file='des.stan')
 
-	# fracspec = numpy.arange(0.2,1.01,.4)
-	# for ns in fracspec:
-	# 	data.spectrum(ns)
+	ADU0=0.2 #0.2 #0.2
+	data.found(ADU0)
 
-	# 	fit = sm.sampling(data=data.dict(ia_only=ia_only), iter=2000, thin=1, n_jobs=-1, chains=Nchains, init=data.init(Nchains))
+	fracspec = numpy.arange(1.,1.01,.4)
+	for ns in fracspec:
+		data.spectrum(ns)
 
-	# 	logposterior = fit.get_logposterior()
+		fit = sm.sampling(data=data.dict(ia_only=ia_only), iter=1000, thin=1, n_jobs=-1, chains=Nchains, init=data.init(Nchains))
 
-	# 	app=''
-	# 	if ia_only:
-	# 		app+='.ia_only.'
-	# 	if ADU0 == 0.:
-	# 		app+='.noMalm.'
-	# 	with open('../results/temp/model'+app+str(ns)+'.pkl', 'wb') as f:
-	# 		pickle.dump([fit.extract(), logposterior], f)
+		logposterior = fit.get_logposterior()
+
+		app=''
+		if ia_only:
+			app+='.ia_only.'
+		if ADU0 == 0.:
+			app+='.noMalm.'
+		with open('../results/temp/model'+app+str(ns)+'.pkl', 'wb') as f:
+			pickle.dump([fit.extract(), logposterior], f)
 
 	ADU0=0.
 	ns=1.
 	data.found(ADU0)
 	data.spectrum(ns)
-	fit = sm.sampling(data=data.dict(ia_only=ia_only), iter=2000, thin=1, n_jobs=-1, chains=Nchains, init=data.init(Nchains))
+
+
+	fit = sm.sampling(data=data.dict(ia_only=ia_only), iter=1000, thin=1, n_jobs=-1, chains=Nchains, init=data.init(Nchains))
 	logposterior = fit.get_logposterior()
 	app=''
 	if ia_only:
@@ -253,6 +257,7 @@ def main():
 		app+='.noMalm.'
 	with open('../results/temp/model'+app+str(ns)+'.pkl', 'wb') as f:
 		pickle.dump([fit.extract(), logposterior], f)
+
 
 
 if __name__ == "__main__":
