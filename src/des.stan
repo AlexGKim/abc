@@ -81,16 +81,6 @@ functions{
     return ans;
   }
 
-  vector lp_term(vector adu, vector adu_true, real alpha, real sigma,  real ln10d25){
-    vector[num_elements(adu)] lp;
-    lp <- adu_true*alpha;
-    lp <- log(lp);
-    for (s in 1:num_elements(adu)){
-      lp[s] <- lognormal_log(adu[s], lp[s], sigma* ln10d25);
-    }
-    return lp;
-  }
-
   real[] spline(real[] x, real[] y, int n, real yp1, real ypn){
     real y2[n];
     real u[n-1];
@@ -426,7 +416,7 @@ transformed parameters{
     real adu_max[1,1];
 
     vector[N_obs] adu_true_obs;
-    vector[N_obs] rate;
+    # vector[N_obs] rate;
     // get luminosity distance at nodes
     {
       real theta[3];
@@ -502,86 +492,87 @@ transformed parameters{
                            + P(ADU| z=g2, zH=g1, T=0, ...) P(T=0| z=g2,...) P(z=g2|...) P(zH=g1|...) )
   */
 
-    {
-      vector[N_mis] rate_Ia;
-//      vector[N_mis] rate_nonIa;
-      vector[N_mis] rate_Ia_neighbor;
-//      vector[N_mis] rate_nonIa_neighbor;
 
-      vector[N_mis] adu_true_mis;
-      vector[N_mis] adu_true_mis2;
-      vector[N_mis] renorm;
+  /*
+   Do the likelihood for each permuatation of type and redshift
+   */
+   {
+      vector[N_mis] lp_holder[4];
+      vector[N_mis] rate;
       vector[N_mis] erfc_Ia;
       vector[N_mis] erfc_nonIa;
-      vector[N_mis] erfc_Ia_neighbor;
-      vector[N_mis] erfc_nonIa_neighbor;
+      vector[N_mis] renorm;
 
-      vector[N_mis] lp_holder[4];
-//      vector[N_mis] logdifferentialVolumeholder;
+      vector[N_mis] adu_;
 
-
-      if (N_mis > 0){
-    #   snIa_rate_0 rate at z=0, snIa_rate_1 rate at zmax
-    #   [1] for sn Ia, [2] for nonIa
-
-        for (s in 1:N_mis){
-          adu_true_mis[s]  <- luminosity_distance[ainv_all_ind_mis[s],1]^(-2);
-          adu_true_mis2[s]  <- luminosity_distance[ainv2_all_ind_mis[s],1]^(-2);
+      if (N_mis !=0){
+        // do correct redshift first
+        rate <- transrate(1, host_zs_mis, snIa_rate_0, snIa_rate_1, zmax);
+        if (ADU0 !=0){
+          for (s in 1:N_mis){
+            adu_[s] <- adu[ainv_all_ind_mis[s]];
+          }
+          erfc_Ia <- myRenorm(ADU0, adu_, alpha_Ia, sigma_Ia, ln10d25);
+          erfc_nonIa <- myRenorm(ADU0, adu_, alpha_nonIa, sigma_nonIa, ln10d25);
+          renorm <- rate .* erfc_Ia+ (1-rate) .* erfc_nonIa;
+          rate <- rate ./ renorm;
         }
-
-
-        lp_holder[1] <- lp_term(adu_mis,adu_true_mis,alpha_Ia,sigma_Ia, ln10d25)+loggalaxyProb;
-        lp_holder[2] <- lp_term(adu_mis,adu_true_mis,alpha_nonIa,sigma_nonIa,ln10d25)+loggalaxyProb;
-        lp_holder[3] <- lp_term(adu_mis,adu_true_mis2,alpha_Ia,sigma_Ia, ln10d25)+lognotgalaxyProb;
-        lp_holder[4] <- lp_term(adu_mis,adu_true_mis2,alpha_nonIa,sigma_nonIa, ln10d25)+lognotgalaxyProb;
-
-        rate_Ia <- transrate(1,host_zs_mis,snIa_rate_0,snIa_rate_1,zmax);
-        rate_Ia_neighbor <- transrate(1,host2_zs_mis,snIa_rate_0,snIa_rate_1,zmax);  //SN Ia bad z
-
+        lp_holder[1] <- log(rate);
+        lp_holder[2] <- log(1-rate);
 
         if (ADU0 !=0){
-          erfc_Ia <- myRenorm(ADU0, adu_true_mis, alpha_Ia, sigma_Ia, ln10d25);
-          erfc_nonIa <- myRenorm(ADU0, adu_true_mis, alpha_nonIa, sigma_nonIa, ln10d25);
-          erfc_Ia_neighbor <- myRenorm(ADU0, adu_true_mis2, alpha_Ia, sigma_Ia, ln10d25);
-          erfc_nonIa_neighbor <- myRenorm(ADU0, adu_true_mis2, alpha_nonIa, sigma_nonIa, ln10d25);
-
-
-          lp_holder[1] <- lp_holder[1]+log(rate_Ia .* erfc_Ia);
-          lp_holder[2] <- lp_holder[2]+log((1-rate_Ia) .* erfc_nonIa);
-          lp_holder[3] <- lp_holder[3]+log(rate_Ia_neighbor .* erfc_Ia_neighbor);
-          lp_holder[4] <- lp_holder[4]+log((1-rate_Ia_neighbor) .* erfc_nonIa_neighbor);
-
-          renorm <- rate_Ia .* erfc_Ia+ (1-rate_Ia) .* erfc_nonIa;
-          rate_Ia <- rate_Ia ./ renorm;
-          renorm <- rate_Ia_neighbor .* erfc_Ia_neighbor+ (1-rate_Ia_neighbor) .* erfc_nonIa_neighbor;
-          rate_Ia_neighbor <- rate_Ia_neighbor ./ renorm;
+          for (ind in 1:2)
+            lp_holder[ind] <- lp_holder[ind]+log(renorm) - zPDFrenorm; // z^2 is independent of parameters
         }
 
-        lp_holder[1] <- lp_holder[1]+log(rate_Ia);
-        lp_holder[2] <- lp_holder[2]+log(1-rate_Ia);
-        lp_holder[3] <- lp_holder[3]+log(rate_Ia_neighbor);
-        lp_holder[4] <- lp_holder[4]+log(1-rate_Ia_neighbor);
+        lp_holder[1] <- lp_holder[1]+ lognormal_log(adu_SNIa, log(adu_true_SNIa*alpha_Ia), sigma_Ia*ln10d25);
+        #    increment_log_prob(lognormal_log(adu_SNIa, log(adu_true_SNIa*alpha_Ia), sigma_Ia*ln10d25));
+        if (ADU0 !=0){
+          erfc_Ia <- log(erfc_Ia);
+          lp_holder[1] <- lp_holder[1] - erfc_Ia;
+        }
+        lp_holder[2] <- lp_holder[2] + lognormal_log(adu_nonIa, log(adu_true_nonIa*alpha_nonIa), sigma_nonIa*ln10d25);
+        # increment_log_prob(lognormal_log(adu_nonIa, log(adu_true_nonIa*alpha_nonIa), sigma_nonIa*ln10d25));
+        if (ADU0 !=0){
+          erfc_nonIa <- log(erfc_nonIa);
+          lp_holder[2] <- lp_holder[2] - erfc_nonIa;
+        }
+        lp_holder[1] <- lp_holder[1] + loggalaxyProb;
+        lp_holder[2] <- lp_holder[2] + loggalaxyProb;
 
-        # // explicit handling of normalization of truncated distribution
-        # renorm <-  galaxyProb*(rate_Ia .* erfc_Ia + rate_nonIa .* erfc_nonIa) + (1-galaxyProb)*(rate_Ia_neighbor .* erfc_Ia_neighbor + rate_nonIa_neighbor .* erfc_nonIa_neighbor);
-        # renorm <- -log(renorm);
+        // do incorrect redshift next
 
-        # lp_holder[1] <- lp_term(adu_mis,adu_true_mis,alpha_Ia,sigma_Ia, rate_Ia, loggalaxyProb, renorm, ln10d25);;
-        # lp_holder[2] <- lp_term(adu_mis,adu_true_mis,alpha_nonIa,sigma_nonIa, rate_nonIa, loggalaxyProb, renorm, ln10d25);
-        # lp_holder[3] <- lp_term(adu_mis,adu_true_mis2,alpha_Ia,sigma_Ia, rate_Ia_neighbor, lognotgalaxyProb, renorm, ln10d25);
-        # lp_holder[4] <- lp_term(adu_mis,adu_true_mis2,alpha_nonIa,sigma_nonIa, rate_nonIa_neighbor, lognotgalaxyProb, renorm, ln10d25);
+        rate <- transrate(1, host2_zs_mis, snIa_rate_0, snIa_rate_1, zmax);
+        if (ADU0 !=0){
+          for (s in 1:N_mis){
+            adu_[s] <- adu[ainv2_all_ind_mis[s]];
+          }
+          erfc_Ia <- myRenorm(ADU0, adu_, alpha_Ia, sigma_Ia, ln10d25);
+          erfc_nonIa <- myRenorm(ADU0, adu_, alpha_nonIa, sigma_nonIa, ln10d25);
+          renorm <- rate .* erfc_Ia+ (1-rate) .* erfc_nonIa;
+          rate <- rate ./ renorm;
+        }
+        lp_holder[3] <- log(rate);
+        lp_holder[4] <- log(1-rate);
+        if (ADU0 !=0){
+          for (ind in 3:4)
+            lp_holder[ind] <- lp_holder[ind]+log(renorm) - zPDFrenorm; // z^2 is independent of parameters
+        }
 
-        // need to add host and neighbor redshift probabilities
-        // neighbor is independent of parameter and can be left out
-        // host redshift probability dn/dz ccdf(z) / norm
-
-        // the host and neighbor probabilities
-        # logdifferentialVolumeholder<- logdifferentialVolume(Omega_M, w, adu_true_mis, host_zs_mis, adu_min[1,1], ainvmin, adu_max[1,1], ainvmax);
-        # lp_holder[1] <- lp_holder[1] + logdifferentialVolumeholder;
-        # lp_holder[2] <- lp_holder[2] + logdifferentialVolumeholder;
-        # logdifferentialVolumeholder<- logdifferentialVolume(Omega_M, w, adu_true_mis2, host2_zs_mis, adu_min[1,1], ainvmin, adu_max[1,1], ainvmax);
-        # lp_holder[3] <- lp_holder[3] + logdifferentialVolumeholder;
-        # lp_holder[4] <- lp_holder[4] + logdifferentialVolumeholder;
+        lp_holder[3] <- lp_holder[3]+ lognormal_log(adu_SNIa, log(adu_true_SNIa*alpha_Ia), sigma_Ia*ln10d25);
+        #    increment_log_prob(lognormal_log(adu_SNIa, log(adu_true_SNIa*alpha_Ia), sigma_Ia*ln10d25));
+        if (ADU0 !=0){
+          erfc_Ia <- log(erfc_Ia);
+          lp_holder[3] <- lp_holder[3] - erfc_Ia;
+        }
+        lp_holder[4] <- lp_holder[4] + lognormal_log(adu_nonIa, log(adu_true_nonIa*alpha_nonIa), sigma_nonIa*ln10d25);
+        # increment_log_prob(lognormal_log(adu_nonIa, log(adu_true_nonIa*alpha_nonIa), sigma_nonIa*ln10d25));
+        if (ADU0 !=0){
+          erfc_nonIa <- log(erfc_nonIa);
+          lp_holder[4] <- lp_holder[4] - erfc_nonIa;
+        }
+        lp_holder[3] <- lp_holder[3] + lognotgalaxyProb;
+        lp_holder[4] <- lp_holder[4] + lognotgalaxyProb;
 
         for (s in 1:N_mis){
           for (t in 1:4){
