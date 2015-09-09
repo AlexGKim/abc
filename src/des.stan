@@ -471,10 +471,10 @@ transformed parameters{
     }
 
     // If there is non Malmquiest bias, this term is independent of parameters and not worth calculating
+    for (s in 1:num_elements(ainv_all)){
+      adu[s] <- luminosity_distance[s,1]^(-2);
+    }
     if (ADU0 !=0){
-      for (s in 1:num_elements(ainv_all)){
-        adu[s] <- luminosity_distance[s,1]^(-2);
-      }
       adu_min[1,1] <- adu_min[1,1]^(-2);
       adu_max[1,1] <- adu_max[1,1]^(-2);
       zPDFrenorm<- normalization_term3(ADU0, adu, ainv_all, adu_min[1,1], ainvmin[1],
@@ -508,10 +508,10 @@ transformed parameters{
       if (N_mis !=0){
         // do correct redshift first
         rate <- transrate(1, host_zs_mis, snIa_rate_0, snIa_rate_1, zmax);
+        for (s in 1:N_mis){
+          adu_[s] <- adu[ainv_all_ind_mis[s]];
+        }
         if (ADU0 !=0){
-          for (s in 1:N_mis){
-            adu_[s] <- adu[ainv_all_ind_mis[s]];
-          }
           erfc_Ia <- myRenorm(ADU0, adu_, alpha_Ia, sigma_Ia, ln10d25);
           erfc_nonIa <- myRenorm(ADU0, adu_, alpha_nonIa, sigma_nonIa, ln10d25);
           renorm <- rate .* erfc_Ia+ (1-rate) .* erfc_nonIa;
@@ -525,13 +525,13 @@ transformed parameters{
             lp_holder[ind] <- lp_holder[ind]+log(renorm) - zPDFrenorm; // z^2 is independent of parameters
         }
 
-        lp_holder[1] <- lp_holder[1]+ lognormal_log(adu_SNIa, log(adu_true_SNIa*alpha_Ia), sigma_Ia*ln10d25);
+        lp_holder[1] <- lp_holder[1]+ lognormal_log(adu_mis, log(adu_*alpha_Ia), sigma_Ia*ln10d25);
         #    increment_log_prob(lognormal_log(adu_SNIa, log(adu_true_SNIa*alpha_Ia), sigma_Ia*ln10d25));
         if (ADU0 !=0){
           erfc_Ia <- log(erfc_Ia);
           lp_holder[1] <- lp_holder[1] - erfc_Ia;
         }
-        lp_holder[2] <- lp_holder[2] + lognormal_log(adu_nonIa, log(adu_true_nonIa*alpha_nonIa), sigma_nonIa*ln10d25);
+        lp_holder[2] <- lp_holder[2] + lognormal_log(adu_mis, log(adu_*alpha_nonIa), sigma_nonIa*ln10d25);
         # increment_log_prob(lognormal_log(adu_nonIa, log(adu_true_nonIa*alpha_nonIa), sigma_nonIa*ln10d25));
         if (ADU0 !=0){
           erfc_nonIa <- log(erfc_nonIa);
@@ -543,10 +543,10 @@ transformed parameters{
         // do incorrect redshift next
 
         rate <- transrate(1, host2_zs_mis, snIa_rate_0, snIa_rate_1, zmax);
+        for (s in 1:N_mis){
+          adu_[s] <- adu[ainv2_all_ind_mis[s]];
+        }
         if (ADU0 !=0){
-          for (s in 1:N_mis){
-            adu_[s] <- adu[ainv2_all_ind_mis[s]];
-          }
           erfc_Ia <- myRenorm(ADU0, adu_, alpha_Ia, sigma_Ia, ln10d25);
           erfc_nonIa <- myRenorm(ADU0, adu_, alpha_nonIa, sigma_nonIa, ln10d25);
           renorm <- rate .* erfc_Ia+ (1-rate) .* erfc_nonIa;
@@ -559,13 +559,13 @@ transformed parameters{
             lp_holder[ind] <- lp_holder[ind]+log(renorm) - zPDFrenorm; // z^2 is independent of parameters
         }
 
-        lp_holder[3] <- lp_holder[3]+ lognormal_log(adu_SNIa, log(adu_true_SNIa*alpha_Ia), sigma_Ia*ln10d25);
+        lp_holder[3] <- lp_holder[3]+ lognormal_log(adu_mis, log(adu_*alpha_Ia), sigma_Ia*ln10d25);
         #    increment_log_prob(lognormal_log(adu_SNIa, log(adu_true_SNIa*alpha_Ia), sigma_Ia*ln10d25));
         if (ADU0 !=0){
           erfc_Ia <- log(erfc_Ia);
           lp_holder[3] <- lp_holder[3] - erfc_Ia;
         }
-        lp_holder[4] <- lp_holder[4] + lognormal_log(adu_nonIa, log(adu_true_nonIa*alpha_nonIa), sigma_nonIa*ln10d25);
+        lp_holder[4] <- lp_holder[4] + lognormal_log(adu_mis, log(adu_*alpha_nonIa), sigma_nonIa*ln10d25);
         # increment_log_prob(lognormal_log(adu_nonIa, log(adu_true_nonIa*alpha_nonIa), sigma_nonIa*ln10d25));
         if (ADU0 !=0){
           erfc_nonIa <- log(erfc_nonIa);
