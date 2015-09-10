@@ -15,8 +15,10 @@ import triangle
 
 levels = numpy.array([0.025, 0.05, 0.16, 1-0.16, 1-0.05, 1-.025])
 
-def individual(N_s, ia_only = False, ADU0=None):
-	app = ''
+def individual(N_s, ia_only = False, ADU0=None,N_sn=None):
+	app=''
+	if N_sn is not None:
+		app='.'+str(N_sn)+'.'
 	if ia_only:
 		app+='.ia_only.'
 	if ADU0 == 0.:
@@ -43,8 +45,8 @@ def individual(N_s, ia_only = False, ADU0=None):
 		samples[:,3] = extract['sigma_Ia']
 		samples[:,4] = extract['alpha_nonIa']
 		samples[:,5] = extract['sigma_nonIa']
-		samples[:,6] = extract['snIa_rate_0'][:,0]
-		samples[:,7] = extract['snIa_rate_1'][:,0]
+		samples[:,6] = extract['snIa_rate_0'][:]
+		samples[:,7] = extract['snIa_rate_1'][:]
 
 		kwargs = {'levels':1.0 - numpy.exp(-0.5 * numpy.arange(1, 3.1, 1) ** 2)}
 		figure = triangle.corner(samples, labels=[r"$\Omega_M$", r"$w$", r"$\alpha_{Ia}$", r"$\sigma_{Ia}$", r"$\alpha_{non-Ia}$", r"$\sigma_{non-Ia}$", r"SN Ia Rate 0", r"SN Ia Rate1"],
@@ -66,12 +68,27 @@ def individual(N_s, ia_only = False, ADU0=None):
 	plt.clf()
 
 
+	plt.plot(extract['snIa_rate_0'])
+	plt.ylabel(r'snIa_rate_0')
+	plt.xlabel('link')
+	plt.tight_layout()
+	plt.savefig('../results/temp/snIa_rate_0.'+app+str(N_s)+'.pdf')
+	plt.clf()
+
+	plt.plot(extract['snIa_rate_1'])
+	plt.ylabel(r'snIa_rate_1')
+	plt.xlabel('link')
+	plt.tight_layout()
+	plt.savefig('../results/temp/snIa_rate_1.'+app+str(N_s)+'.pdf')
+	plt.clf()
+
 	plt.plot(extract['w'])
 	plt.ylabel(r'$w$')
 	plt.xlabel('link')
 	plt.tight_layout()
 	plt.savefig('../results/temp/w.'+app+str(N_s)+'.pdf')
-
+	plt.clf()
+	
 	# plt.hist(extract['w'],normed=True)
 	# plt.xlabel(r'$w$')
 	# plt.legend(loc=2)
@@ -164,7 +181,7 @@ def group(nspec):
 
 
 def main():
-	individual(1.0,ia_only=False,ADU0=None)
+	individual(0.6,ia_only=False,ADU0=0.,N_sn=2000)
 #	individual(500,ia_only=False)
 	wefew
 	group([200,350,500])
