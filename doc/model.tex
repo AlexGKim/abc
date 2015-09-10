@@ -164,7 +164,7 @@ The measurements:
 \begin{itemize}
 \item $\mathit{ADU}$ are measured counts at peak brightness.
 \item ${{T}}_S$, ${{z}}_S$ are spectroscopic type and redshift for a subset of transients.
-\item $\theta_G$ is the redshift of the galaxy identified as the transient host.
+\item $\theta_G$ are the redshift of the galaxy identified as the transient host.
 \end{itemize}
 The model parameters:
 \begin{itemize}
@@ -197,7 +197,7 @@ $z_S$, is described as follows.  We are interested in
 p(\mathit{ADU}, {{T}}_S,{{z}}_S|  \Omega_M, w, \theta_r,\alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}})  &=\sum_T \int_z dz\,
 p(\mathit{ADU}, {{T}}_S,{{z}}_S, T, z| \ldots)\\
 &= \sum_T \int_z dz\,
-p(\mathit{ADU}, {{T}}_S,{{z}}_S| T, z,\dots) P(T,z | \ldots)
+p(\mathit{ADU}, {{T}}_S,{{z}}_S| T, z,\dots) p(T,z | \ldots)
 \end{align}
 
 A direct association of spectroscopic redshift and type are made so that
@@ -209,15 +209,18 @@ p(T_S|T) &= \delta(T_S-T),
 so that
 \begin{align}
 p(\mathit{ADU}, {{T}}_S,{{z}}_S|  \ldots) &= 
-p(\mathit{ADU}| T_S, z_s,\dots) P(T_S,z_S | \ldots)
+p(\mathit{ADU}| T=T_S, z=z_s,\dots) P(T_S| z= z_S , \ldots) p(z_S|\ldots).
+\label{obs:eqn}
 \end{align}
+We remark that in a flux limited survey, the pdf's for the data are truncated versions of the universal
+pdf's of the observables.
 
-The first term: Given the redshift
+The first term describes the expected counts. Given the redshift
 and transient type, the brightness of the underlying population
 is modeled as being drawn from a standard candle
 with luminosity $4\pi\alpha_X$ and intrinsic magnitude dispersion  $\sigma_X$:
 \begin{equation}
-\mathit{ADU}| T_S, \Omega_M, w, \theta_r, \alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}} \sim \mathcal{N}_{\ln}\left(\ln{\left(\frac{\alpha_{T_S}}{d_L^2(z_S;\Omega_M, w)}\right)}, \frac{\ln{10}}{2.5}\sigma_{T_S}\right),
+\mathit{ADU}| T_S, z_S, \Omega_M, w, \theta_r, \alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}} \sim \mathcal{N}_{\ln}\left(\ln{\left(\frac{\alpha_{T_S}}{d_L^2(z_S;\Omega_M, w)}\right)}, \frac{\ln{10}}{2.5}\sigma_{T_S}\right),
 \end{equation}
 where $\mathcal{N}_{\ln}$ is the log-normal distribution and $d_L$ is the luminosity distance.
 
@@ -225,13 +228,13 @@ The subset of objects that enters our analysis comes from a truncated distributi
 \begin{itemize}
 \item For transients in set $T_S=1$:
 \begin{equation}
-\mathit{ADU} | \Omega_M, w, \alpha_{Ia},\sigma_{Ia} \sim
+\mathit{ADU} | T_S=1, z_S, \Omega_M, w, \alpha_{Ia},\sigma_{Ia} \sim
 \frac{\mathcal{N}_{\ln}\left(\ln{\left(\frac{\alpha_{Ia}}{d_L^2(z_S;\Omega_M, w)}\right)}, \frac{\ln{10}}{2.5}\sigma_{Ia}\right)}{P_{Ia}(\mathit{ADU} > \mathit{ADU}_0)}.
 \label{adusnIa:eqn}
 \end{equation}
 \item For transients in set $T_S=0$:
 \begin{equation}
-\mathit{ADU} | \Omega_M, w, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}}\sim 
+\mathit{ADU} | T_S=0, z_S, \Omega_M, w, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}}\sim 
 \frac{\mathcal{N}_{\ln}\left(\ln{\left(\frac{\alpha_{\mathit{non-Ia}}}{d_L^2(z_S;\Omega_M, w)}\right)}, \frac{\ln{10}}{2.5}\sigma_{\mathit{non-Ia}}\right)}{P_{non-Ia}(\mathit{ADU} > \mathit{ADU}_0)},
 \label{adunonIa:eqn}
 \end{equation}
@@ -240,22 +243,39 @@ where the normalization factor is the complementary cumulative distribution func
 for the corresponding log-normal distribution.
 It is understood that $p(\mathit{ADU}<\mathit{ADU}_0)=0$ is never evaluated.
 
-The second term is redshift and type probabilities.  In our model we adopt
-a flat prior on the redshift distribution.
-The underlying relative rates between SNe~Ia and non-Ia are modeled
-as being linear in redshift parameterized by the
+The second term gives the type probability. In our model,
+the underlying relative rates between SNe~Ia and non-Ia is linear in redshift,
+ parameterized by the
 its value at $z=0$ and $1.1 \times z_{max}$, 
 \begin{equation}
 \hat{\theta}_{r}=\theta_{r0}+z\left(\frac{\theta_{r1}-\theta_{r0}}{1.1 \times z_{max}}\right).
 \end{equation}
-The relative rate for SN~Ia discovery is then
+The relative rate for SN~Ia discovery for the truncated distribution is
 \begin{equation}
 \theta_{r}=\frac{\hat{\theta}_{r}}{\hat{\theta}_{r}P_{Ia}(\mathit{ADU} > \mathit{ADU}_0) + (1-\hat{\theta}_{r})P_{non-Ia}(\mathit{ADU} > \mathit{ADU}_0)}.
 \end{equation}
 The spectroscopic classifications are drawn from
 \begin{equation}
-T_S | \theta_{r0}, \theta_{r1} \sim \text{Bernoulli}(\theta_r).
+T_S | \Omega_M, w, \theta_{r0}, \theta_{r1} , \alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}} \sim \text{Bernoulli}(\theta_r).
 \end{equation}
+Although the underlying type distribution depends only on $ \theta_{r0}$ and $ \theta_{r1}$,  
+the observed truncated distribution does depend on the other parameters through 
+$P_{X}(\mathit{ADU} > \mathit{ADU}_0)$.
+
+The third term is the redshift distribution of transient discoveries.
+In our model we adopt
+a redshift distribution of transients in the universe
+\begin{equation}
+P(z) \propto z^2.
+\end{equation}
+The redshift distribution of discovered transients is then
+\begin{equation}
+P(z) = \left(\int_{z_{min}}^{z_{max}} dz'\, z'^2\left( 
+\hat{\theta}_{r}P_{Ia}(\mathit{ADU} > \mathit{ADU}_0) + (1-\hat{\theta}_{r})P_{non-Ia}(\mathit{ADU} > \mathit{ADU}_0)
+\right)\right)^{-1}z^2.
+\end{equation}
+
+In the presented model, the data from different transients are independent.
 
 \subsubsection{Model for the {\it mis} set data}
 
@@ -273,35 +293,32 @@ P(\theta_{G1},\theta_{G2}|z, z_N) =
 	P_{host}\delta(z-\theta_{G1})\delta(z_N-\theta_{G2}) +
 	(1-P_{host}) \delta(z-\theta_{G2})\delta(z_N-\theta_{G1}).
 \end{equation}
+As for the {\it obs} set, the redshifts of the supernova
+ and neighbor are drawn from distributions $P(z) \propto z^2$, $P(z_N) \propto z^2_N$.
 
-The underlying distribution for counts at peak brightness $\mathit{ADU}$
-is
+
+The data likelihood is 
 \begin{multline}
-p(\mathit{ADU}, \theta_{G1}, \theta_{G2} | \Omega_M, w, \theta_r, \alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}}) \\
- \sum_{z, T}  p(\mathit{ADU, \theta_{G1}, \theta_{G2}}| z , z_H, T \ldots)P(z, T|\ldots).
+p(\mathit{ADU}, \theta_{G1}, \theta_{G2} | \Omega_M, w, \theta_r, \alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}})  \\
+= \sum_{T}\int_{z,z_N} dz\,dz_N \, p(\mathit{ADU, \theta_{G1}, \theta_{G2}}| z , z_N, T, \ldots)P(T| z, z_N,\ldots) P(z, z_N|\ldots)\\
+ =\sum_{T} \int_{z,z_N} dz\,dz_N\, p(\mathit{ADU}| z ,T, \ldots)p(\theta_{G1}, \theta_{G2}| z , z_N) P(T| z, \ldots) P(z, z_N|\ldots)\\
+= \sum_{T} P_{host} p(\mathit{ADU}| z=\theta_{G1} ,T, \ldots) P(T| z=\theta_{G1}, \ldots) P(\theta_{G1},\theta_{G2}|\ldots) \\
+ +  (1-P_{host}) p(\mathit{ADU}| z=\theta_{G2} ,T, \ldots) P(T| z=\theta_{G2}, \ldots) P(\theta_{G2},
+ \theta_{G1}|\ldots)\\
+\propto \sum_{T} P_{host} p(\mathit{ADU}| z=\theta_{G1} ,T, \ldots) P(T| z=\theta_{G1}, \ldots) \\
+ +  (1-P_{host}) p(\mathit{ADU}| z=\theta_{G2} ,T, \ldots) P(T| z=\theta_{G2}, \ldots),
 \label{adumis:eqn}
 \end{multline}
-
-The marginalization of Eqn.~\ref{adumis:eqn} thus gives for a transient with $\theta_{G1}$,
-$\theta_{G2}$ an underlying distribution of counts of
- \begin{multline}
-\mathit{ADU}| \Omega_M, w, \theta_r, \alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}} \\
- \sim  P_{host} \left[\theta_r \mathcal{N}_{\ln}\left(\ln{\left(\frac{\alpha_{Ia}}{d_L^2(\theta_{G1})}\right)}, \frac{\ln{10}}{2.5}\sigma_{Ia}\right)
-+\left(1-\theta_r\right)
-\mathcal{N}_{\ln}\left(\ln{\left(\frac{\alpha_{\mathit{non-Ia}}}{d_L^2(\theta_{G1})}\right)}, \frac{\ln{10}}{2.5}\sigma_{\mathit{non-Ia}}\right) \right] \\
- + (1-P_{host})\left[ \theta_r \mathcal{N}_{\ln}\left(\ln{\left(\frac{\alpha_{Ia}}{d_L^2(\theta_{G2})}\right)}, \frac{\ln{10}}{2.5}\sigma_{Ia}\right) 
- + \left(1-\theta_r\right)
-\mathcal{N}_{\ln}\left(\ln{\left(\frac{\alpha_{\mathit{non-Ia}}}{d_L^2(\theta_{G2})}\right)}, \frac{\ln{10}}{2.5}\sigma_{\mathit{non-Ia}}\right) \right],
-\label{adumis2:eqn}
-\end{multline}
-where again we adopt a flat prior in redshift.
+where we take advantage of the fact that
+$P(\theta_{G1}, \theta_{G2} | \ldots) = P(\theta_{G2}, \theta_{G1} | \ldots)$ does
+not have parameter dependence.
 
 The distribution of $\mathit{ADU}$ for our sample is a truncated version of the
 underlying distribution.  
-For our analysis, we use the distribution in  Eqn.~\ref{adumis2:eqn} normalized by
+For our analysis, we use the distribution in  Eqn.~\ref{adumis:eqn} normalized by
 the complementary cumulative distribution function
 \begin{equation}
-P(\mathit{ADU}>\mathit{ADU}_0|\ldots) = \int_{\mathit{ADU}_0}^{\infty} p(\mathit{ADU}|\Omega_M, w, \theta_r, \alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}})d\mathit{ADU}
+P(\mathit{ADU}>\mathit{ADU}_0, \theta_{G1}, \theta_{G2}|\ldots) = \int_{\mathit{ADU}_0}^{\infty} p(\mathit{ADU}, \theta_{G1}, \theta_{G2}|\Omega_M, w, \theta_r, \alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}})d\mathit{ADU}
 \end{equation}
 for a detection threshold of $\mathit{ADU}_0$.
 
@@ -334,7 +351,7 @@ choices:
 \item Type~Ia supernovae with intrinsic dispersion $\sigma_{SNIa}=0.1$.
 \item Non-Ia supernovae 2 magnitudes fainter than SNe~Ia with intrinsic
 dispersion $\sigma_{non-Ia}=1$.
-\item $\theta_r=r_0 + (r_1-r_0)z/2.1$ for a constant relative fraction of SNe~Ia where $r_1=0.2$,
+\item $\theta_r=r_0 + (r_1-r_0)z/1.54$ for a constant relative fraction of SNe~Ia where $r_1=0.2$,
 $r_0=0.95$.
 \item 2000 transients distributed by co-moving volume in the range $0.1<z<1.4$.
 \item Detection threshold at approximately the mean brightness SN~Ia at $z=1.2$.
@@ -344,121 +361,186 @@ host redshift.
 \item Accumulated spectra for 20\%, 60\%, and 100\% of discovered transients.
 \end{itemize}
 
-
-In our simulated data sets, the
-pdf for the redshift of the second galaxy is approximately uniform in volume:
-\begin{equation}
-\frac{3 z_N^2}{z_{max}^3 - z_{min}^3}.
-\end{equation}
-
-A prior is applied to the SN~Ia absolute magnitude
-\begin{equation}
-\alpha_{SNIa} \sim \ln\mathcal{N}\left(\ln\left(\alpha^0_{SNIa}\right),\frac{\ln{10}}{2.5}0.02\right),
-\end{equation}
+A prior is applied to the SN~Ia absolute magnitude and intrinsic dispersion
+\begin{align}
+\alpha_{SNIa} & \sim \mathcal{N}_{\ln}\left(\ln\left(\alpha^0_{SNIa}\right),\frac{\ln{10}}{2.5}0.02\right)\\
+\sigma_{SNIa} & \sim \mathcal{N}_{\ln}\left(\ln\left(0.1\right),0.1\right),
+\end{align}
 where $\alpha^0_{SNIa}$ is the true input luminosity.
 
 The simulated data are analyzed using 
 \citet{stan-software:2015}, a
 a probabilistic programming language for
-inference of Bayesian models with Hamiltonian Monte Carlo.  There are
-four chains run, each with 50,000 samples then thinned by 5.  Half the links
-are used for burnin, so ultimately 20,000 links are used as draws from the posterior.
+inference of Bayesian models with Hamiltonian Monte Carlo.
 
-\subsubsection{SN~Ia Only}
-A classical analysis would only include confirmed SNe~Ia with a definitive
-redshift. The realization of simulated data has 415 Type~Ia supernovae.
-Results of the analysis of a pure SN~Ia sample with no
-host misclassification are presented:  Figure~\ref{contour.ia_only:fig}
-shows the posteriors for  $\Omega_M$--$w$ and Table~\ref{ia_only:tab} the
-credible equal-tailed intervals for $w$.  The true $w=-1$ is within
-the 0.58 credible interval. (Note that $w$ is the parameter
-of most interest for the experiment.)
+\subsubsection{Results}
 
 \begin{figure}[htbp] %  figure placement: here, top, bottom, or page
    \centering
-   \includegraphics[scale=0.55]{/Users/akim/project/abc/results/{contour..ia_only.500}.pdf} \newline
-\caption{Probability distribution function for $\Omega_M$--$w$ for only SNe~Ia
-   all with spectra.
+   \includegraphics[scale=0.35]{/Users/akim/project/abc/results/temp/{contour..2000..noMalm.1.0}.pdf} \newline
+\caption{Probability distribution function for $\Omega_M$--$w$,
+ 100\% spectroscopy no Malmquist bias.
    Solid lines represent the input cosmology.  Dashed lines in the
    histograms are the 0.16 and 0.86 quantiles. 
-   \label{contour.ia_only:fig}}
+   \label{contour1:fig}}
 \end{figure}
+
+\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
+   \centering
+   \includegraphics[scale=0.35]{/Users/akim/project/abc/results/temp/{contour..2000.1.0}.pdf} \newline
+\caption{Probability distribution function for $\Omega_M$--$w$,
+ 100\% spectroscopy with Malmquist bias.
+   \label{contour2:fig}}
+\end{figure}
+
+\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
+   \centering
+   \includegraphics[scale=0.35]{/Users/akim/project/abc/results/temp/{contour..2000.0.6}.pdf} \newline
+\caption{Probability distribution function for $\Omega_M$--$w$,
+ 60\% spectroscopy with Malmquist bias.
+   \label{contour3:fig}}
+\end{figure}
+
+\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
+   \centering
+   \includegraphics[scale=0.35]{/Users/akim/project/abc/results/temp/{contour..2000.0.2}.pdf} \newline
+\caption{Probability distribution function for $\Omega_M$--$w$,
+ 20\% spectroscopy with Malmquist bias.
+   \label{contour4:fig}}
+\end{figure}
+
+\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
+   \centering
+   \includegraphics[scale=0.35]{/Users/akim/project/abc/results/temp/{contour..2000..noMalm.0.2}.pdf} \newline
+\caption{Probability distribution function for $\Omega_M$--$w$,
+ 20\% spectroscopy without Malmquist bias.
+   \label{contour4:fig}}
+\end{figure}
+
 
 \begin{table}
 \centering
-\begin{tabular}{|c|cc|}
+\begin{tabular}{cc|c|cc|}
 \hline
-\%-ile & $w$ range & $\Delta w$\\ \hline
-$0.68$ & $[-1.254, -0.975]$ & $0.279$ \\
-$0.90$ & $[-1.347, -0.889]$ & $0.458$ \\
-$0.95$ & $[-1.396, -0.846]$ & $0.550$ \\
+ADU0&\% Spec&\%-ile & $w$ range & $\Delta w$\\ \hline
+0 & 100 &$0.68$ & $[-1.174, -0.982]$ & $0.192$ \\
+&&$0.90$ & $[-1.239, -0.923]$ & $0.316$ \\
+&&$0.95$ & $[-1.267, -0.894]$ & $0.373$ \\ \hline
+0.2 & 100&$0.68$ & $[-1.156, -0.972]$ & $0.184$ \\
+&&$0.90$ & $[-1.222, -0.912]$ & $0.309$ \\
+&&$0.95$ & $[-1.255, -0.883]$ & $0.372$ \\ \hline
+0.2&60&$0.68$ & $[-1.209, -1.014]$ & $0.195$ \\
+&&$0.90$ & $[-1.275, -0.955]$ & $0.321$ \\
+&&$0.95$ & $[-1.309, -0.924]$ & $0.385$ \\ \hline
+0&20&$0.68$ & $[-1.226, -1.032]$ & $0.194$ \\
+&&$0.90$ & $[-1.289, -0.969]$ & $0.320$ \\
+&&$0.95$ & $[-1.322, -0.942]$ & $0.379$ \\ \hline
+0.2& 20&$0.68$ & $[-1.229, -1.033]$ & $0.196$ \\
+&&$0.90$ & $[-1.294, -0.972]$ & $0.322$ \\
+&&$0.95$ & $[-1.323, -0.943]$ & $0.380$ \\
 \hline
 \end{tabular}
 \caption{Credible intervals of $w$ using the SNe~Ia only with spectroscopic
 observations.\label{ia_only:tab}}
 \end{table}
 
-\subsubsection{Full Sample: Varying Spectroscopic Completeness}
-We now turn to the full sample of SNe~Ia and non-Ia's.  Recall that our simple
-model treats the non-Ia's in the sample
-as standard candles with a large (1 mag) intrinsic dispersion.
 
-Results for the $\Omega_M$--$w$ posterior for the
-case of 40\%, 70\%, and 100\% spectroscopic completeness
-are shown in Figures~\ref{contour.200:fig}, \ref{contour.350:fig}, and
-\ref{contour.500:fig} respectively.
-The credible intervals
-of $w$ for are given in Table~\ref{compare:tab}, with
-the input $w=-1$ within the 0.65, 0.49, and 0.47  intervals
-respectively.
-
-\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
-   \centering
-   \includegraphics[scale=0.40]{/Users/akim/project/abc/results/{contour.200}.pdf} 
-   \caption{Probability distribution function for $\Omega_M$--$w$ for:
-    SNe~Ia and non-Ia with 40\%  spectroscopic completeness.
-   \label{contour.200:fig}}
-\end{figure}
-
-\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
-   \centering
-   \includegraphics[scale=0.40]{/Users/akim/project/abc/results/{contour.350}.pdf} 
-   \caption{Probability distribution function for $\Omega_M$--$w$ for
-    SNe~Ia and non-Ia with 70\%  spectroscopic completeness.
-   \label{contour.350:fig}}
-\end{figure}
-
-\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
-   \centering
-   \includegraphics[scale=0.40]{/Users/akim/project/abc/results/{contour.500}.pdf} 
-   %\includegraphics[scale=0.55]{/Users/akim/project/abc/results/{contour.200}.pdf}    
-   \caption{Probability distribution function for $\Omega_M$--$w$ for
-    SNe~Ia and non-Ia with 100\%  spectroscopic completeness.
-   \label{contour.500:fig}}
-\end{figure}
-
-\begin{table}[htbp] 
-\centering
-\begin{tabular}{|cc|cc|}
-\hline
-\# Spectra & \%-ile & $w$ range & $\Delta$\\ \hline
-200& $0.68$ & $[-1.284, -0.991]$ & $0.293$ \\
-200& $0.90$ & $[-1.385, -0.900]$ & $0.485$ \\
-200& $0.95$ & $[-1.435, -0.860]$ & $0.575$ \\
-350& $0.68$ & $[-1.243, -0.952]$ & $0.291$ \\
-350& $0.90$ & $[-1.339, -0.858]$ & $0.481$ \\
-350& $0.95$ & $[-1.390, -0.817]$ & $0.573$ \\
-500& $0.68$ & $[-1.236, -0.948]$ & $0.289$ \\
-500& $0.90$ & $[-1.336, -0.861]$ & $0.475$ \\
-500& $0.95$ & $[-1.385, -0.815]$ & $0.570$ \\
-\hline
-\end{tabular}
-\caption{Credible intervals of $w$ given different levels of spectroscopy.  \label{compare:tab}}
-\end{table}
-
-As would be expected, the better the spectroscopic completeness, the less bias
-and smaller uncertainties that are obtained.
-
+%
+%\subsubsection{SN~Ia Only}
+%A classical analysis would only include confirmed SNe~Ia with a definitive
+%redshift. The realization of simulated data has 415 Type~Ia supernovae.
+%Results of the analysis of a pure SN~Ia sample with no
+%host misclassification are presented:  Figure~\ref{contour.ia_only:fig}
+%shows the posteriors for  $\Omega_M$--$w$ and Table~\ref{ia_only:tab} the
+%credible equal-tailed intervals for $w$.  The true $w=-1$ is within
+%the 0.58 credible interval. (Note that $w$ is the parameter
+%of most interest for the experiment.)
+%
+%\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
+%   \centering
+%   \includegraphics[scale=0.55]{/Users/akim/project/abc/results/{contour..ia_only.500}.pdf} \newline
+%\caption{Probability distribution function for $\Omega_M$--$w$ for only SNe~Ia
+%   all with spectra.
+%   Solid lines represent the input cosmology.  Dashed lines in the
+%   histograms are the 0.16 and 0.86 quantiles. 
+%   \label{contour.ia_only:fig}}
+%\end{figure}
+%
+%\begin{table}
+%\centering
+%\begin{tabular}{|c|cc|}
+%\hline
+%\%-ile & $w$ range & $\Delta w$\\ \hline
+%$0.68$ & $[-1.254, -0.975]$ & $0.279$ \\
+%$0.90$ & $[-1.347, -0.889]$ & $0.458$ \\
+%$0.95$ & $[-1.396, -0.846]$ & $0.550$ \\
+%\hline
+%\end{tabular}
+%\caption{Credible intervals of $w$ using the SNe~Ia only with spectroscopic
+%observations.\label{ia_only:tab}}
+%\end{table}
+%
+%\subsubsection{Full Sample: Varying Spectroscopic Completeness}
+%We now turn to the full sample of SNe~Ia and non-Ia's.  Recall that our simple
+%model treats the non-Ia's in the sample
+%as standard candles with a large (1 mag) intrinsic dispersion.
+%
+%Results for the $\Omega_M$--$w$ posterior for the
+%case of 40\%, 70\%, and 100\% spectroscopic completeness
+%are shown in Figures~\ref{contour.200:fig}, \ref{contour.350:fig}, and
+%\ref{contour.500:fig} respectively.
+%The credible intervals
+%of $w$ for are given in Table~\ref{compare:tab}, with
+%the input $w=-1$ within the 0.65, 0.49, and 0.47  intervals
+%respectively.
+%
+%\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
+%   \centering
+%   \includegraphics[scale=0.40]{/Users/akim/project/abc/results/{contour.200}.pdf} 
+%   \caption{Probability distribution function for $\Omega_M$--$w$ for:
+%    SNe~Ia and non-Ia with 40\%  spectroscopic completeness.
+%   \label{contour.200:fig}}
+%\end{figure}
+%
+%\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
+%   \centering
+%   \includegraphics[scale=0.40]{/Users/akim/project/abc/results/{contour.350}.pdf} 
+%   \caption{Probability distribution function for $\Omega_M$--$w$ for
+%    SNe~Ia and non-Ia with 70\%  spectroscopic completeness.
+%   \label{contour.350:fig}}
+%\end{figure}
+%
+%\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
+%   \centering
+%   \includegraphics[scale=0.40]{/Users/akim/project/abc/results/{contour.500}.pdf} 
+%   %\includegraphics[scale=0.55]{/Users/akim/project/abc/results/{contour.200}.pdf}    
+%   \caption{Probability distribution function for $\Omega_M$--$w$ for
+%    SNe~Ia and non-Ia with 100\%  spectroscopic completeness.
+%   \label{contour.500:fig}}
+%\end{figure}
+%
+%\begin{table}[htbp] 
+%\centering
+%\begin{tabular}{|cc|cc|}
+%\hline
+%\# Spectra & \%-ile & $w$ range & $\Delta$\\ \hline
+%200& $0.68$ & $[-1.284, -0.991]$ & $0.293$ \\
+%200& $0.90$ & $[-1.385, -0.900]$ & $0.485$ \\
+%200& $0.95$ & $[-1.435, -0.860]$ & $0.575$ \\
+%350& $0.68$ & $[-1.243, -0.952]$ & $0.291$ \\
+%350& $0.90$ & $[-1.339, -0.858]$ & $0.481$ \\
+%350& $0.95$ & $[-1.390, -0.817]$ & $0.573$ \\
+%500& $0.68$ & $[-1.236, -0.948]$ & $0.289$ \\
+%500& $0.90$ & $[-1.336, -0.861]$ & $0.475$ \\
+%500& $0.95$ & $[-1.385, -0.815]$ & $0.570$ \\
+%\hline
+%\end{tabular}
+%\caption{Credible intervals of $w$ given different levels of spectroscopy.  \label{compare:tab}}
+%\end{table}
+%
+%As would be expected, the better the spectroscopic completeness, the less bias
+%and smaller uncertainties that are obtained.
+%
 %
 %\section{Subsections of the Model}
 %
