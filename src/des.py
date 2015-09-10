@@ -252,7 +252,6 @@ def main():
 
 	fit = sm.sampling(data=data.dict(ia_only=ia_only), iter=1000, thin=1, n_jobs=-1, chains=Nchains, init=data.init(Nchains))
 	logposterior = fit.get_logposterior()
-	app=''
 	if ia_only:
 		app+='.ia_only.'
 	if ADU0 == 0.:
@@ -266,7 +265,6 @@ def main():
 
 	fit = sm.sampling(data=data.dict(ia_only=ia_only), iter=1000, thin=1, n_jobs=-1, chains=Nchains, init=data.init(Nchains))
 	logposterior = fit.get_logposterior()
-	app=''
 	if ia_only:
 		app+='.ia_only.'
 	if ADU0 == 0.:
