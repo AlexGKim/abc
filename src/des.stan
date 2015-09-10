@@ -474,7 +474,7 @@ transformed parameters{
     for (s in 1:num_elements(ainv_all)){
       adu[s] <- luminosity_distance[s,1]^(-2);
     }
-    if (ADU0 !=0){
+    if (ADU0 !=0.){
       adu_min[1,1] <- adu_min[1,1]^(-2);
       adu_max[1,1] <- adu_max[1,1]^(-2);
       zPDFrenorm<- normalization_term3(ADU0, adu, ainv_all, adu_min[1,1], ainvmin[1],
@@ -511,39 +511,46 @@ transformed parameters{
         for (s in 1:N_mis){
           adu_[s] <- adu[ainv_all_ind_mis[s]];
         }
-        if (ADU0 !=0){
+        for (s in 1:N_mis){
+          lp_holder[1][s] <- lognormal_log(adu_mis[s], log(adu_[s]*alpha_Ia), sigma_Ia*ln10d25);
+          lp_holder[2][s] <- lognormal_log(adu_mis[s], log(adu_[s]*alpha_nonIa), sigma_nonIa*ln10d25);
+        }
+        lp_holder[1] <- lp_holder[1] + loggalaxyProb +log(rate);
+        lp_holder[2] <- lp_holder[2] + loggalaxyProb +log(1-rate);
+
+        if (ADU0 !=0.){
           erfc_Ia <- myRenorm(ADU0, adu_, alpha_Ia, sigma_Ia, ln10d25);
           erfc_nonIa <- myRenorm(ADU0, adu_, alpha_nonIa, sigma_nonIa, ln10d25);
-          renorm <- rate .* erfc_Ia+ (1-rate) .* erfc_nonIa;
-          rate <- rate ./ renorm;
-        }
-        lp_holder[1] <- log(rate);
-        lp_holder[2] <- log(1-rate);
+          renorm <- galaxyProb*( rate .* erfc_Ia + (1-rate) .* erfc_nonIa);
 
-        if (ADU0 !=0){
-          for (ind in 1:2)
-            lp_holder[ind] <- lp_holder[ind]+log(renorm) - zPDFrenorm; // z^2 is independent of parameters
+          # erfc_Ia <- log(erfc_Ia);
+          # lp_holder[1] <- lp_holder[1] - erfc_Ia;
+          # erfc_nonIa <- log(erfc_nonIa);
+          # lp_holder[2] <- lp_holder[2] - erfc_nonIa;
+
+#          rate <- rate ./ renorm;
         }
 
-        for (s in 1:N_mis)
-          lp_holder[1][s] <- lp_holder[1][s]+ lognormal_log(adu_mis[s], log(adu_[s]*alpha_Ia), sigma_Ia*ln10d25);
+        # if (ADU0 !=0){
+        #   for (ind in 1:2)
+        #     lp_holder[ind] <- lp_holder[ind]+log(renorm) - zPDFrenorm; // z^2 is independent of parameters
+        # }
+
 
         #    increment_log_prob(lognormal_log(adu_SNIa, log(adu_true_SNIa*alpha_Ia), sigma_Ia*ln10d25));
-        if (ADU0 !=0){
-          erfc_Ia <- log(erfc_Ia);
-          lp_holder[1] <- lp_holder[1] - erfc_Ia;
-        }
-
-        for (s in 1:N_mis)
-          lp_holder[2][s] <- lp_holder[2][s] + lognormal_log(adu_mis[s], log(adu_[s]*alpha_nonIa), sigma_nonIa*ln10d25);
+        # if (ADU0 !=0){
+        #   erfc_Ia <- log(erfc_Ia);
+        #   lp_holder[1] <- lp_holder[1] - erfc_Ia;
+        #             erfc_nonIa <- log(erfc_nonIa);
+        #   lp_holder[2] <- lp_holder[2] - erfc_nonIa;
+        # }
 
         # increment_log_prob(lognormal_log(adu_nonIa, log(adu_true_nonIa*alpha_nonIa), sigma_nonIa*ln10d25));
-        if (ADU0 !=0){
-          erfc_nonIa <- log(erfc_nonIa);
-          lp_holder[2] <- lp_holder[2] - erfc_nonIa;
-        }
-        lp_holder[1] <- lp_holder[1] + loggalaxyProb;
-        lp_holder[2] <- lp_holder[2] + loggalaxyProb;
+        # if (ADU0 !=0){
+        #   erfc_nonIa <- log(erfc_nonIa);
+        #   lp_holder[2] <- lp_holder[2] - erfc_nonIa;
+        # }
+
 
 
         // do incorrect redshift next
@@ -552,36 +559,51 @@ transformed parameters{
         for (s in 1:N_mis){
           adu_[s] <- adu[ainv2_all_ind_mis[s]];
         }
-        if (ADU0 !=0){
+        for (s in 1:N_mis){
+          lp_holder[3][s] <- lognormal_log(adu_mis[s], log(adu_[s]*alpha_Ia), sigma_Ia*ln10d25);
+          lp_holder[4][s] <- lognormal_log(adu_mis[s], log(adu_[s]*alpha_nonIa), sigma_nonIa*ln10d25);
+        }
+        lp_holder[3] <- lp_holder[3] + lognotgalaxyProb +log(rate);
+        lp_holder[4] <- lp_holder[4] + lognotgalaxyProb +log(1-rate);
+
+        if (ADU0 !=0.){
           erfc_Ia <- myRenorm(ADU0, adu_, alpha_Ia, sigma_Ia, ln10d25);
           erfc_nonIa <- myRenorm(ADU0, adu_, alpha_nonIa, sigma_nonIa, ln10d25);
-          renorm <- rate .* erfc_Ia+ (1-rate) .* erfc_nonIa;
-          rate <- rate ./ renorm;
-        }
-        lp_holder[3] <- log(rate);
-        lp_holder[4] <- log(1-rate);
-        if (ADU0 !=0){
-          for (ind in 3:4)
-            lp_holder[ind] <- lp_holder[ind]+log(renorm) - zPDFrenorm; // z^2 is independent of parameters
-        }
+          renorm <- renorm + (1-galaxyProb)*(rate .* erfc_Ia+ (1-rate) .* erfc_nonIa) ;
 
-        for (s in 1:N_mis)
-          lp_holder[3][s] <- lp_holder[3][s]+ lognormal_log(adu_mis[s], log(adu_[s]*alpha_Ia), sigma_Ia*ln10d25);
+          # erfc_Ia <- log(erfc_Ia);
+          # lp_holder[3] <- lp_holder[3] - erfc_Ia;
+          # erfc_nonIa <- log(erfc_nonIa);
+          # lp_holder[4] <- lp_holder[4] - erfc_nonIa;
+
+          renorm <- log(renorm);
+          for (s in 1:4){
+            lp_holder[s] <- lp_holder[s] - renorm;
+          }  
+        }        
+          # rate <- rate ./ renorm;
+        
+        # lp_holder[3] <- log(rate);
+        # lp_holder[4] <- log(1-rate);
+        # if (ADU0 !=0){
+        #   for (ind in 3:4)
+        #     lp_holder[ind] <- lp_holder[ind]+log(renorm) - zPDFrenorm; // z^2 is independent of parameters
+        # }
+
+
 
         #    increment_log_prob(lognormal_log(adu_SNIa, log(adu_true_SNIa*alpha_Ia), sigma_Ia*ln10d25));
-        if (ADU0 !=0){
-          erfc_Ia <- log(erfc_Ia);
-          lp_holder[3] <- lp_holder[3] - erfc_Ia;
-        }
-        for (s in 1:N_mis)
-          lp_holder[4][s] <- lp_holder[4][s] + lognormal_log(adu_mis[s], log(adu_[s]*alpha_nonIa), sigma_nonIa*ln10d25);
+        # if (ADU0 !=0){
+        #   erfc_Ia <- log(erfc_Ia);
+        #   lp_holder[3] <- lp_holder[3] - erfc_Ia;
+        # }
+
         # increment_log_prob(lognormal_log(adu_nonIa, log(adu_true_nonIa*alpha_nonIa), sigma_nonIa*ln10d25));
-        if (ADU0 !=0){
-          erfc_nonIa <- log(erfc_nonIa);
-          lp_holder[4] <- lp_holder[4] - erfc_nonIa;
-        }
-        lp_holder[3] <- lp_holder[3] + lognotgalaxyProb;
-        lp_holder[4] <- lp_holder[4] + lognotgalaxyProb;
+        # if (ADU0 !=0){
+        #   erfc_nonIa <- log(erfc_nonIa);
+        #   lp_holder[4] <- lp_holder[4] - erfc_nonIa;
+        # }
+
 
         for (s in 1:N_mis){
           for (t in 1:4){
@@ -616,7 +638,7 @@ model{
 
     //second term P(Ts| zs,...)
     rate <- transrate(1,trans_ainv_obs-1, snIa_rate_0, snIa_rate_1, zmax);
-    if (ADU0 !=0){
+    if (ADU0 !=0.){
       for (s in 1:N_SNIa){
         adu_true[index_SNIa[s]] <- adu_true_SNIa[s];
       }
@@ -632,7 +654,7 @@ model{
     snIa_obs ~ bernoulli(rate);
 
     //third term P(zs|...) 
-    if (ADU0 !=0){
+    if (ADU0 !=0.){
       increment_log_prob(log(renorm)); // z^2 is independent of parameters
       increment_log_prob(-N_obs*zPDFrenorm);
     }
@@ -643,7 +665,7 @@ model{
 
     # print(lognormal_log(adu_SNIa[1], log(adu_true_SNIa[1]*alpha_Ia), sigma_Ia*ln10d25));
 
-    if (ADU0 !=0){
+    if (ADU0 !=0.){
       erfc_Ia <- log(erfc_Ia);
       for (s in 1:N_SNIa)
         increment_log_prob(-erfc_Ia[index_SNIa[s]]);
@@ -651,7 +673,7 @@ model{
 
     if (N_nonIa > 0){
       increment_log_prob(lognormal_log(adu_nonIa, log(adu_true_nonIa*alpha_nonIa), sigma_nonIa*ln10d25));
-      if (ADU0 !=0){
+      if (ADU0 !=0.){
         erfc_nonIa <- log(erfc_nonIa);
         for (s in 1:N_nonIa)
           increment_log_prob(-erfc_nonIa[index_nonIa[s]]);
