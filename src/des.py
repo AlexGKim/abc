@@ -217,60 +217,62 @@ def main():
 	Nchains=4
 	N_sn=2000
 
-	app='.'+str(N_sn)+'.'
 	ia_only=False
 
 	data= Data(N_sn, 2)
 
 	sm = pystan.StanModel(file='des.stan')
 
-	ADU0=0.2 #0.2 #0.2
-	data.found(ADU0)
+	ADU0s = [0.,0.2]
+	for ADU0 in ADU0s:
+		app='.'+str(N_sn)+'.'
+		ADU0=0.2 #0.2 #0.2
+		data.found(ADU0)
 
-	fracspec = numpy.arange(0.2,1.0,0.4)
-	for ns in fracspec:
-		data.spectrum(ns)
+		fracspec = numpy.arange(0.2,1.0,0.4)
+		for ns in fracspec:
+			data.spectrum(ns)
 
-		fit = sm.sampling(data=data.dict(ia_only=ia_only), iter=1000, thin=1, n_jobs=-1, chains=Nchains, init=data.init(Nchains))
+			fit = sm.sampling(data=data.dict(ia_only=ia_only), iter=1000, thin=1, n_jobs=-1, chains=Nchains, init=data.init(Nchains))
 
-		logposterior = fit.get_logposterior()
-
-
-		if ia_only:
-			app+='.ia_only.'
-		if ADU0 == 0.:
-			app+='.noMalm.'
-		with open('../results/temp/model'+app+str(ns)+'.pkl', 'wb') as f:
-			pickle.dump([fit.extract(), logposterior], f)
+			logposterior = fit.get_logposterior()
 
 
-	ADU0=0.
-	ns=1.
-	data.found(ADU0)
-	data.spectrum(ns)
+			if ia_only:
+				app+='.ia_only.'
+			if ADU0 == 0.:
+				app+='noMalm.'
+			with open('../results/temp/model'+app+str(ns)+'.pkl', 'wb') as f:
+				pickle.dump([fit.extract(), logposterior], f)
 
 
-	fit = sm.sampling(data=data.dict(ia_only=ia_only), iter=1000, thin=1, n_jobs=-1, chains=Nchains, init=data.init(Nchains))
-	logposterior = fit.get_logposterior()
-	if ia_only:
-		app+='.ia_only.'
-	if ADU0 == 0.:
-		app+='.noMalm.'
-	with open('../results/temp/model'+app+str(ns)+'.pkl', 'wb') as f:
-		pickle.dump([fit.extract(), logposterior], f)
+	# ADU0=0.
+	# ns=1.
+	# data.found(ADU0)
+	# data.spectrum(ns)
 
-	ns=0.2
-	data.found(ADU0)
-	data.spectrum(ns)
 
-	fit = sm.sampling(data=data.dict(ia_only=ia_only), iter=1000, thin=1, n_jobs=-1, chains=Nchains, init=data.init(Nchains))
-	logposterior = fit.get_logposterior()
-	if ia_only:
-		app+='.ia_only.'
-	if ADU0 == 0.:
-		app+='.noMalm.'
-	with open('../results/temp/model'+app+str(ns)+'.pkl', 'wb') as f:
-		pickle.dump([fit.extract(), logposterior], f)
+	# fit = sm.sampling(data=data.dict(ia_only=ia_only), iter=1000, thin=1, n_jobs=-1, chains=Nchains, init=data.init(Nchains))
+	# logposterior = fit.get_logposterior()
+	# if ia_only:
+	# 	app+='.ia_only.'
+	# if ADU0 == 0.:
+	# 	app+='.noMalm.'
+	# with open('../results/temp/model'+app+str(ns)+'.pkl', 'wb') as f:
+	# 	pickle.dump([fit.extract(), logposterior], f)
+
+	# ns=0.2
+	# data.found(ADU0)
+	# data.spectrum(ns)
+
+	# fit = sm.sampling(data=data.dict(ia_only=ia_only), iter=1000, thin=1, n_jobs=-1, chains=Nchains, init=data.init(Nchains))
+	# logposterior = fit.get_logposterior()
+	# if ia_only:
+	# 	app+='.ia_only.'
+	# if ADU0 == 0.:
+	# 	app+='.noMalm.'
+	# with open('../results/temp/model'+app+str(ns)+'.pkl', 'wb') as f:
+	# 	pickle.dump([fit.extract(), logposterior], f)
 
 
 
