@@ -226,7 +226,6 @@ def main():
 	ADU0s = [0.,0.2]
 	for ADU0 in ADU0s:
 		app='.'+str(N_sn)+'.'
-		ADU0=0.2 #0.2 #0.2
 		data.found(ADU0)
 
 		fracspec = numpy.arange(0.2,1.0,0.4)
