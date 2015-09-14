@@ -181,7 +181,7 @@ def group(nspec):
 
 
 def main():
-	individual(0.6,ia_only=False,ADU0=0.,N_sn=2000)
+	individual(1.0,ia_only=False,ADU0=0.2,N_sn=2000)
 #	individual(500,ia_only=False)
 	wefew
 	group([200,350,500])
