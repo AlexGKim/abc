@@ -47,6 +47,24 @@ functions{
   }
 
 
+  vector transrate_quad(int type, vector zs, real snIa_rate_0_,real  snIa_rate_1_, real zmax){
+    real a2;
+    real snIa_rate_1;
+    real snIa_rate_0;
+    vector[num_elements(zs)] rate;
+    if (type ==1){
+      snIa_rate_0 <- snIa_rate_0_;
+      snIa_rate_1 <- snIa_rate_1_;
+    } else {
+      snIa_rate_0 <- 1-snIa_rate_0_;
+      snIa_rate_1 <- 1-snIa_rate_1_;
+    }
+
+    a2 <- (snIa_rate_1-snIa_rate_0)/((zmax*1.1)^2);
+    rate <- snIa_rate_0+ a2*(zs .* zs); 
+    return rate;
+  }
+
 
   vector myPhi(real ADU0, vector adu, real alpha, real sigma, real ln10d25){
     vector[num_elements(adu)] ans;
@@ -220,7 +238,43 @@ functions{
       sumans <- sumans/2.;
       return sumans;
   }
-}
+
+  real normalization_term3_quad(real ADU0, vector adu, real[] ainv, real adumin, real ainvmin,
+      real adumax, real ainvmax, real alpha, real sigma, real alpha2, real sigma2,
+      real snIa_rate_0, real snIa_rate_1, real zmax, real ln10d25)
+    {
+      vector[num_elements(adu)+2] adus;
+      vector[num_elements(adu)+2] ainvs;
+      vector[num_elements(adu)+2] ans;
+      vector[num_elements(adu)+2] rates;
+      real sumans;
+
+      adus[1] <- adumin;
+      adus[num_elements(adus)] <- adumax;
+      ainvs[1] <- ainvmin;
+      ainvs[num_elements(adus)] <- ainvmax;
+      for (s in 1:num_elements(adu)){
+        adus[s+1] <- adu[s];
+        ainvs[s+1] <- ainv[s];
+      }
+      ainvs <- ainvs-1;
+
+
+      rates <-transrate_quad(1,ainvs,snIa_rate_0,snIa_rate_1,zmax);
+
+      ans <- rates .* myRenorm(ADU0, adus, alpha, sigma, ln10d25);
+      ans <- ans + (1-rates) .* myRenorm(ADU0, adus, alpha2, sigma2, ln10d25);
+      ans <- ans .* ainvs .* ainvs .* ainvs;
+
+      //Now do trapezoidal rule
+      sumans <- 0.;
+      for (s in 1:num_elements(adus)-1){
+        sumans <- sumans + (ans[s]+ans[s+1])*(ainvs[s+1]-ainvs[s]);
+      }
+      sumans <- sumans/2.;
+      return sumans;
+    }
+  }
 
 data{
   int<lower=1> N_sn;
@@ -244,6 +298,8 @@ data{
   vector[N_obs] host_zs_obs;  # not used for now
   vector[N_sn-N_obs] host_zs_mis; 
   vector[N_sn-N_obs] host2_zs_mis; 
+
+  int bias_anal;
 }
 
 transformed data {
@@ -283,6 +339,13 @@ transformed data {
   real ainvmax[1];
 
 
+
+  galaxyProb <- 0.98; 
+
+  # if (bias_anal ==1)
+  #   galaxyProb <- 0.96;
+
+
 //  vector[N_sn-N_obs] ainv_zs_mis;  // need to do this way in case N_mis =0, transformed data is used
 //  vector[N_sn-N_obs] ainv2_zs_mis;  // need to do this way in case N_mis =0, transformed data is used
 
@@ -300,7 +363,7 @@ transformed data {
   N_nonIa <- N_obs-N_SNIa;
 
 
-  galaxyProb <- 0.98; 
+
   ln10d25 <- log(10.)/2.5;
   loggalaxyProb <- log(galaxyProb);
   lognotgalaxyProb <- log(1-galaxyProb);
@@ -477,8 +540,13 @@ transformed parameters{
     if (ADU0 !=0.){
       adu_min[1,1] <- adu_min[1,1]^(-2);
       adu_max[1,1] <- adu_max[1,1]^(-2);
-      zPDFrenorm<- normalization_term3(ADU0, adu, ainv_all, adu_min[1,1], ainvmin[1],
-          adu_max[1,1], ainvmax[1], alpha_Ia, sigma_Ia, alpha_nonIa, sigma_nonIa, snIa_rate_0,snIa_rate_1, zmax, ln10d25);
+      if (bias_anal ==1){
+        zPDFrenorm<- normalization_term3_quad(ADU0, adu, ainv_all, adu_min[1,1], ainvmin[1],
+            adu_max[1,1], ainvmax[1], alpha_Ia, sigma_Ia, alpha_nonIa, sigma_nonIa, snIa_rate_0,snIa_rate_1, zmax, ln10d25);
+      } else{
+        zPDFrenorm<- normalization_term3(ADU0, adu, ainv_all, adu_min[1,1], ainvmin[1],
+            adu_max[1,1], ainvmax[1], alpha_Ia, sigma_Ia, alpha_nonIa, sigma_nonIa, snIa_rate_0,snIa_rate_1, zmax, ln10d25);
+      }
       zPDFrenorm <- log(zPDFrenorm);
     }
 
@@ -507,7 +575,11 @@ transformed parameters{
 
       if (N_mis !=0){
         // do correct redshift first
-        rate <- transrate(1, host_zs_mis, snIa_rate_0, snIa_rate_1, zmax);
+        if (bias_anal ==1){
+          rate <- transrate_quad(1, host_zs_mis, snIa_rate_0, snIa_rate_1, zmax);
+        } else {
+          rate <- transrate(1, host_zs_mis, snIa_rate_0, snIa_rate_1, zmax);
+        }
         for (s in 1:N_mis){
           adu_[s] <- adu[ainv_all_ind_mis[s]];
         }
@@ -554,8 +626,11 @@ transformed parameters{
 
 
         // do incorrect redshift next
-
-        rate <- transrate(1, host2_zs_mis, snIa_rate_0, snIa_rate_1, zmax);
+        if (bias_anal==1){
+          rate <- transrate_quad(1, host2_zs_mis, snIa_rate_0, snIa_rate_1, zmax);
+        } else{
+          rate <- transrate(1, host2_zs_mis, snIa_rate_0, snIa_rate_1, zmax);
+        }
         for (s in 1:N_mis){
           adu_[s] <- adu[ainv2_all_ind_mis[s]];
         }
@@ -637,7 +712,11 @@ model{
     vector[N_obs] renorm;
 
     //second term P(Ts| zs,...)
-    rate <- transrate(1,trans_ainv_obs-1, snIa_rate_0, snIa_rate_1, zmax);
+    if (bias_anal==1){
+      rate <- transrate_quad(1,trans_ainv_obs-1, snIa_rate_0, snIa_rate_1, zmax);
+    } else{
+      rate <- transrate(1,trans_ainv_obs-1, snIa_rate_0, snIa_rate_1, zmax);
+    }
     if (ADU0 !=0.){
       for (s in 1:N_SNIa){
         adu_true[index_SNIa[s]] <- adu_true_SNIa[s];

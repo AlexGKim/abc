@@ -143,7 +143,8 @@ class Data(object):
 				'host_zs_mis': self.host_zs_random[self.s_mis],
 				'host2_zs_mis': self.neighbor_zs_random[self.s_mis],
 
-				'ADU0': self.ADU0
+				'ADU0': self.ADU0, 
+				'bias_anal':0,
 				}
 
 	def init(self, n):
@@ -223,12 +224,15 @@ def main():
 
 	sm = pystan.StanModel(file='des.stan')
 
-	ADU0s = [0.,0.2]
+	ADU0s = [0., 0.2]
 	for ADU0 in ADU0s:
 		app='.'+str(N_sn)+'.'
+		if ADU0 == 0.:
+			app+='noMalm.'
+		
 		data.found(ADU0)
 
-		fracspec = numpy.arange(0.2,1.0,0.4)
+		fracspec = numpy.arange(0.2,1.1,0.4)
 		for ns in fracspec:
 			data.spectrum(ns)
 
@@ -239,8 +243,7 @@ def main():
 
 			if ia_only:
 				app+='.ia_only.'
-			if ADU0 == 0.:
-				app+='noMalm.'
+
 			with open('../results/temp/model'+app+str(ns)+'.pkl', 'wb') as f:
 				pickle.dump([fit.extract(), logposterior], f)
 
