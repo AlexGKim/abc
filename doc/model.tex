@@ -300,17 +300,17 @@ As for the {\it obs} set, the redshifts of the supernova
 The data likelihood is 
 \begin{multline}
 p(\mathit{ADU}, \theta_{G1}, \theta_{G2} | \Omega_M, w, \theta_r, \alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}})  \\
-= \sum_{T}\int_{z,z_N} dz\,dz_N \, p(\mathit{ADU, \theta_{G1}, \theta_{G2}}| z , z_N, T, \ldots)P(T| z, z_N,\ldots) P(z, z_N|\ldots)\\
- =\sum_{T} \int_{z,z_N} dz\,dz_N\, p(\mathit{ADU}| z ,T, \ldots)p(\theta_{G1}, \theta_{G2}| z , z_N) P(T| z, \ldots) P(z, z_N|\ldots)\\
-= \sum_{T} P_{host} p(\mathit{ADU}| z=\theta_{G1} ,T, \ldots) P(T| z=\theta_{G1}, \ldots) P(\theta_{G1},\theta_{G2}|\ldots) \\
- +  (1-P_{host}) p(\mathit{ADU}| z=\theta_{G2} ,T, \ldots) P(T| z=\theta_{G2}, \ldots) P(\theta_{G2},
+= \sum_{T}\int_{z,z_N} dz\,dz_N \, p(\mathit{ADU, \theta_{G1}, \theta_{G2}}| z , z_N, T, \ldots)P(T| z, z_N,\ldots) p(z, z_N|\ldots)\\
+ =\sum_{T} \int_{z,z_N} dz\,dz_N\, p(\mathit{ADU}| z ,T, \ldots)p(\theta_{G1}, \theta_{G2}| z , z_N) P(T| z, \ldots) p(z, z_N|\ldots)\\
+= \sum_{T} P_{host} p(\mathit{ADU}| z=\theta_{G1} ,T, \ldots) P(T| z=\theta_{G1}, \ldots) p(\theta_{G1},\theta_{G2}|\ldots) \\
+ +  (1-P_{host}) p(\mathit{ADU}| z=\theta_{G2} ,T, \ldots) P(T| z=\theta_{G2}, \ldots) p(\theta_{G2},
  \theta_{G1}|\ldots)\\
 \propto \sum_{T} P_{host} p(\mathit{ADU}| z=\theta_{G1} ,T, \ldots) P(T| z=\theta_{G1}, \ldots) \\
  +  (1-P_{host}) p(\mathit{ADU}| z=\theta_{G2} ,T, \ldots) P(T| z=\theta_{G2}, \ldots),
 \label{adumis:eqn}
 \end{multline}
 where we take advantage of the fact that
-$P(\theta_{G1}, \theta_{G2} | \ldots) = P(\theta_{G2}, \theta_{G1} | \ldots)$ does
+$p(\theta_{G1}, \theta_{G2} | \ldots) = p(\theta_{G2}, \theta_{G1} | \ldots)$ does
 not have parameter dependence.
 
 The distribution of $\mathit{ADU}$ for our sample is a truncated version of the
