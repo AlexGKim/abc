@@ -54,7 +54,8 @@ def individual(N_s, ia_only = False, ADU0=None,N_sn=None,dir='temp'):
 	for i in xrange(len(levels)/2-1,-1,-1):
 		print '${:4.2f}$ &${:4.2f}$ &${:4.2f}$ & $[{:5.3f}, {:5.3f}]$ & ${:5.3f}$ \\\\'.format(ADU0, N_s, 1-levels[i]*2, ans[i],ans[-1-i], deltas[i])
 
-	fractions = [0.6, 0.2]
+	fractions = [0.6, 0.2, 0.0]
+	#fractions = [0.0]
 
 	for frac in fractions:
 		[extract_,logposterior_] = pickle.load(file('../results/'+dir+'/model'+app+str(frac)+'.pkl','rb'))
@@ -200,7 +201,7 @@ def group(nspec):
 
 
 def main():
-	key='temp'
+	key='seed2'
 	individual(1.0,ia_only=False,ADU0=0.2,N_sn=2000, dir=key)
 	individual(1.0,ia_only=False,ADU0=0.,N_sn=2000, dir=key)
 

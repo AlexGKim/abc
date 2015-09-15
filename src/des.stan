@@ -282,7 +282,7 @@ data{
 
   int<lower=1> N_adu_max;
 
-  int<lower=1> N_SNIa;
+  int<lower=0> N_SNIa;
 
   real ADU0;
 

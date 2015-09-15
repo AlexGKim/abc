@@ -15,15 +15,15 @@ import triangle
 
 levels = numpy.array([0.025, 0.05, 0.16, 1-0.16, 1-0.05, 1-.025])
 
-def individual(N_s, ia_only = False, ADU0=None,N_sn=None):
+def individual(N_s, ia_only = False, ADU0=None,N_sn=None,dir='temp'):
 	app=''
 	if N_sn is not None:
-		app='.'+str(N_sn)+'.'
+		app='.'+str(N_sn)
 	if ia_only:
 		app+='.ia_only.'
 	if ADU0 == 0.:
 			app+='.noMalm.'
-	[extract,logposterior] = pickle.load(file('../results/temp/model'+app+str(N_s)+'.pkl','rb'))
+	[extract,logposterior] = pickle.load(file('../results/'+dir+'/model'+app+str(N_s)+'.pkl','rb'))
 #	print numpy.abs((extract['w'] < -1).sum()*1. / len(extract['w'])-0.5)*2
 	n_samples = len(extract[extract.keys()[0]])
 
@@ -35,7 +35,7 @@ def individual(N_s, ia_only = False, ADU0=None,N_sn=None):
 		samples[:,3] = extract['sigma_Ia']
 		figure = triangle.corner(samples, labels=[r"$\Omega_M$", r"$w$", r"$\alpha_{Ia}$", r"$\sigma_{Ia}$"],truths=[0.28,-1, 2.,0.1],
 			quantiles=[0.16, 0.5, 0.84], plot_datapoints=False,plot_density=True)
-		plt.savefig('../results/temp/contour.'+app+str(N_s)+'.pdf')
+		plt.savefig('../results/'+dir+'/contour'+app+str(N_s)+'.pdf')
 		plt.clf()
 	else:
 		samples=numpy.zeros((n_samples,8))
@@ -52,7 +52,7 @@ def individual(N_s, ia_only = False, ADU0=None,N_sn=None):
 		figure = triangle.corner(samples, labels=[r"$\Omega_M$", r"$w$", r"$\alpha_{Ia}$", r"$\sigma_{Ia}$", r"$\alpha_{non-Ia}$", r"$\sigma_{non-Ia}$", r"SN Ia Rate 0", r"SN Ia Rate1"],
 			truths=[0.28,-1, 2.,0.1,2*10**(-2./2.5),1,0.95,0.2],
 			quantiles=[0.16, 0.5, 0.84], plot_datapoints=False,plot_density=True, **kwargs)
-		plt.savefig('../results/temp/contour.'+app+str(N_s)+'.pdf')
+		plt.savefig('../results/'+dir+'/contour'+app+str(N_s)+'.pdf')
 		plt.clf()
 
 
@@ -64,7 +64,7 @@ def individual(N_s, ia_only = False, ADU0=None,N_sn=None):
 	plt.xlabel('link')
 	plt.legend(loc=3,prop={'size':9})
 	plt.tight_layout()
-	plt.savefig('../results/temp/posterior.'+app+str(N_s)+'.pdf')
+	plt.savefig('../results/'+dir+'/posterior'+app+str(N_s)+'.pdf')
 	plt.clf()
 
 
@@ -72,28 +72,28 @@ def individual(N_s, ia_only = False, ADU0=None,N_sn=None):
 	plt.ylabel(r'snIa_rate_0')
 	plt.xlabel('link')
 	plt.tight_layout()
-	plt.savefig('../results/temp/snIa_rate_0.'+app+str(N_s)+'.pdf')
+	plt.savefig('../results/'+dir+'/snIa_rate_0'+app+str(N_s)+'.pdf')
 	plt.clf()
 
 	plt.plot(extract['snIa_rate_1'])
 	plt.ylabel(r'snIa_rate_1')
 	plt.xlabel('link')
 	plt.tight_layout()
-	plt.savefig('../results/temp/snIa_rate_1.'+app+str(N_s)+'.pdf')
+	plt.savefig('../results/'+dir+'/snIa_rate_1'+app+str(N_s)+'.pdf')
 	plt.clf()
 
 	plt.plot(extract['w'])
 	plt.ylabel(r'$w$')
 	plt.xlabel('link')
 	plt.tight_layout()
-	plt.savefig('../results/temp/w.'+app+str(N_s)+'.pdf')
+	plt.savefig('../results/'+dir+'/w'+app+str(N_s)+'.pdf')
 	plt.clf()
 	
 	# plt.hist(extract['w'],normed=True)
 	# plt.xlabel(r'$w$')
 	# plt.legend(loc=2)
 	# plt.tight_layout()
-	# plt.savefig('../results/temp/w.'+app+str(N_s)+'.pdf')
+	# plt.savefig('../results/'+dir+'/w.'+app+str(N_s)+'.pdf')
 
 	# plt.clf()
 
@@ -181,7 +181,7 @@ def group(nspec):
 
 
 def main():
-	individual(1.0,ia_only=False,ADU0=0.2,N_sn=2000)
+	individual(1.0,ia_only=False,ADU0=0.,N_sn=2000,dir='temp')
 #	individual(500,ia_only=False)
 	wefew
 	group([200,350,500])
