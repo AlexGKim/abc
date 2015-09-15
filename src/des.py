@@ -38,6 +38,9 @@ class Data(object):
 		self.frac_nonIa_0=1.
 		self.frac_nonIa_1=0.2
 
+		# self.frac_nonIa_0=1.
+		# self.frac_nonIa_1=1.
+
 		numpy.random.seed(seed)
 		self.initialize_()
 
@@ -46,7 +49,6 @@ class Data(object):
 		self.types_()
 		self.adus_()
 		self.hosts_()
-		self.pop2_()
 
 	def redshifts_(self):
 		# zs : the true redshifts
@@ -75,6 +77,8 @@ class Data(object):
 		wnonIa = numpy.where(numpy.logical_not(self.snIa))[0]
 		adu[wsnIa] = self.alpha_snIa*adu[wsnIa]*10**(adu_random[wsnIa]*self.sigma_snIa/2.5)
 		adu[wnonIa] = self.alpha_nonIa*adu[wnonIa]*10**(adu_random[wnonIa]*self.sigma_nonIa/2.5)
+		wpop2 = numpy.where(numpy.logical_and(self.snIa ==0, self.nonIa ==0))[0]
+		adu[wpop2] = self.alpha_nonIa_2*adu[wpop2]*10**(adu_random[wpop2]*self.sigma_nonIa_2/2.5)
 		self.adu = adu
 
 	def hosts_(self):
@@ -90,12 +94,6 @@ class Data(object):
 		self.neighbor_zs=numpy.random.uniform((self.zmin/1.1)**3, (self.zmax*1.1)**3,size=self.N_sn)**(1./3)
 		self.host_zs_random = self.zs*self.host_choice + self.neighbor_zs*(1-self.host_choice)
 		self.neighbor_zs_random = self.zs*(1-self.host_choice) + self.neighbor_zs*self.host_choice
-
-	def pop2_(self):
-		adu = 1/(self.cosmo.luminosity_distance(self.zs).value/self.cosmo.hubble_distance.value)**2
-		wpop2 = numpy.where(numpy.logical_and(self.snIa ==0, self.nonIa ==0))[0]
-		adu_random = numpy.random.normal(size=len(wpop2))
-		self.adu[wpop2] = self.alpha_nonIa_2*adu[wpop2]*10**(adu_random*self.sigma_nonIa_2/2.5)
 
 
 	def found(self, ADU0):
