@@ -161,7 +161,7 @@ class Data(object):
 				'host2_zs_mis': self.neighbor_zs_random[self.s_mis],
 
 				'ADU0': self.ADU0, 
-				'bias_anal':0,
+				'bias_anal':0
 				}
 
 	def init(self, n):
