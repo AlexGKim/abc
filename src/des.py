@@ -35,11 +35,11 @@ class Data(object):
 		self.frac_Ia_0=.95
 		self.frac_Ia_1=.2
 
-		# self.frac_nonIa_0=1.
-		# self.frac_nonIa_1=0.2
-
 		self.frac_nonIa_0=1.
-		self.frac_nonIa_1=1.
+		self.frac_nonIa_1=0.2
+
+		# self.frac_nonIa_0=1.
+		# self.frac_nonIa_1=1.
 
 		numpy.random.seed(seed)
 		self.initialize_()
@@ -294,5 +294,5 @@ def main():
 
 
 if __name__ == "__main__":
-	dataPlot()
-#    main()
+#	dataPlot()
+    main()
