@@ -35,11 +35,11 @@ class Data(object):
 		self.frac_Ia_0=.95
 		self.frac_Ia_1=.2
 
-		self.frac_nonIa_0=1.
-		self.frac_nonIa_1=0.2
-
 		# self.frac_nonIa_0=1.
-		# self.frac_nonIa_1=1.
+		# self.frac_nonIa_1=0.2
+
+		self.frac_nonIa_0=1.
+		self.frac_nonIa_1=1.
 
 		numpy.random.seed(seed)
 		self.initialize_()
@@ -221,10 +221,10 @@ class Data(object):
 
 def dataPlot():
 	N_sn=2000
-	ADU0=.2
+	ADU0=.75
 	ia_only=False
 
-	data= Data(N_sn, 1)
+	data= Data(N_sn, 2)
 	data.found(ADU0)
 	data.spectrum(0.2)
 	data.plot()
@@ -239,7 +239,7 @@ def main():
 
 	sm = pystan.StanModel(file='des.stan')
 
-	ADU0s = [0., 0.2]
+	ADU0s = [0.75]
 	for ADU0 in ADU0s:
 		app='.'+str(N_sn)+'.'
 		if ADU0 == 0.:
@@ -294,5 +294,5 @@ def main():
 
 
 if __name__ == "__main__":
-#	dataPlot()
-    main()
+	dataPlot()
+#    main()
