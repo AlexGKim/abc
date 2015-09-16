@@ -727,7 +727,7 @@ model{
       erfc_Ia <- myRenorm(ADU0, adu_true, alpha_Ia, sigma_Ia, ln10d25);
       erfc_nonIa <- myRenorm(ADU0, adu_true, alpha_nonIa, sigma_nonIa, ln10d25);
       renorm <- rate .* erfc_Ia+ (1-rate) .* erfc_nonIa;
-      rate <- rate ./ renorm;
+      rate <- rate .* erfc_Ia ./ renorm;    
     }
 
     snIa_obs ~ bernoulli(rate);

@@ -13,7 +13,7 @@ import pickle
 
 class Data(object):
 	"""docstring for Data"""
-	def __init__(self, N_sn, seed):
+	def __init__(self, N_sn, seed, pop2=False):
 		super(Data, self).__init__()
 		self.N_sn = N_sn
 		self.seed = seed
@@ -35,11 +35,14 @@ class Data(object):
 		self.frac_Ia_0=.95
 		self.frac_Ia_1=.2
 
-		self.frac_nonIa_0=1.
-		self.frac_nonIa_1=0.2
 
-		# self.frac_nonIa_0=1.
-		# self.frac_nonIa_1=1.
+		if pop2:
+			self.frac_nonIa_0=1.
+			self.frac_nonIa_1=0.2
+		else:
+			self.frac_nonIa_0=1.
+			self.frac_nonIa_1=1.
+
 
 		numpy.random.seed(seed)
 		self.initialize_()
@@ -232,10 +235,16 @@ def dataPlot():
 def main():
 	Nchains=4
 	N_sn=2000
+	pop2=False
 
-	ia_only=False
+	ia_only=False ###deprecated
 
-	data= Data(N_sn, 2)
+	if pop2:
+		dire='_pop2'
+	else :
+		dire=''
+
+	data= Data(N_sn, 2, pop2)
 
 	sm = pystan.StanModel(file='des.stan')
 
@@ -251,7 +260,7 @@ def main():
 		for ns in fracspec:
 			data.spectrum(ns)
 
-			fit = sm.sampling(data=data.dict(ia_only=ia_only), iter=1000, thin=1, n_jobs=-1, chains=Nchains, init=data.init(Nchains))
+			fit = sm.sampling(data=data.dict(ia_only=ia_only), iter=400, thin=1, n_jobs=-1, chains=Nchains, init=data.init(Nchains))
 
 			logposterior = fit.get_logposterior()
 
@@ -259,7 +268,7 @@ def main():
 			if ia_only:
 				app+='.ia_only.'
 
-			with open('../results/temp/model'+app+str(ns)+'.pkl', 'wb') as f:
+			with open('../results/temp'+dire+'/model'+app+str(ns)+'.pkl', 'wb') as f:
 				pickle.dump([fit.extract(), logposterior], f)
 
 
