@@ -26,11 +26,11 @@ class Data(object):
 
 		self.sigma_snIa=0.1
 		self.sigma_nonIa=1.
-		self.sigma_nonIa_2=0.5
+		self.sigma_nonIa_2=0.25
 
 		self.alpha_snIa=2.
 		self.alpha_nonIa=self.alpha_snIa*10**(-2./2.5)
-		self.alpha_nonIa_2=self.alpha_snIa*10**(-0.5/2.5)
+		self.alpha_nonIa_2=self.alpha_snIa*10**(-1/2.5)
 
 		self.frac_Ia_0=.95
 		self.frac_Ia_1=.2
@@ -225,9 +225,11 @@ class Data(object):
 def dataPlot():
 	N_sn=2000
 	ADU0=.75
+	pop2=True
+
 	ia_only=False
 
-	data= Data(N_sn, 2)
+	data= Data(N_sn, 2, pop2=pop2)
 	data.found(ADU0)
 	data.spectrum(0.2)
 	data.plot()
@@ -244,7 +246,7 @@ def main():
 	else :
 		dire=''
 
-	data= Data(N_sn, 2, pop2)
+	data= Data(N_sn, 2, pop2=pop2)
 
 	sm = pystan.StanModel(file='des.stan')
 
@@ -260,7 +262,7 @@ def main():
 		for ns in fracspec:
 			data.spectrum(ns)
 
-			fit = sm.sampling(data=data.dict(ia_only=ia_only), iter=400, thin=1, n_jobs=-1, chains=Nchains, init=data.init(Nchains))
+			fit = sm.sampling(data=data.dict(ia_only=ia_only), iter=1000, thin=1, n_jobs=-1, chains=Nchains, init=data.init(Nchains))
 
 			logposterior = fit.get_logposterior()
 
