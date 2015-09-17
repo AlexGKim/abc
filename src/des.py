@@ -13,7 +13,7 @@ import pickle
 
 class Data(object):
 	"""docstring for Data"""
-	def __init__(self, N_sn, seed, pop2=False):
+	def __init__(self, N_sn, seed, pop2=False, asifIa = False):
 		super(Data, self).__init__()
 		self.N_sn = N_sn
 		self.seed = seed
@@ -34,6 +34,8 @@ class Data(object):
 
 		self.frac_Ia_0=.95
 		self.frac_Ia_1=.2
+
+		self.asifIa = asifIa
 
 
 		if pop2:
@@ -106,6 +108,8 @@ class Data(object):
 		numpy.random.shuffle(self.s_obs_random)
 
 	def spectrum(self, frac_obs):
+		if self.asifIa:
+			frac_obs=1.
 		self.N_s_obs = frac_obs*self.found_.sum()
 		s_obs=numpy.sort(self.s_obs_random[:self.N_s_obs])
 		s_mis= numpy.sort(self.s_obs_random[self.N_s_obs:])
@@ -143,9 +147,15 @@ class Data(object):
 		else:
 			self.s_obs = self.s_obs.tolist()
 			self.s_mis = self.s_mis.tolist()
+
+			dum= self.snIa[self.s_obs]
+
+			if self.asifIa:
+				dum[:]=1
+
 			return 	{'N_sn': self.found_.sum(),
 				'N_obs': len(self.s_obs),
-				'N_SNIa': self.snIa[self.s_obs].sum(),
+				'N_SNIa': dum.sum(),
 				'N_adu_max':1,
 
 				'zmin':self.zmin,
@@ -155,7 +165,7 @@ class Data(object):
 				'adu_mis': self.adu[self.s_mis],
 
 				'trans_ainv_obs': 1+self.zs[self.s_obs],
-				'snIa_obs': self.snIa[self.s_obs],
+				'snIa_obs': dum,
 
 				'host_zs_obs': self.host_zs_random[self.s_obs], #zs[s_obs],
 				'host_zs_mis': self.host_zs_random[self.s_mis],
@@ -238,6 +248,7 @@ def main():
 	Nchains=4
 	N_sn=2000
 	pop2=False
+	asifIa = False
 
 	ia_only=False ###deprecated
 
@@ -246,7 +257,7 @@ def main():
 	else :
 		dire=''
 
-	data= Data(N_sn, 2, pop2=pop2)
+	data= Data(N_sn, 2, pop2=pop2, asifIa=asifIa)
 
 	sm = pystan.StanModel(file='des.stan')
 
@@ -255,6 +266,9 @@ def main():
 		app='.'+str(N_sn)+'.'
 		if ADU0 == 0.:
 			app+='noMalm.'
+
+		if asifIa:
+			app+='asifIa.'
 		
 		data.found(ADU0)
 
