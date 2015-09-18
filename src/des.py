@@ -30,7 +30,7 @@ class Data(object):
 
 		self.alpha_snIa=2.
 		self.alpha_nonIa=self.alpha_snIa*10**(-2./2.5)
-		self.alpha_nonIa_2=self.alpha_snIa*10**(-1/2.5)
+		self.alpha_nonIa_2=self.alpha_snIa*10**(-0.5/2.5)
 
 		self.frac_Ia_0=.95
 		self.frac_Ia_1=.2
@@ -79,7 +79,7 @@ class Data(object):
 		adu = 1/(self.cosmo.luminosity_distance(self.zs).value/self.cosmo.hubble_distance.value)**2
 		adu_random = numpy.random.normal(size=self.N_sn)
 		wsnIa = numpy.where(self.snIa)[0]
-		wnonIa = numpy.where(numpy.logical_not(self.snIa))[0]
+		wnonIa = numpy.where(numpy.logical_and(self.snIa ==0, self.nonIa ==1))[0]
 		adu[wsnIa] = self.alpha_snIa*adu[wsnIa]*10**(adu_random[wsnIa]*self.sigma_snIa/2.5)
 		adu[wnonIa] = self.alpha_nonIa*adu[wnonIa]*10**(adu_random[wnonIa]*self.sigma_nonIa/2.5)
 		wpop2 = numpy.where(numpy.logical_and(self.snIa ==0, self.nonIa ==0))[0]
