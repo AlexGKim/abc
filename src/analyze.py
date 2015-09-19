@@ -18,11 +18,11 @@ levels = numpy.array([0.025, 0.05, 0.16, 1-0.16, 1-0.05, 1-.025])
 def individual(N_s, ia_only = False, ADU0=None,N_sn=None,dir='temp'):
 	app=''
 	if N_sn is not None:
-		app='.'+str(N_sn)
+		app='.'+str(N_sn)+'.'
 	if ia_only:
 		app+='.ia_only.'
 	if ADU0 == 0.:
-			app+='.noMalm.'
+			app+='noMalm.'
 	[extract,logposterior] = pickle.load(file('../results/'+dir+'/model'+app+str(N_s)+'.pkl','rb'))
 #	print numpy.abs((extract['w'] < -1).sum()*1. / len(extract['w'])-0.5)*2
 	n_samples = len(extract[extract.keys()[0]])
@@ -181,7 +181,7 @@ def group(nspec):
 
 
 def main():
-	individual(1.0,ia_only=False,ADU0=0.,N_sn=2000,dir='temp')
+	individual(0.0,ia_only=False,ADU0=0.75,N_sn=2000,dir='seed2_pop2')
 #	individual(500,ia_only=False)
 	wefew
 	group([200,350,500])

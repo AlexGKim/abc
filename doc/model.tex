@@ -252,7 +252,7 @@ its value at $z=0$ and $1.1 \times z_{max}$,
 \end{equation}
 The relative rate for SN~Ia discovery for the truncated distribution is
 \begin{equation}
-\theta_{r}=\frac{\hat{\theta}_{r}}{\hat{\theta}_{r}P_{Ia}(\mathit{ADU} > \mathit{ADU}_0) + (1-\hat{\theta}_{r})P_{non-Ia}(\mathit{ADU} > \mathit{ADU}_0)}.
+\theta_{r}=\frac{\hat{\theta}_{r}P_{Ia}(\mathit{ADU} > \mathit{ADU}_0)}{\hat{\theta}_{r}P_{Ia}(\mathit{ADU} > \mathit{ADU}_0) + (1-\hat{\theta}_{r})P_{non-Ia}(\mathit{ADU} > \mathit{ADU}_0)}.
 \end{equation}
 The spectroscopic classifications are drawn from
 \begin{equation}
@@ -354,96 +354,179 @@ dispersion $\sigma_{non-Ia}=1$.
 \item $\theta_r=r_0 + (r_1-r_0)z/1.54$ for a constant relative fraction of SNe~Ia where $r_1=0.2$,
 $r_0=0.95$.
 \item 2000 transients distributed by co-moving volume in the range $0.1<z<1.4$.
-\item Detection threshold at approximately the mean brightness SN~Ia at $z=1.2$.
+\item Detection threshold at approximately the mean brightness SN~Ia at $z=1$.
 \item $z_{min}=0.1/1.1$ and $z_{max}=1.4\times 1.1$ is the range of possible misassigned
 host redshift.
 \item $P_{host}=0.98$ for the probability of correct host-galaxy assignment.
-\item Accumulated spectra for 20\%, 60\%, and 100\% of discovered transients.
+\item Accumulated spectra for 0\%, 20\%, 60\%, and 100\% of discovered transients.
 \end{itemize}
+This setup is referred to as Model 1.
 
-A prior is applied to the SN~Ia absolute magnitude and intrinsic dispersion
+The Hubble diagram for a realization drawn from this model is shown in Figure~\ref{hd:fig}.
+Type~Ia's are shown in blue and non-Ia's in red, those that fall below detection threshold
+are faded.  The solid points
+represent those objects spectroscopically typed for the case of 20\% follow-up.
+The green X's represent the 2\% among those without spectroscopy that
+are assigned an incorrect redshift.
+
+\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
+   \centering
+   \includegraphics[scale=0.4]{/Users/akim/project/abc/doc/seed2.pdf}
+   \includegraphics[scale=0.4]{/Users/akim/project/abc/doc/seed2_pop2.pdf}  
+\caption{Hubble diagrams for a realization drawn from the baseline Model 1 (left)
+and Model 2 with a second non-Ia population (right).
+Type~Ia's are shown in blue and non-Ia's in red, those that fall below detection threshold
+are faded.  The green X's represent the 2\% among those without spectroscopy that
+are assigned an incorrect redshift.
+   \label{hd:fig}}
+\end{figure}
+
+The simulated data are analyzed using 
+\citet{stan-software:2015},
+a probabilistic programming language for
+inference of Bayesian models with Hamiltonian Monte Carlo.
+In addition to the simulated data,
+supplemental priors are applied to the SN~Ia absolute magnitude and intrinsic dispersion
 \begin{align}
 \alpha_{SNIa} & \sim \mathcal{N}_{\ln}\left(\ln\left(\alpha^0_{SNIa}\right),\frac{\ln{10}}{2.5}0.02\right)\\
 \sigma_{SNIa} & \sim \mathcal{N}_{\ln}\left(\ln\left(0.1\right),0.1\right),
 \end{align}
-where $\alpha^0_{SNIa}$ is the true input luminosity.
+where $\alpha^0_{SNIa}$ is the true input luminosity.  This prior is added in lieu of
+a pure large SN~Ia sample at low-redshift.
 
-The simulated data are analyzed using 
-\citet{stan-software:2015}, a
-a probabilistic programming language for
-inference of Bayesian models with Hamiltonian Monte Carlo.
-
-\subsubsection{Results}
+The results of the analyses meet expectations.  As the input data and analyses are
+based on the same model, the input parameters lie in reasonable position
+within the resultant posterior despite the non-trivial appearance of
+the Hubble diagram in Figure~\ref{hd:fig}.
+The parameter pdf's are shown in Figure~\ref{contour1:fig} for the ideal case of 100\% spectroscopic classification.  The input values for all 7 parameters fall within the 68\%
+credible interval.  The same is true for the unideal case of no
+spectroscopic classification.  Table~\ref{seed2:tab} lists the modes
+of the $w$ distribution for varying spectroscopic coverage: there is no appreciable
+bias relative to the statistical uncertainties.
 
 \begin{figure}[htbp] %  figure placement: here, top, bottom, or page
    \centering
-   \includegraphics[scale=0.35]{/Users/akim/project/abc/results/temp/{contour..2000..noMalm.1.0}.pdf} \newline
-\caption{Probability distribution function for $\Omega_M$--$w$,
- 100\% spectroscopy no Malmquist bias.
-   Solid lines represent the input cosmology.  Dashed lines in the
-   histograms are the 0.16 and 0.86 quantiles. 
+   \includegraphics[scale=0.17]{/Users/akim/project/abc/results/seed2/{contour.2000.1.0}.pdf}
+   \includegraphics[scale=0.17]{/Users/akim/project/abc/results/seed2_pop2/{contour.2000.1.0}.pdf} 
+\caption{Probability distribution functions of the model parameters for the case of
+ 100\% spectroscopy for Model 1 (left) and Model 2 (right).
+    Solid lines represent the input parameters.  Dashed lines in the
+   histograms are the 0.16 and 0.84 quantiles. 
    \label{contour1:fig}}
 \end{figure}
 
-\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
-   \centering
-   \includegraphics[scale=0.35]{/Users/akim/project/abc/results/temp/{contour..2000.1.0}.pdf} \newline
-\caption{Probability distribution function for $\Omega_M$--$w$,
- 100\% spectroscopy with Malmquist bias.
-   \label{contour2:fig}}
-\end{figure}
+\begin{table}
+\centering
+\begin{tabular}{|c|c|ccc|}
+\hline
+Fraction Spec&\%-ile & $w$ &$w$ range & $\Delta w$\\ \hline
+$1.00$ &$0.68$ &$-1.08$ & $[-1.196, -0.914]$ & $0.281$ \\
+$1.00$ &$0.90$ &$-1.08$ & $[-1.292, -0.826]$ & $0.466$ \\
+$1.00$ &$0.95$ &$-1.08$ & $[-1.340, -0.784]$ & $0.556$ \\
+$0.60$ &$0.68$ &$-1.08$ & $[-1.227, -0.933]$ & $0.293$ \\
+$0.60$ &$0.90$ &$-1.08$ & $[-1.331, -0.836]$ & $0.495$ \\
+$0.60$ &$0.95$ &$-1.08$ & $[-1.385, -0.787]$ & $0.598$ \\
+$0.20$ &$0.68$ &$-1.15$ & $[-1.249, -0.943]$ & $0.305$ \\
+$0.20$ &$0.90$ &$-1.15$ & $[-1.354, -0.851]$ & $0.502$ \\
+$0.20$ &$0.95$ &$-1.15$ & $[-1.408, -0.810]$ & $0.597$ \\
+$0.00$ &$0.68$ &$-1.09$ & $[-1.218, -0.909]$ & $0.309$ \\
+$0.00$ &$0.90$ &$-1.09$ & $[-1.320, -0.812]$ & $0.508$ \\
+$0.00$ &$0.95$ &$-1.09$ & $[-1.372, -0.770]$ & $0.602$ \\
+\hline
+\end{tabular}
+\caption{Mode and credible intervals of $w$ for Model 1 for varying
+fractions of spectroscopic coverage. \label{seed2:tab}}
+\end{table}
 
-\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
-   \centering
-   \includegraphics[scale=0.35]{/Users/akim/project/abc/results/temp/{contour..2000.0.6}.pdf} \newline
-\caption{Probability distribution function for $\Omega_M$--$w$,
- 60\% spectroscopy with Malmquist bias.
-   \label{contour3:fig}}
-\end{figure}
+%\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
+%   \centering
+%   \includegraphics[scale=0.17]{/Users/akim/project/abc/results/seed2/{contour.2000.0.0}.pdf}
+%   \includegraphics[scale=0.17]{/Users/akim/project/abc/results/seed2_pop2/{contour.2000.0.0}.pdf} 
+%\caption{Probability distribution functions for the difference in parameters
+%with 100\% and 0\% spectroscopic folowup for Model 1 (left) and Model 2 (right).  \label{contour2:fig}}
+%\end{figure}
 
-\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
-   \centering
-   \includegraphics[scale=0.35]{/Users/akim/project/abc/results/temp/{contour..2000.0.2}.pdf} \newline
-\caption{Probability distribution function for $\Omega_M$--$w$,
- 20\% spectroscopy with Malmquist bias.
-   \label{contour4:fig}}
-\end{figure}
+Though the decrease in spectroscopic coverage produces low bias, it does lead to
+increased parameter uncertainties.
+The credible intervals for $w$ are shown in Table~\ref{seed2:tab}:
+for the case of 100\% follow-up the range of the 68\% $w$ interval is $\Delta w = 0.281$. 
+At the opposite extreme of no spectroscopic classification the $w$ interval inflates to
+$\Delta w = 0.309$, a constraining result nevertheless considering that none of the
+objects are directly typed and redshifted.
 
-\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
-   \centering
-   \includegraphics[scale=0.35]{/Users/akim/project/abc/results/temp/{contour..2000..noMalm.0.2}.pdf} \newline
-\caption{Probability distribution function for $\Omega_M$--$w$,
- 20\% spectroscopy without Malmquist bias.
-   \label{contour4:fig}}
-\end{figure}
 
+
+
+
+As a stress test, we generate a simulated data based on a different model
+referred to as Model 2, which
+has a second non-Ia population with average luminosity 0.5 mag fainter
+than the Ia's and 0.25 mag dispersion.
+The relative rates of the original non-Ia population relative to the second is quadratic:
+\begin{equation}
+1 -\frac{0.8}{1.54}z^2.
+\end{equation}
+A realization of transients from this model, using the same random seeds
+as Model 1, is shown in Figure~\ref{hd:fig}.
+
+When there is 100\% spectroscopic coverage the   $\Omega_M$--$w$  posterior accommodates the input 
+parameters, as shown  in
+Figure~\ref{contour1:fig}.
+A salient feature that contrasts with Model 1 is 
+seen in the modes for $w$ listed in Table~\ref{seed2_pop2:tab}: biases
+larger than the statistical uncertainties appear with decreasing
+spectroscopic coverage.  Note that the Hubble diagrams
+in these analyses are almost identical: there are redshift misassignments
+for 2\% of the transients that lack spectroscopy. 
+
+
+%\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
+%   \centering
+%   \includegraphics[scale=0.35]{/Users/akim/project/abc/results/seed2_pop2/{contour.2000.1.0}.pdf} \newline
+%\caption{Probability distribution function for $\Omega_M$--$w$,
+% 100\% spectroscopy, biased.
+%    Solid lines represent the input cosmology.  Dashed lines in the
+%   histograms are the 0.16 and 0.84 quantiles. 
+%   \label{contour3:fig}}
+%\end{figure}
+%
+%\begin{figure}[htbp] %  figure placement: here, top, bottom, or page
+%   \centering
+%   \includegraphics[scale=0.35]{/Users/akim/project/abc/results/seed2_pop2/{contour.2000.0.0}.pdf} \newline
+%\caption{Probability distribution function for $\Omega_M$--$w$,
+% no spectroscopy, biased.
+%   \label{contour4:fig}}
+%\end{figure}
 
 \begin{table}
 \centering
-\begin{tabular}{cc|c|cc|}
+\begin{tabular}{|c|c|ccc|}
 \hline
-ADU0&\% Spec&\%-ile & $w$ range & $\Delta w$\\ \hline
-0 & 100 &$0.68$ & $[-1.174, -0.982]$ & $0.192$ \\
-&&$0.90$ & $[-1.239, -0.923]$ & $0.316$ \\
-&&$0.95$ & $[-1.267, -0.894]$ & $0.373$ \\ \hline
-0.2 & 100&$0.68$ & $[-1.156, -0.972]$ & $0.184$ \\
-&&$0.90$ & $[-1.222, -0.912]$ & $0.309$ \\
-&&$0.95$ & $[-1.255, -0.883]$ & $0.372$ \\ \hline
-0.2&60&$0.68$ & $[-1.209, -1.014]$ & $0.195$ \\
-&&$0.90$ & $[-1.275, -0.955]$ & $0.321$ \\
-&&$0.95$ & $[-1.309, -0.924]$ & $0.385$ \\ \hline
-0&20&$0.68$ & $[-1.226, -1.032]$ & $0.194$ \\
-&&$0.90$ & $[-1.289, -0.969]$ & $0.320$ \\
-&&$0.95$ & $[-1.322, -0.942]$ & $0.379$ \\ \hline
-0.2& 20&$0.68$ & $[-1.229, -1.033]$ & $0.196$ \\
-&&$0.90$ & $[-1.294, -0.972]$ & $0.322$ \\
-&&$0.95$ & $[-1.323, -0.943]$ & $0.380$ \\
+Fraction Spec&\%-ile &$w$ & $w$ range & $\Delta w$\\ \hline
+$1.00$ &$0.68$ &$-0.94$ & $[-1.078, -0.804]$ & $0.274$ \\
+$1.00$ &$0.90$ &$-0.94$ & $[-1.168, -0.720]$ & $0.447$ \\
+$1.00$ &$0.95$ &$-0.94$ & $[-1.214, -0.680]$ & $0.534$ \\
+$0.60$ &$0.68$ &$-1.09$ & $[-1.182, -0.883]$ & $0.298$ \\
+$0.60$ &$0.90$ &$-1.09$ & $[-1.285, -0.791]$ & $0.494$ \\
+$0.60$ &$0.95$ &$-1.09$ & $[-1.332, -0.749]$ & $0.583$ \\
+$0.20$ &$0.68$ &$-1.09$ & $[-1.247, -0.936]$ & $0.311$ \\
+$0.20$ &$0.90$ &$-1.09$ & $[-1.359, -0.840]$ & $0.518$ \\
+$0.20$ &$0.95$ &$-1.09$ & $[-1.413, -0.798]$ & $0.614$ \\
+$0.00$ &$0.68$ &$-1.11$ & $[-1.266, -0.948]$ & $0.317$ \\
+$0.00$ &$0.90$ &$-1.11$ & $[-1.375, -0.850]$ & $0.525$ \\
+$0.00$ &$0.95$ &$-1.11$ & $[-1.428, -0.808]$ & $0.621$ \\
 \hline
 \end{tabular}
-\caption{Credible intervals of $w$ using the SNe~Ia only with spectroscopic
-observations.\label{ia_only:tab}}
+\caption{Mode and credible intervals of $w$ for Model 2  for varying
+fractions of spectroscopic coverage.\label{seed2_pop2:tab}}
 \end{table}
 
+Some initial conclusions.
+\begin{itemize}
+\item Knowing the underlying model that produces data, you should
+get results statistically consistent with the truth.  A tautology?
+\item Typing is important when the non-Ia model is not accurate.
+\end{itemize}
 
 %
 %\subsubsection{SN~Ia Only}

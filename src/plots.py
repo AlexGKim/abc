@@ -45,6 +45,9 @@ def individual(N_s, ia_only = False, ADU0=None,N_sn=None,dir='temp'):
 	plt.savefig('../results/'+dir+'/contour'+app+str(N_s)+'.pdf')
 	plt.clf()
 
+
+	n, b = numpy.histogram(samples[:,1], bins=20)
+
 	ans = numpy.zeros(len(levels))
 	deltas = numpy.zeros(len(levels)/2)
 	wsort = numpy.sort(extract['w'])
@@ -52,7 +55,7 @@ def individual(N_s, ia_only = False, ADU0=None,N_sn=None,dir='temp'):
 	for i in xrange(len(levels)/2):
 		deltas[i] = ans[-1-i]-ans[i] 
 	for i in xrange(len(levels)/2-1,-1,-1):
-		print '${:4.2f}$ &${:4.2f}$ &${:4.2f}$ & $[{:5.3f}, {:5.3f}]$ & ${:5.3f}$ \\\\'.format(ADU0, N_s, 1-levels[i]*2, ans[i],ans[-1-i], deltas[i])
+		print '${:4.2f}$ &${:4.2f}$ &${:4.2f}$ & $[{:5.3f}, {:5.3f}]$ & ${:5.3f}$ \\\\'.format(N_s, 1-levels[i]*2, b[numpy.argmax(n)],  ans[i],ans[-1-i], deltas[i])
 
 	fractions = [0.6, 0.2, 0.0]
 	#fractions = [0.0]
@@ -77,6 +80,8 @@ def individual(N_s, ia_only = False, ADU0=None,N_sn=None,dir='temp'):
 		plt.savefig('../results/'+dir+'/contour'+app+str(frac)+'.pdf')
 		plt.clf()
 
+		n, b = numpy.histogram(extract_['w'], bins=20)
+
 		ans = numpy.zeros(len(levels))
 		deltas = numpy.zeros(len(levels)/2)
 		wsort = numpy.sort(extract_['w'])
@@ -84,7 +89,7 @@ def individual(N_s, ia_only = False, ADU0=None,N_sn=None,dir='temp'):
 		for i in xrange(len(levels)/2):
 			deltas[i] = ans[-1-i]-ans[i] 
 		for i in xrange(len(levels)/2-1,-1,-1):
-			print '${:4.2f}$ &${:4.2f}$ &${:4.2f}$ & $[{:5.3f}, {:5.3f}]$ & ${:5.3f}$ \\\\'.format(ADU0, frac, 1-levels[i]*2, ans[i],ans[-1-i], deltas[i])
+			print '${:4.2f}$ &${:4.2f}$ &${:4.2f}$ & $[{:5.3f}, {:5.3f}]$ & ${:5.3f}$ \\\\'.format(frac, 1-levels[i]*2, b[numpy.argmax(n)], ans[i],ans[-1-i], deltas[i])
 
 	# plt.plot(logposterior[0][500:],label=0)
 	# plt.plot(logposterior[1][500:],label=1)
@@ -202,8 +207,9 @@ def group(nspec):
 
 def main():
 	key='seed2'
-	individual(1.0,ia_only=False,ADU0=0.2,N_sn=2000, dir=key)
-	individual(1.0,ia_only=False,ADU0=0.,N_sn=2000, dir=key)
+	print key
+	individual(1.0,ia_only=False,ADU0=0.75,N_sn=2000, dir=key)
+#	individual(1.0,ia_only=False,ADU0=0.,N_sn=2000, dir=key)
 
 
 #	individual(500,ia_only=False)
