@@ -142,7 +142,8 @@ class Data(object):
 				'host_zs_mis': [],
 				'host2_zs_mis': [],
 
-				'ADU0': self.ADU0
+				'ADU0': self.ADU0,
+				'bias_anal':0
 			}
 		else:
 			self.s_obs = self.s_obs.tolist()
@@ -250,7 +251,7 @@ def main():
 	pop2=False
 	asifIa = False
 
-	ia_only=False ###deprecated
+	ia_only = False
 
 	if pop2:
 		dire='_pop2'
@@ -282,7 +283,7 @@ def main():
 
 
 			if ia_only:
-				app+='.ia_only.'
+				app+='ia_only.'
 
 			with open('../results/temp'+dire+'/model'+app+str(ns)+'.pkl', 'wb') as f:
 				pickle.dump([fit.extract(), logposterior], f)
