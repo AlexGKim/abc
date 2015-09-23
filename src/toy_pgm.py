@@ -13,7 +13,7 @@ pgm = PGM([6.5, 4.5], origin=[0., 0.2], observed_style='inner')
 pgm.add_node(Node('G_i',r"$z_i, z_{Ni}$", 2,2, scale=1.2))
 
 pgm.add_node(Node('mu',r"$\Omega_M$, $w$", 3,4, scale=1.4))
-pgm.add_node(Node('rate',r"$\theta_r$", 5,4))
+pgm.add_node(Node('rate',r"$\theta_{r1}$, $\theta_{r2}$", 5,4,scale=1.4))
 pgm.add_node(Node('HD',r"$\mu_i$", 3,2,fixed=True,offset=(0,-22)))
 pgm.add_node(Node('theta_T',r"\center{$\alpha_{Ia}$, $\alpha_{non-Ia}$ \newline $\sigma_{Ia}$, $\sigma_{non-Ia}$}", 4,4,scale=1.65,aspect=1.5))
 #pgm.add_node(Node('theta_Ti',r"$\theta_{Ti}^{Ia}$, $\theta_{Ti}^{non-Ia}$", 2,6,scale=1.5,aspect=1.5))
@@ -22,7 +22,7 @@ pgm.add_node(Node('theta_T',r"\center{$\alpha_{Ia}$, $\alpha_{non-Ia}$ \newline 
 #pgm.add_node(Node('z',r"$z_i$", 2, 2, fixed=True,offset=(-10,-5)))
 
 pgm.add_node(Node('Type',r"$T_i$", 5,3))
-pgm.add_node(Node('Luminosity',r"$L_i(t,\lambda)$", 4,3, scale=1.4))
+pgm.add_node(Node('Luminosity',r"$L_i(t,\lambda)$", 4,3, fixed=True, scale=1.4, offset=(-22,-22)))
 #pgm.add_node(Node('Flux',r"$n_i(t,\lambda)$", 5, 5, scale=1.2,fixed=True,offset=(15,0)))
 #pgm.add_node(Node('Flux_g',r"$n_{gi}(\lambda)$", 5, 2,fixed=True,offset=(0,-20)))
 #pgm.add_node(Node('Transmission',r"$\phi(\lambda)$", 7, 7))
@@ -37,7 +37,7 @@ pgm.add_node(Node('Spars',r"${T}_{Si}$, ${z}_{Si}$", 4,1, scale=1.4,aspect=1.2, 
 #pgm.add_node(Node('Detected',r"Detected$_i$", 8, 3, fixed=True,offset=(-10,-20)))
 #pgm.add_node(Node('^Type',r"$\tau_i$", 9, 2, fixed=True,offset=(10,-10)))
 
-pgm.add_node(Node('Gals',r"$\theta_G$", 1,1, observed=True))
+pgm.add_node(Node('Gals',r"$\theta_{G1}$, $\theta_{G2}$", 1,1, scale=1.4, aspect=1.2, observed=True))
 
 
 pgm.add_edge("G_i","Gals")

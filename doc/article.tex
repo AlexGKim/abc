@@ -1,18 +1,79 @@
-\documentclass[preprint]{aastex}
+\documentclass[preprint]{elsarticle}
+\usepackage{aas_macros}
 \usepackage{amsmath,amssymb}
 \usepackage{mathrsfs}
 \usepackage{graphicx}
-\usepackage{natbib}
 \usepackage{bm}
-\bibliographystyle{apj}
+\usepackage{hyperref}
 
 \newcommand{\mli}[1]{\mathit{#1}}
 %\usepackage{epstopdf}
 
+
 \begin{document}
 
-\title{Model for DES Type Ia Supernova Cosmology Analysis}
-\author{Alex Kim}
+\begin{frontmatter}
+
+\title{Standard Candle Cosmology With Incomplete Spectroscopic Classification}
+\author{A.~G. Kim\corref{cor1}}\ead{agkim@lbl.gov}
+\address{Physics Division, Lawrence Berkeley National Laboratory, 1 Cyclotron Road, Berkeley CA, USA 94720}
+
+\begin{abstract}
+\end{abstract}
+\begin{keyword}
+\end{keyword}
+\end{frontmatter}
+
+\section{Introduction}
+A class of astronomical objects who share a common luminosity are called a standard
+candle.  The relative fluxes (or magnitudes) for a set of these objects distributed in space
+provide a measurement of their relative luminosity distances. These data, combined with
+measurements of the standard candle redshifts, constitute a Hubble
+diagram which is used to map the expansion history of the Universe.
+
+Type~Ia supernovae (SNe~Ia) are an example of a standard candle (more precisely a standardizable
+candle), whose redshift-magnitude relation provides an accurate expansion history
+used to measure the Hubble Constant
+\citep{2001ApJ...553...47F} and detect the accelerated expansion of the Universe
+\citep{1998AJ....116.1009R, 1999ApJ...517..565P}.  SN~Ia measurements continue
+to improve 
+\citep{2014A&A...568A..22B} and play a critical role in probing the physics
+responsible for the acceleration \citep{2013PhR...530...87W}.
+Looking at the present and toward the future, SN~Ia cosmology is
+a component of the Dark Energy Survey\footnote{\url{http://www.darkenergysurvey.org}} (DES),
+and a science driver in the design of the
+Large Synoptic Survey Telescope\footnote{\url{http://www.lsst.org}} (LSST)
+and the Wide-Field InfrarRed Survey Telescope
+\citep{2015arXiv150303757S}.
+
+The information necessary to construct a Hubble diagram consists of, per object,
+its classification as a
+member of the standard candle class, its redshift, and its flux.  For SNe~Ia, the flux at
+peak brightness is typically determined from multi-band light curves obtained from repeated
+photometric observations. Traditionally, spectroscopic data is used to classify the transient
+as SN~Ia through the lack of hydrogen and the presence of SiII in its spectrum,
+and determine its redshift either directly through the transient spectrum or that of its host
+galaxy. While the classification and redshift could be determined from the multi-band
+light curves and colors of the host galaxy, the accuracy is insufficient for precision
+cosmology \citep{2011ApJ...738..162S}.  Consequently spectroscopic follow-up
+has played a critical role in cosmological supernova surveys.
+
+While the large focal planes of the Dark Energy Camera (3 square degrees)
+and the LSST (9.6 square degrees) open the
+possibility for the photometric discovery and observation of thousands to millions
+of SNe~Ia out to $z\sim1$, a corresponding multiplex advantage has not been
+achieved for the 10-m
+class telescopes used for the spectroscopic classification of faint discoveries:
+it is unfeasible to obtain a spectrum for all SN~Ia candidates with well-measured
+photometry.
+
+Photometric SN analysis has been developed
+in the hope of taking advantage of the statistical weight imported by the
+availability of light curves
+for large numbers of supernovae, despite their lack of spectroscopy.
+Such analyses have been applied to SDSS-II SN data \citep{2012ApJ...752...79H,
+2013ApJ...763...88C}, and are planned for
+DES \citep{2012ApJ...753..152B} and LSST \citep{2012arXiv1211.0310L}.
 
 \section{Model}
 We infer a Hubble diagram based on measurements of discovered transients
@@ -357,7 +418,7 @@ for a detection threshold of $\mathit{ADU}_0$.
 \subsection{Analysis of Simulated Data}
 The simulation of data from the model presented in \S\ref{example:sec}
 and their analysis is implemented in Python and are available
-on GitHub\footnote{\url{git@github.com:AlexGKim/abc.git}}.
+on GitHub\footnote{{git@github.com:AlexGKim/abc.git}}.
 
 The results that follow are based on the parameter
 choices:
@@ -432,39 +493,41 @@ bias relative to the statistical uncertainties.
 
 \begin{table}
 \centering
-\begin{tabular}{|c|c|ccc|}
+\begin{tabular}{|c|c|cccc|}
 \hline
-Fraction Spec&\%-ile & $w$ &$w$ range & $\Delta w$\\ \hline
-SN Ia only&&&&\\
-$1.00$ & $0.68$ &$-0.97$ & $[-1.076, -0.801]$ & $0.275$ \\
-$1.00$& $0.90$ &$-0.97$ & $[-1.166, -0.718]$ & $0.448$ \\
-$1.00$ & $0.95$ &$-0.97$ & $[-1.208, -0.682]$ & $0.525$ \\ \hline
-Model 1&&&&\\
-$1.00$ &$0.68$ &$-1.08$ & $[-1.196, -0.914]$ & $0.281$ \\
-$1.00$ &$0.90$ &$-1.08$ & $[-1.292, -0.826]$ & $0.466$ \\
-$1.00$ &$0.95$ &$-1.08$ & $[-1.340, -0.784]$ & $0.556$ \\
-$0.60$ &$0.68$ &$-1.08$ & $[-1.227, -0.933]$ & $0.293$ \\
-$0.60$ &$0.90$ &$-1.08$ & $[-1.331, -0.836]$ & $0.495$ \\
-$0.60$ &$0.95$ &$-1.08$ & $[-1.385, -0.787]$ & $0.598$ \\
-$0.20$ &$0.68$ &$-1.15$ & $[-1.249, -0.943]$ & $0.305$ \\
-$0.20$ &$0.90$ &$-1.15$ & $[-1.354, -0.851]$ & $0.502$ \\
-$0.20$ &$0.95$ &$-1.15$ & $[-1.408, -0.810]$ & $0.597$ \\
-$0.00$ &$0.68$ &$-1.09$ & $[-1.218, -0.909]$ & $0.309$ \\
-$0.00$ &$0.90$ &$-1.09$ & $[-1.320, -0.812]$ & $0.508$ \\
-$0.00$ &$0.95$ &$-1.09$ & $[-1.372, -0.770]$ & $0.602$ \\ \hline
-Model 2&&&&\\
-$1.00$ &$0.68$ &$-0.94$ & $[-1.078, -0.804]$ & $0.274$ \\
-$1.00$ &$0.90$ &$-0.94$ & $[-1.168, -0.720]$ & $0.447$ \\
-$1.00$ &$0.95$ &$-0.94$ & $[-1.214, -0.680]$ & $0.534$ \\
-$0.60$ &$0.68$ &$-1.09$ & $[-1.182, -0.883]$ & $0.298$ \\
-$0.60$ &$0.90$ &$-1.09$ & $[-1.285, -0.791]$ & $0.494$ \\
-$0.60$ &$0.95$ &$-1.09$ & $[-1.332, -0.749]$ & $0.583$ \\
-$0.20$ &$0.68$ &$-1.09$ & $[-1.247, -0.936]$ & $0.311$ \\
-$0.20$ &$0.90$ &$-1.09$ & $[-1.359, -0.840]$ & $0.518$ \\
-$0.20$ &$0.95$ &$-1.09$ & $[-1.413, -0.798]$ & $0.614$ \\
-$0.00$ &$0.68$ &$-1.11$ & $[-1.266, -0.948]$ & $0.317$ \\
-$0.00$ &$0.90$ &$-1.11$ & $[-1.375, -0.850]$ & $0.525$ \\
-$0.00$ &$0.95$ &$-1.11$ & $[-1.428, -0.808]$ & $0.621$ \\
+Fraction Spec&\%-ile &$<w>$ & $w$ mode  &$w$ range & $\Delta w$\\ \hline
+\multicolumn{6}{|c|}{SN Ia only}\\ \hline
+$1.00$& $0.68$ &$-0.94 \pm 0.09$ &$-0.80$ & $[-1.076, -0.801]$ & $0.275$ \\
+$1.00$& $0.90$ &$-0.94 \pm 0.09$ &$-0.80$ & $[-1.166, -0.718]$ & $0.448$ \\
+$1.00$& $0.95$ &$-0.94 \pm 0.09$ &$-0.80$ & $[-1.208, -0.682]$ & $0.525$ \\
+ \hline
+\multicolumn{6}{|c|}{Model 1}\\ \hline
+$1.00$ &$0.68$ &$-1.06 \pm 0.09$ &$-0.91$ & $[-1.196, -0.914]$ & $0.281$ \\
+$1.00$ &$0.90$ &$-1.06 \pm 0.09$ &$-0.91$ & $[-1.292, -0.826]$ & $0.466$ \\
+$1.00$ &$0.95$ &$-1.06 \pm 0.09$ &$-0.91$ & $[-1.340, -0.784]$ & $0.556$ \\
+$0.60$ &$0.68$ &$-1.08 \pm 0.10$ &$-0.93$ & $[-1.227, -0.933]$ & $0.293$ \\
+$0.60$ &$0.90$ &$-1.08 \pm 0.10$ &$-0.93$ & $[-1.331, -0.836]$ & $0.495$ \\
+$0.60$ &$0.95$ &$-1.08 \pm 0.10$ &$-0.93$ & $[-1.385, -0.787]$ & $0.598$ \\
+$0.20$ &$0.68$ &$-1.10 \pm 0.10$ &$-0.94$ & $[-1.249, -0.943]$ & $0.305$ \\
+$0.20$ &$0.90$ &$-1.10 \pm 0.10$ &$-0.94$ & $[-1.354, -0.851]$ & $0.502$ \\
+$0.20$ &$0.95$ &$-1.10 \pm 0.10$ &$-0.94$ & $[-1.408, -0.810]$ & $0.597$ \\
+$0.00$ &$0.68$ &$-1.07 \pm 0.10$ &$-0.91$ & $[-1.218, -0.909]$ & $0.309$ \\
+$0.00$ &$0.90$ &$-1.07 \pm 0.10$ &$-0.91$ & $[-1.320, -0.812]$ & $0.508$ \\
+$0.00$ &$0.95$ &$-1.07 \pm 0.10$ &$-0.91$ & $[-1.372, -0.770]$ & $0.602$ \\
+ \hline
+\multicolumn{6}{|c|}{Model 2}\\ \hline
+$1.00$ &$0.68$ &$-0.94 \pm 0.09$ &$-0.80$ & $[-1.078, -0.804]$ & $0.274$ \\
+$1.00$ &$0.90$ &$-0.94 \pm 0.09$ &$-0.80$ & $[-1.168, -0.720]$ & $0.447$ \\
+$1.00$ &$0.95$ &$-0.94 \pm 0.09$ &$-0.80$ & $[-1.214, -0.680]$ & $0.534$ \\
+$0.60$ &$0.68$ &$-1.04 \pm 0.10$ &$-0.88$ & $[-1.182, -0.883]$ & $0.298$ \\
+$0.60$ &$0.90$ &$-1.04 \pm 0.10$ &$-0.88$ & $[-1.285, -0.791]$ & $0.494$ \\
+$0.60$ &$0.95$ &$-1.04 \pm 0.10$ &$-0.88$ & $[-1.332, -0.749]$ & $0.583$ \\
+$0.20$ &$0.68$ &$-1.10 \pm 0.10$ &$-0.94$ & $[-1.247, -0.936]$ & $0.311$ \\
+$0.20$ &$0.90$ &$-1.10 \pm 0.10$ &$-0.94$ & $[-1.359, -0.840]$ & $0.518$ \\
+$0.20$ &$0.95$ &$-1.10 \pm 0.10$ &$-0.94$ & $[-1.413, -0.798]$ & $0.614$ \\
+$0.00$ &$0.68$ &$-1.11 \pm 0.10$ &$-0.95$ & $[-1.266, -0.948]$ & $0.317$ \\
+$0.00$ &$0.90$ &$-1.11 \pm 0.10$ &$-0.95$ & $[-1.375, -0.850]$ & $0.525$ \\
+$0.00$ &$0.95$ &$-1.11 \pm 0.10$ &$-0.95$ & $[-1.428, -0.808]$ & $0.621$ \\
 \hline
 \end{tabular}
 \caption{Mode and credible intervals of $w$ for only the SNe~Ia, Model 1, and Model 2 for varying
@@ -537,6 +600,7 @@ Some initial conclusions.
 \item Knowing the underlying model that produces data, you should
 get results statistically consistent with the truth.  A tautology?
 \item Typing is important when the non-Ia model is not accurate.
+\item Better than only using SNe~Ia with spectra.
 \end{itemize}
 
 %
@@ -716,6 +780,7 @@ get results statistically consistent with the truth.  A tautology?
 %we only need to model non-Ia's
 %that are mistaken for Ia and not all discovered transients. 
 
+\bibliographystyle{elsarticle-num} 
 \bibliography{/Users/akim/Documents/alex}
 
 \end{document}

@@ -20,7 +20,7 @@ def individual(N_s, ia_only = False, ADU0=None,N_sn=None,dir='temp'):
 	if N_sn is not None:
 		app='.'+str(N_sn)+'.'
 	if ia_only:
-		app+='.ia_only.'
+		app+='ia_only.'
 	if ADU0 == 0.:
 			app+='noMalm.'
 	[extract,logposterior] = pickle.load(file('../results/'+dir+'/model'+app+str(N_s)+'.pkl','rb'))
@@ -112,6 +112,8 @@ def individual(N_s, ia_only = False, ADU0=None,N_sn=None,dir='temp'):
 	# 	for i in xrange(len(levels)/2-1,-1,-1):
 	# 		print '{}& ${:4.2f}$ & $[{:5.3f}, {:5.3f}]$ & ${:5.3f}$ \\\\'.format(label[j],1-levels[i]*2, ans[j,i],ans[j,-1-i], deltas[j,i])
 
+	n, b = numpy.histogram(samples[:,1], bins=20)
+
 	ans = numpy.zeros(len(levels))
 	deltas = numpy.zeros(len(levels)/2)
 	wsort = numpy.sort(extract['w'])
@@ -119,7 +121,7 @@ def individual(N_s, ia_only = False, ADU0=None,N_sn=None,dir='temp'):
 	for i in xrange(len(levels)/2):
 		deltas[i] = ans[-1-i]-ans[i] 
 	for i in xrange(len(levels)/2-1,-1,-1):
-		print '${:4.2f}$ & $[{:5.3f}, {:5.3f}]$ & ${:5.3f}$ \\\\'.format(1-levels[i]*2, ans[i],ans[-1-i], deltas[i])
+		print '1.0& ${:4.2f}$ &${:4.2f}$ & $[{:5.3f}, {:5.3f}]$ & ${:5.3f}$ \\\\'.format(1-levels[i]*2, b[numpy.argmax(n)],  ans[i],ans[-1-i], deltas[i])
 
 
 
@@ -181,7 +183,7 @@ def group(nspec):
 
 
 def main():
-	individual(0.0,ia_only=False,ADU0=0.75,N_sn=2000,dir='seed2_pop2')
+	individual(1.0,ia_only=True,ADU0=0.75,N_sn=2000,dir='seed2')
 #	individual(500,ia_only=False)
 	wefew
 	group([200,350,500])
