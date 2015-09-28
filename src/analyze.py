@@ -118,11 +118,22 @@ def individual(N_s, ia_only = False, ADU0=None,N_sn=None,dir='temp'):
 	deltas = numpy.zeros(len(levels)/2)
 	wsort = numpy.sort(extract['w'])
 	ans = wsort[numpy.round(levels*len(wsort)).astype(int)]
+	median  = wsort[len(wsort)/2]
+	mean = numpy.mean(ans)
+	std = numpy.std(ans)
 	for i in xrange(len(levels)/2):
 		deltas[i] = ans[-1-i]-ans[i] 
-	for i in xrange(len(levels)/2-1,-1,-1):
-		print '1.0& ${:4.2f}$ &${:4.2f}$ & $[{:5.3f}, {:5.3f}]$ & ${:5.3f}$ \\\\'.format(1-levels[i]*2, b[numpy.argmax(n)],  ans[i],ans[-1-i], deltas[i])
 
+	index = 0
+
+	for i in xrange(len(levels)/2-1,-1,-1):
+#		print '1.0& ${:4.2f}$ &${:4.2f}$ & $[{:5.3f}, {:5.3f}]$ & ${:5.3f}$ \\\\'.format(1-levels[i]*2, b[numpy.argmax(n)],  ans[i],ans[-1-i], deltas[i])
+		if index ==0:
+			print '$1.00$& ${:4.2f} \pm {:4.2f}$ &${:4.2f}$ &${:4.2f}$ & $[{:5.3f}, {:5.3f}]$ & ${:5.3f}$ \\\\'.format(mean, std/numpy.sqrt(len(ans)), median, 1-levels[i]*2,  ans[i],ans[-1-i], deltas[i])
+		else:
+			print '&  &  & ${:4.2f}$ & $[{:5.3f}, {:5.3f}]$ & ${:5.3f}$ \\\\'.format(1-levels[i]*2,  ans[i],ans[-1-i], deltas[i])
+
+		index +=1
 
 
 	# for j in xrange(len(nspec)):

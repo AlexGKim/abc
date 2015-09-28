@@ -52,10 +52,20 @@ def individual(N_s, ia_only = False, ADU0=None,N_sn=None,dir='temp'):
 	deltas = numpy.zeros(len(levels)/2)
 	wsort = numpy.sort(extract['w'])
 	ans = wsort[numpy.round(levels*len(wsort)).astype(int)]
+	median  = wsort[len(wsort)/2]
+	mean = numpy.mean(ans)
+	std = numpy.std(ans)
 	for i in xrange(len(levels)/2):
 		deltas[i] = ans[-1-i]-ans[i] 
+	index = 0
 	for i in xrange(len(levels)/2-1,-1,-1):
-		print '${:4.2f}$ &${:4.2f}$ &${:4.2f}$ & $[{:5.3f}, {:5.3f}]$ & ${:5.3f}$ \\\\'.format(N_s, 1-levels[i]*2, b[numpy.argmax(n)],  ans[i],ans[-1-i], deltas[i])
+#		print '${:4.2f}$ &${:4.2f}$ &${:4.2f}$ & $[{:5.3f}, {:5.3f}]$ & ${:5.3f}$ \\\\'.format(N_s, 1-levels[i]*2, b[numpy.argmax(n)],  ans[i],ans[-1-i], deltas[i])
+		if index ==0:
+			print '${:4.2f}$ &${:5.2f} \pm {:5.2f}$ &${:4.2f}$ &${:4.2f}$ & $[{:5.3f}, {:5.3f}]$ & ${:5.3f}$ \\\\'.format(N_s,mean, std/numpy.sqrt(len(ans)), median,  1-levels[i]*2,  ans[i],ans[-1-i], deltas[i])
+		else:
+			print '&&&${:4.2f}$ & $[{:5.3f}, {:5.3f}]$ & ${:5.3f}$ \\\\'.format(1-levels[i]*2,  ans[i],ans[-1-i], deltas[i])
+		index +=1
+	print "\hline"
 
 	fractions = [0.6, 0.2, 0.0]
 	#fractions = [0.0]
@@ -86,11 +96,21 @@ def individual(N_s, ia_only = False, ADU0=None,N_sn=None,dir='temp'):
 		deltas = numpy.zeros(len(levels)/2)
 		wsort = numpy.sort(extract_['w'])
 		ans = wsort[numpy.round(levels*len(wsort)).astype(int)]
+		median  = wsort[len(wsort)/2]
+		mean = numpy.mean(ans)
+		std = numpy.std(ans)
 		for i in xrange(len(levels)/2):
 			deltas[i] = ans[-1-i]-ans[i] 
+		index = 0
 		for i in xrange(len(levels)/2-1,-1,-1):
-			print '${:4.2f}$ &${:4.2f}$ &${:4.2f}$ & $[{:5.3f}, {:5.3f}]$ & ${:5.3f}$ \\\\'.format(frac, 1-levels[i]*2, b[numpy.argmax(n)], ans[i],ans[-1-i], deltas[i])
-
+#			print '${:4.2f}$ &${:4.2f}$ &${:4.2f}$ & $[{:5.3f}, {:5.3f}]$ & ${:5.3f}$ \\\\'.format(frac, 1-levels[i]*2, b[numpy.argmax(n)], ans[i],ans[-1-i], deltas[i])
+#			print '${:4.2f}$ &${:4.2f}$ &${:4.2f} \pm {:4.2f}$ &${:4.2f}$ & $[{:5.3f}, {:5.3f}]$ & ${:5.3f}$ \\\\'.format(frac, 1-levels[i]*2, mean, std/numpy.sqrt(len(ans)), median, ans[i],ans[-1-i], deltas[i])
+			if index ==0:
+				print '${:4.2f}$ &${:5.2f} \pm {:5.2f}$ & ${:4.2f}$ &${:4.2f}$ & $[{:5.3f}, {:5.3f}]$ & ${:5.3f}$ \\\\'.format(frac,mean, std/numpy.sqrt(len(ans)), median,  1-levels[i]*2,  ans[i],ans[-1-i], deltas[i])
+			else:
+				print '& & &${:4.2f}$ & $[{:5.3f}, {:5.3f}]$ & ${:5.3f}$ \\\\'.format(1-levels[i]*2,  ans[i],ans[-1-i], deltas[i])
+			index +=1
+		print "\hline"
 	# plt.plot(logposterior[0][500:],label=0)
 	# plt.plot(logposterior[1][500:],label=1)
 	# plt.plot(logposterior[2][500:],label=2)
@@ -206,7 +226,7 @@ def group(nspec):
 
 
 def main():
-	key='seed2'
+	key='seed2_pop2'
 	print key
 	individual(1.0,ia_only=False,ADU0=0.75,N_sn=2000, dir=key)
 #	individual(1.0,ia_only=False,ADU0=0.,N_sn=2000, dir=key)

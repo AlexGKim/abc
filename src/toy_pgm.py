@@ -26,10 +26,10 @@ pgm.add_node(Node('Luminosity',r"$L_i(t,\lambda)$", 4,3, fixed=True, scale=1.4, 
 #pgm.add_node(Node('Flux',r"$n_i(t,\lambda)$", 5, 5, scale=1.2,fixed=True,offset=(15,0)))
 #pgm.add_node(Node('Flux_g',r"$n_{gi}(\lambda)$", 5, 2,fixed=True,offset=(0,-20)))
 #pgm.add_node(Node('Transmission',r"$\phi(\lambda)$", 7, 7))
-#pgm.add_node(Node('Counts',r"$\overline{\mathit{ADU}}_i$", 8, 5,scale=1.2,fixed=True,offset=(15,0)))
-#pgm.add_node(Node('Counts_g',r"$\overline{\mathit{ADU}}_{gi}$", 8, 4,scale=1.2,fixed=True,offset=(10,-25)))
+#pgm.add_node(Node('Counts',r"$\overline{f}_i$", 8, 5,scale=1.2,fixed=True,offset=(15,0)))
+#pgm.add_node(Node('Counts_g',r"$\overline{f}_{gi}$", 8, 4,scale=1.2,fixed=True,offset=(10,-25)))
 #pgm.add_node(Node('Zeropoints',r"${Z}$", 9, 7, observed=True))
-pgm.add_node(Node('^Counts',r"${\mathit{ADU}_i}$", 4, 2, observed=True,scale=1.2,aspect=1.2))
+pgm.add_node(Node('^Counts',r"${f_i}$", 4, 2, observed=True))
 
 pgm.add_node(Node('Spars',r"${T}_{Si}$, ${z}_{Si}$", 4,1, scale=1.4,aspect=1.2, observed=True))
 #pgm.add_node(Node('^Host',r"${z}_{Hi},{\theta}_{Hi}$", 7, 2, scale=1.5,observed=True))
