@@ -22,7 +22,7 @@ pgm.add_node(Node('theta_T',r"\center{$\alpha_{Ia}$, $\alpha_{non-Ia}$ \newline 
 #pgm.add_node(Node('z',r"$z_i$", 2, 2, fixed=True,offset=(-10,-5)))
 
 pgm.add_node(Node('Type',r"$T_i$", 5,3))
-pgm.add_node(Node('Luminosity',r"$L_i(t,\lambda)$", 4,3, fixed=True, scale=1.4, offset=(-22,-22)))
+pgm.add_node(Node('Luminosity',r"$L_i(t,\lambda)$", 4,3, scale=1.4))
 #pgm.add_node(Node('Flux',r"$n_i(t,\lambda)$", 5, 5, scale=1.2,fixed=True,offset=(15,0)))
 #pgm.add_node(Node('Flux_g',r"$n_{gi}(\lambda)$", 5, 2,fixed=True,offset=(0,-20)))
 #pgm.add_node(Node('Transmission',r"$\phi(\lambda)$", 7, 7))
