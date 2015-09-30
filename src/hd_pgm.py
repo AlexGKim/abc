@@ -15,30 +15,30 @@ pgm.add_node(Node('mu',r"$\Omega_M$, $w$", 6,7, scale=1.4))
 pgm.add_node(Node('Transmission',r"$Z$", 7, 7))
 
 pgm.add_node(Node('G_i',r"$g_i$", 3,6))
-pgm.add_node(Node('G_Ni',r"$g_{Ni}$", 4,1))
-
 pgm.add_node(Node('Gals',r"$\theta_G$", 10,6, observed=True))
 
-
 pgm.add_node(Node('theta_Ti',r"\center{$\theta_{Ia,i}$ \newline $\theta_{non-Ia,i}$}", 1,5,scale=1.5,aspect=1.2))
-
 pgm.add_node(Node('Type',r"$T_i$", 2, 5))
+
+pgm.add_node(Node('G_Ni',r"$g_{Ni}$", 4,5))
+
 pgm.add_node(Node('z',r"$z_i$", 3, 3, fixed=True,offset=(-10,-5)))
 
+
+
+pgm.add_node(Node('Stheta',r"${\theta}_{Si}$", 1, 1,  observed=True))
 pgm.add_node(Node('ST',r"${T}_{Si}$", 2, 1, observed=True))
 pgm.add_node(Node('Sz',r"${z}_{Si}$", 3, 1, observed=True))
-pgm.add_node(Node('Stheta',r"${\theta}_{Si}$", 1, 1,  observed=True))
 
 
 pgm.add_node(Node('HD',r"$\mu_i$", 5,3,fixed=True,offset=(10,-5)))
 pgm.add_node(Node('Luminosity',r"$L_i(t,\lambda)$", 5, 4, fixed=True, scale=1.2, offset=(20,-22)))
-pgm.add_node(Node('Flux_g',r"$f_{gi}(\lambda)$", 5, 1,fixed=True,offset=(0,-25)))
 pgm.add_node(Node('Flux',r"$f_i(t,\lambda)$", 5, 2, scale=1.2,fixed=True,offset=(20,-25)))
-
-pgm.add_node(Node('Counts_g',r"$\overline{\mathit{ADU}}_{gi}$", 8, 1,scale=1.2,fixed=True,offset=(10,-25)))
 pgm.add_node(Node('Counts',r"$\overline{\mathit{ADU}}_i$", 8, 2,scale=1.2,fixed=True,offset=(15,0)))
-pgm.add_node(Node('^Type',r"$\tau_i$", 9, 1, fixed=True,offset=(10,-10)))
-pgm.add_node(Node('^Counts',r"${\mathit{ADU}_i}$", 9, 2, observed=True,scale=1.2,aspect=1.2))
+pgm.add_node(Node('Counts_g',r"$\overline{\mathit{ADU}}_{gi}$", 8, 1,scale=1.2,fixed=True,offset=(10,-25)))
+pgm.add_node(Node('Flux_g',r"$f_{gi}(\lambda)$", 5, 1,fixed=True,offset=(0,-25)))
+#pgm.add_node(Node('^Type',r"$\tau_i$", 9, 1, fixed=True,offset=(10,-10)))
+pgm.add_node(Node('^Counts',r"${\mathit{ADU}_i}$", 9, 1, observed=True,scale=1.2,aspect=1.2))
 
 
 
@@ -53,7 +53,7 @@ pgm.add_edge("Type", "theta_Ti")
 
 
 pgm.add_edge("mu","HD")
-pgm.add_edge("^Counts","^Type")
+#pgm.add_edge("^Counts","^Type")
 pgm.add_edge("dispersion", "theta_Ti")
 #pgm.add_edge("Host","Luminosity")
 
@@ -70,6 +70,7 @@ pgm.add_edge("z","Flux")
 pgm.add_edge("G_Ni","Flux_g")
 pgm.add_edge("HD","Flux_g")
 pgm.add_edge("z","Flux_g")
+
 #pgm.add_edge("HD","^Host")
 
 

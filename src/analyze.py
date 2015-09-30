@@ -52,7 +52,7 @@ def individual(N_s, ia_only = False, ADU0=None,N_sn=None,dir='temp'):
 		figure = triangle.corner(samples, labels=[r"$\Omega_M$", r"$w$", r"$\alpha_{Ia}$", r"$\sigma_{Ia}$", r"$\alpha_{non-Ia}$", r"$\sigma_{non-Ia}$", r"SN Ia Rate 0", r"SN Ia Rate1"],
 			truths=[0.28,-1, 2.,0.1,2*10**(-2./2.5),1,0.95,0.2],
 			quantiles=[0.16, 0.5, 0.84], plot_datapoints=False,plot_density=True, **kwargs)
-		plt.savefig('../results/'+dir+'/contour'+app+str(N_s)+'.pdf')
+		plt.savefig('../results/'+dir+'/contour'+app+str(N_s)+'.analyze.pdf')
 		plt.clf()
 
 
@@ -194,7 +194,7 @@ def group(nspec):
 
 
 def main():
-	individual(1.0,ia_only=True,ADU0=0.75,N_sn=2000,dir='seed2')
+	individual(0.0,ia_only=False,ADU0=0.75,N_sn=2000,dir='seed2_pop2')
 #	individual(500,ia_only=False)
 	wefew
 	group([200,350,500])
