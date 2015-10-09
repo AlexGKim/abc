@@ -459,7 +459,7 @@ transformed parameters{
   vector[N_obs-N_SNIa] adu_true_nonIa;
   vector[N_obs+2*N_mis] adu;
 
-  real zPDFrenorm;
+//  real zPDFrenorm;
 
   # real snIa_rate_0;
   # real snIa_rate_1;
@@ -537,6 +537,8 @@ transformed parameters{
     for (s in 1:num_elements(ainv_all)){
       adu[s] <- luminosity_distance[s,1]^(-2);
     }
+
+    /*
     if (ADU0 !=0.){
       adu_min[1,1] <- adu_min[1,1]^(-2);
       adu_max[1,1] <- adu_max[1,1]^(-2);
@@ -549,7 +551,8 @@ transformed parameters{
       }
       zPDFrenorm <- log(zPDFrenorm);
     }
-
+  */
+  
         /*
 
     For the mis set the likelihood is
@@ -733,10 +736,10 @@ model{
     snIa_obs ~ bernoulli(rate);
 
     //third term P(zs|...) 
-    if (ADU0 !=0.){
-      increment_log_prob(log(renorm)); // z^2 is independent of parameters
-      increment_log_prob(-N_obs*zPDFrenorm);
-    }
+    // if (ADU0 !=0.){
+    //   increment_log_prob(log(renorm)); // z^2 is independent of parameters
+    //   increment_log_prob(-N_obs*zPDFrenorm);
+    // }
 
     // first term  P(ADU| zs, Tz, ...)
 

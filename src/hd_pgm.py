@@ -70,6 +70,7 @@ pgm.add_edge("Transmission","Counts_g")
 pgm.add_edge("Type","ST")
 pgm.add_edge("theta_Ti","Stheta")
 pgm.add_edge("Counts_g","^Counts")
+
 # Big Plate: Galaxy
 pgm.add_plate(Plate([0.5, 0.5, 9, 6.],
                     label=r"SNe $i = 1, \cdots, N_{SN}$",
