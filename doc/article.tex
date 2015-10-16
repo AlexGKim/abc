@@ -111,6 +111,7 @@ intrinsic distributions in a flux-limited sample can have important effects on t
 diagram  (e.g.\ Malmquist bias) so are accounted for explicitly.
 
 \section{Standard Candle}
+\label{toy:sec}
 To introduce basic model elements, this Section considers a
 simplified view of SNe~Ia
 as transients that are bolometric standard candles with an intrinsic random
@@ -430,7 +431,6 @@ priors are applied to the SN~Ia absolute magnitude and intrinsic dispersion
 \end{align}
 where $\alpha^0_{SNIa}$ is the true input luminosity.
 
-
 The output of the analyses are presented as contours of the model
 parameter pdf's for the case of 100\% spectroscopic
 typing in Figure~\ref{hd:fig}, and as the mean, median, and
@@ -531,9 +531,9 @@ the non-Ia's contribute little statistically to the $w$ constraints.
 
 
 
-\section{SN~Ia Model}
+\section{DES SN Survey Model}
 \label{snIamodel:sec}
-\subsection{Base Model}
+\subsection{Model}
 SNe~Ia are not perfect standard candles but rather are calibrated candles whose
 peak brightnesses are a
 function of their internal properties discerned from their colors and light-curve evolution.
@@ -543,9 +543,9 @@ reach of experiments.  This Section contains a model that expands upon the one
 presented in \S\ref{snIamodel:sec} to have the fidelity needed for the photometric
 supernova analysis of the Dark Energy Survey and the Large Synoptic Survey Telescope.
 
-The likelihood is written as
+The notation for the likelihood presents the data and fundamental model parameters
 \begin{equation}
-p(\mathit{ADU}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G |  \Omega_M, w, \theta_r,\alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}}, \theta_{Ia}, \theta_{non-Ia}, Z, g, g_N),
+p(\mathit{ADU}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G |  \Omega_M, w, \theta_r, \alpha_{Ia}, \beta_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\beta_{\mathit{non-Ia}}, \sigma_{\mathit{non-Ia}},  Z, g, g_N, f_g),
 \label{likelihood2:eqn}
 \end{equation}
 whose relations are sketched in the probabilistic graphical model in Figure~\ref{pgm:fig}.
@@ -576,76 +576,278 @@ whose relations are sketched in the probabilistic graphical model in Figure~\ref
 
 The new measurement that differs from  \S\ref{model:sec} is
 \begin{itemize}
-\item $\mathit{ADU}$: the measured counts for each photometric observation takes
-the place of flux;
+\item $\mathit{ADU}$: the measured counts for each photometric observation.
+This takes
+the place of flux as calibration is now considered.
 \end{itemize}
 The new model parameters are
 \begin{itemize}
-\item $\theta_{Ia}$, $\theta_{non-Ia}$: the parameters for the internal diversity within SNe~Ia and
-non-Ia's respectively;
 \item $Z$: the parameters that describe the transmission functions, i.e.\ photometric calibration.
+\item $\beta_{Ia}$, $\beta_{non-Ia}$: the parameters for the internal diversity within SNe~Ia and
+non-Ia's respectively, e.g.\ SALT2's  $\alpha$ and $\beta$;
+\item $f_g$: the surface brightness of the background light at the location of the transient
+needed for to extract the photometry of the point-source transient.
 \end{itemize}
 New latent model parameters for each transient:
 \begin{itemize}
-\item $\theta_{Ia,i}$, $\theta_{non-Ia,i}$: the underlying parameters that describe the transient;
-\item $g$: the parameters that describe the candidate host and neighbor galaxies including redshift
-is a more general replacement for $z$.
+\item $\theta_{Ia}$, $\theta_{non-Ia}$: the transient parameters that describe individual
+transients, e.g.\ SALT2's $x_1$, $c$;
+\item $g$: the parameters that describe the candidate host and neighbor galaxies,
+to be more expansive than the previous $z$ parameter.
 \end{itemize}
 The new fixed parameters are
 \begin{itemize}
-\item{$z$}: the cosmological transient redshift given the host galaxy;
-\item{$L$}: the luminosity of the transient with specified parameters;
-\item{$f$, $f_g$}: the flux of the transient and foreground hosts;
-\item{$\overline{\mathit{ADU}}$, $\overline{\mathit{ADU}}_g$}: the expected counts of the
-transient and foreground galaxies.
+\item{$f$}: the flux of the transient;
+\item{$\overline{\mathit{ADU}}_X$}: the expected counts of the transient and background light.
 \end{itemize}
 
-\subsubsection{Likelihood for the obs set data}
-The likelihood of data from the {\it obs} set is
+The relationships between the parameters for the underlying population are now described.  What follows is an initial proposal
+based on current supernova analyses, but many different models need to be
+considered as the understanding of transients improve
+and for probing systematics by comparing the
+performance of competing models.
+
+\begin{itemize}
+\item Intrinsic transient parameters are dependent on their distributions and the host galaxy.
+The SNe~Ia parameters are drawn as
 \begin{equation}
-p(\mathit{ADU}, {{T}}_S,{{z}}_S, \theta_S, \theta_G|  \Omega_M, w, \theta_r,\alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}}, \theta_{Ia}, \theta_{non-Ia}, Z, g, g_N).
+\theta_{Ia} | \sigma_{Ia}, g \sim \mathcal{N}(0, \sigma_{Ia}),
 \end{equation}
-Again assuming that spectroscopy gives an unambiguous redshift, type and now adding
-host-galaxy properties 
-\begin{align}
-p(\theta_S, \theta_G|g) &= \delta(\{\theta_S, \theta_G\} -g)
-\end{align}
-then
-\begin{multline}
-p(\mathit{ADU}, {{T}}_S,{{z}}_S, \theta_S, \theta_G|  \ldots) = \\
-p(\mathit{ADU} | T=T_S, z=z_s, g=\{\theta_S, \theta_G\},  \dots) P(T_S| z= z_S , g=\{\theta_S, \theta_G\}, \ldots).
-\label{obs3:eqn}
-\end{multline}
+where $\theta_{Ia} =\{x_1, c, \delta_M\}$, the SALT2 light-curve shape and color parameters.
+A more complex model can be based on non-Normal distributions
+and/or including SN properties directly tied to characteristics (e.g.\ mass, star formation
+rate) of the host galaxy.
 
-The first term is the likelihood for the light curve.  The dependence of the light curve depends
-on transient properties, cosmology, calibration, and the experiment.  For convenience. the
-construction of the likelihood is broken up into several steps, with intermediary points
-at the determination of the time and wavelength-dependent luminosity $L$,
-the flux $f$, the expected counts $\overline{\mathit{ADU}}$ of the transient and background, and
-finally the observed light curve $\mathit{ADU}$.  Figure~\ref{pgm:fig} shows how these
-parameters are related to the intrinsic parameters and to each other.
+The non-Ia parameters are drawn as
+\begin{equation}
+\theta_{non-Ia} | \sigma_{non-Ia}, g  \sim \mathcal{N}(0, \sigma_{non-Ia}),
+\end{equation}
+where the parameter is the realization of an intrinsic magnitude dispersion.
+A more complex model can include multiple non-Ia populations each with its own
+intrinsic parameters.
+\item Spectroscopically observed transient parameters depend on the intrinsic transient
+parameters and type.  $\theta_{Si}$ may be ignored in a zero'th order analysis that
+does not relate spectral features with SN~Ia absolute magnitudes.   If spectral
+features are considered, the simple model
+\begin{equation}
+\theta_{Si} | \theta_{Ia}, \theta_{non-Ia}, T = \delta(\theta_{Si}-\theta_T)
+\end{equation}
+assumes an unambiguous mapping between supernova parameters and spectral signal.
+\item The type is drawn from the host-dependent relative rate between SNe~Ia and non-Ia's 
+\begin{equation}
+T | \theta_r, g \sim \rm{Bernoulli}(\pi(g,\theta_r)),
+\end{equation}
+where $\pi$ is a model for the relative rates of the different types as a
+function of galaxy parameters and redshift.  A reasonable choice for $\pi$ needs to be
+selected, any volunteers?
+\item Supernova type is assumed to be unambiguously encoded in the
+spectrum:
+\begin{equation}
+T_S | T  = \delta(T_S - T).
+\end{equation}
+\item The observed redshift is taken to be the host galaxy redshift
+\begin{equation}
+z_S = g_z,
+\end{equation}
+where $g_z$ is the element in $g$ that corresponds to redshift.
+Added sophistication includes redshift
+measurement uncertainty and random peculiar velocities. The study of coherent
+flow requires added model complexity.
+\item The underlying SED of transients are modeled.  For SNe~Ia the SALT2 model
+is an option, although new models that separate dust and intrinsic color or
+identify new SN~Ia parameters are expected in the near future.  Absolute magnitudes
+that depend on host-galaxy properties need to be considered. 
+For SNe~Ia $T=1$
+\begin{equation}
+L(t,\lambda; \alpha_{Ia}, \beta_{Ia}, \theta_{Ia}, g)  =10^{-\left(\frac{\alpha x_1 + \beta c}{2.5}\right)}L_{SALT2}(t-t_0; \alpha_{Ia}, x_1, c, \delta_m) \gamma(g, \beta) ,
+\end{equation}
+where the first two terms is the SALT2 model with a realized error snake,
+and $\gamma(g, \beta)$ a step function with free parameters in $\beta$ that
+describe the step size.
 
-The pdf of the luminosity $L$ can be expressed as follows:
-\begin{multline}
-p(L|  \theta_r,\alpha_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\sigma_{\mathit{non-Ia}}, \theta_{Ia}, \theta_{non-Ia}, g)  \\
-= \sum_T \int d\theta_{Ia}\, d\theta_{non-Ia}\, P(L, T, \theta_{Ia} \theta_{non-Ia}|\ldots) \\
-= \sum_T \int d\theta_{Ia}\, d\theta_{non-Ia}\, P(L| T, \theta_{Ia} \theta_{non-Ia} \ldots) p(T,
-\theta_{Ia}\, \theta_{non-Ia} | \ldots)
-\end{multline}
+For non-Ia's $T=0$ a set of light curve templates or a model can be used.
+An initial candidate is the treatment of non-Ia's implemented in PSNID.
+\item The theoretical distance modulus
+\begin{equation}
+\mu(g_z; \Omega_M, w)
+\end{equation}
+is the predicted distance modulus of a flat dark energy cosmology.
+\item The flux incident on Earth is the redshifted and time-dilated SED scaled
+by the distance modulus.
+\begin{equation}
+f(t,\lambda) = 10^{-\mu/2.5} L\left(t/(1+g_z),\lambda/(1+g_z)\right)
+\end{equation}
+\item The expected light curve in counts depends on the flux and throughput of the
+optical chain.  A first model encapsulates flux calibration through a zeropoint
+\begin{equation}
+\overline{\mathit{ADU}}(f, Z) = 10^{Z/2.5} \int  f(\lambda) T_0(\lambda)d\lambda,
+\end{equation}
+where $T_0$ is a fiducial transmission function for the appropriate filter.  A more sophisticated
+analysis can have a transmission function specific to each observation.
+\item The measured surface brightness of the host galaxy depends on the underlying
+surface brightness convolved with the point spread function and integrated
+over the transmission
+\begin{equation}
+\overline{\mathit{ADU}}_g =    \int (f_g(\lambda, RA, Dec) \otimes PSF) T(\lambda;Z)d\lambda.
+\end{equation}
+\item The measurement $\mathit{ADU}$ is the superposition of transient and background
+light $\overline{\mathit{ADU}} + \overline{\mathit{ADU}}_g$.
+\end{itemize}
+
+\subsection{Likelihood}
+
+\subsubsection{Measurements}
+In the following discussion,
+spectroscopic and galaxy measurements are assumed
+to provide prefect determinations of transient type and parameters, and
+galaxy redshifts and parameters.  The working group is striving to get spectroscopic
+redshifts of all potential hosts.
+
+The measured counts depend on the expected counts and measurement uncertainty
+$C_P$ as a Poisson (or considering the high sky background Normal) distribution
+\begin{equation}
+\mathit{ADU} \sim \mathcal{N} (\overline{\mathit{ADU}}+\overline{\mathit{ADU}}_g ,C_P).
+\label{ADU:eqn}
+\end{equation}
 
 
-\subsubsection{Likelihood for the mis set data}
+Practically, the photometric extraction is handled by independent software, which calculates
+the pdf of $\mathit{ADU}_{\mathit{SN}}$, the realized contribution of supernova light,
+replacing this and the previous two bullet points.  Dillon is providing this.
+For the rest of the discussion, $\mathit{ADU}_{\mathit{SN}}$ is treated a measurement
+directly connected to the expected mean signal of the supernova
+$\overline{\mathit{ADU}}$.
+
+\subsubsection{Likelihood}
 
 
-%The likelihood for the model is
+The above describes the model for the underlying distribution.  Needed
+is the distribution for the population that enter the analysis; detection and spectroscopic
+follow-up have parameter-dependent selection efficiencies.  For the analysis sample
+imposing slightly more stringent criteria at the expense
+of losing a few captured transients may be more convenient than reconstructing
+the live-time decision making process.
+
+%The likelihood for the analysis sample is related to the underlying likelihood through
 %\begin{multline}
-%p(\mathit{ADU}, {{T}}_S,{{z}}_S,
-%{{\theta}}_S, \theta_G, \tau, Z | g, \theta_\mu, \theta_r, \theta_T^{Ia}, \theta_{Ti}^{Ia}, \theta_T^{non-Ia}, \theta_{Ti}^{non-Ia}, \phi) = \\
-%p(\theta_G|g)p(Z|\phi)p(\mathit{ADU}, {{T}}_S,{{z}}_S,
-%{{\theta}}_S, \tau | g, \theta_\mu, \theta_r, \theta_T^{Ia}, \theta_{Ti}^{Ia}, \theta_T^{non-Ia}, \theta_{Ti}^{non-Ia}, \phi).
-%\label{likelihood:eqn}
-%\end{multline}
+%p(\mathit{ADU}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G |  \Omega_M, w, \theta_r, \alpha_{Ia}, \beta_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\beta_{\mathit{non-Ia}}, \sigma_{\mathit{non-Ia}},  Z, g, g_N, f_g)\\
+%= \frac{\epsilon(\mathit{ADU}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G) p_U(\mathit{ADU}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G | \ldots)}
+%{\sum_{T_S} \int d\mathit{ADU}\, dz_S\, d\theta_S\, d\theta_G\, \epsilon(\mathit{ADU}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G) p_U(\mathit{ADU}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G | \ldots)},
+%\end{multline} 
+%where $p_U$ is the underlying likelihood  and $\epsilon$ is the efficiency for inclusion
+%in the sample (more precisely subsample as spectroscopic
+%selection should produce different efficiencies for the {\it obs} and {\it mis} sets.)
 
+%The efficiencies for photometric and spectroscopic selection are taken to be independent.
+%The efficiency  to pass photometric selection is denoted as $\epsilon_P$.
+The acceptance criteria based on photometry has not yet defined; the following is a sketch
+of how it would be considered for a criterion of $\ge N$ photometric points
+above a signal-to-noise threshold (translating to a distinct limiting signal $ADU_0$
+for each measurement of each transient) given $M$ available measurements. 
+The fail/pass status of each of the measurements is denoted as
+$b$ of 0/1, and there are $\sum_{k=N}^M \binom{M}{k}$ 
+distinct $b$'s that allow acceptance of the light curve.
+
+
+
+
+\subsubsection{Likelihood for the {\it obs} Set}
+The likelihood for the {\it obs} set is
+\begin{multline}
+p(\mathit{ADU}_{SN}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G |  \Omega_M, w, \theta_r, \alpha_{Ia}, \beta_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\beta_{\mathit{non-Ia}}, \sigma_{\mathit{non-Ia}},  Z, g, g_N, f_g)\\
+= \sum_i \int_L dL\, p(\mathit{ADU}_{SN}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G | b_i, L, \ldots)
+P(b_{i} |L, \ldots) P(L|\ldots) ,
+\end{multline} 
+where $L$ are the latent parameters.
+The first term is the likelihood for the data given the condition for the  $b_i$ configuration
+of threshold pass/fails  and all parameters.  The second term and
+third terms are the probabilities of achieving the configuration
+and latent parameters
+respectively.
+
+The likelihood for one of the $b$ configurations is derived from the likelihood without the configuration condition
+\begin{equation}
+p(\mathit{ADU}_{SN}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G | b_i, L, \ldots)
+%=\frac{
+% \epsilon(\mathit{ADU}_{SN}; b_i)
+%  p(\mathit{ADU}_{SN}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G | L, \ldots)}
+%  {\sum_{T_S} \int d\mathit{ADU}_{SN}\, dz_S\, d\theta_S\, d\theta_G\, 
+% \epsilon(\mathit{ADU}_{SN}; b_i)
+%  p(\mathit{ADU}_{SN}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G | L, \ldots)}\\
+  =  \frac{ \prod_j
+ \epsilon(\mathit{ADU}_{SN,j}; b_{ij})
+  p(\mathit{ADU}_{SN}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G | L, \ldots)}
+  {\prod_j P(b_{ij}{ |L,\dots)}} ,
+\label{obsconf:eqn}
+\end{equation}
+where $j$ indexes photometric points and
+$\epsilon$ is the efficiency of acceptance of that point from the underlying distribution.
+For flux thresholds, the efficiency is
+\begin{equation}
+\epsilon(\mathit{ADU}_{SN,j}; b_{ij})= \mathcal{H}\left((-1)^{b_{ij}+1}(ADU_{SN,j}-ADU_{0,j})\right),
+\end{equation}
+where $\mathcal{H}$ is the Heaviside step function; when $b_{ij}=1$ the step in the efficiency
+is up and for $b_{ij}=0$ the step is down.
+
+The likelihood without the configuration condition is
+\begin{multline}
+p(\mathit{ADU}_{SN}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G | L, \ldots) \\
+= \delta(z_S - g_z) \delta(\theta_S-\theta_T) \delta(\theta_G -g) \delta(T_S-T)  \mathcal{N}
+\left(\mathit{ADU}_{SN} -\overline{\mathit{ADU}}_j(L ,\ldots), \sigma \right),
+\end{multline}
+where $\mathcal{N}$ is an $M$-dimensional Normal distribution
+and $\sigma$ is the photometric uncertainty.  
+
+The probability for failing (passing) the selection criterion for a single point is
+\begin{equation}
+P(b_{ij} | L, \ldots) = b_{ij} + (-1)^{b_{ij}}\int_{-\infty}^{ADU_0} d\mathit{ADU}_{SN,i}  \mathcal{N}\left(\mathit{ADU}_{SN} - \overline{\mathit{ADU}}_j(L ,\ldots), \sigma_T \right),
+\end{equation}
+the (complementary) cumulative distribution function for a normal distribution
+with variable
+$\mathit{ADU}_0$.
+
+\subsubsection{Likelihood for the {\it mis} Set}
+The likelihood for the {\it mis} set does not have to account for spectroscopic data
+\begin{multline}
+p(\mathit{ADU}_{SN}, \theta_G |  \Omega_M, w, \theta_r, \alpha_{Ia}, \beta_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\beta_{\mathit{non-Ia}}, \sigma_{\mathit{non-Ia}},  Z, g, g_N, f_g)\\
+= \sum_i \int_L dL\, p(\mathit{ADU}_{SN}, \theta_G | b_i, L, \ldots)
+P(b_{i} |L, \ldots) P(L|\ldots) ,
+\end{multline} 
+\begin{equation}
+p(\mathit{ADU}_{SN}, \theta_G | b_i, L, \ldots)
+  =  \frac{ \prod_j
+ \epsilon(\mathit{ADU}_{SN,j}; b_{ij})
+  p(\mathit{ADU}_{SN}, \theta_G | L, \ldots)}
+  {\prod_j P(b_{ij}{ |L,\dots)}}.
+\label{misconf:eqn}
+\end{equation}
+
+Suppose Ravi provides for each transient a set of potential host galaxies
+each with an associated probability.  For the case of two potential hosts,
+the likelihood without the configuration condition is
+\begin{multline}
+p(\mathit{ADU}_{SN}, \theta_{G}| L, \ldots) = \\
+ \left(\pi_{host} p(z-\theta_{G1})\delta(z_N-\theta_{G2}) +
+	(1-\pi_{host}) \delta(z-\theta_{G2})\delta(z_N-\theta_{G1})
+\right) \mathcal{N}
+\left(\mathit{ADU}_{SN} -\overline{\mathit{ADU}}_j(L ,\ldots), \sigma \right);
+\end{multline}
+this is trivially generalized for only one or more than two potential hosts.
+FIX FOR PHOTO-Z.
+
+All other terms are as for the {\it obs} Set case.
+
+\subsubsection{Spectroscopic Selection}
+The efficiency for a successful spectroscopic observation $\epsilon_S$ has
+to be determined.  There are volunteers.
+
+\subsubsection{Measurement Uncertainties}
+The measurements $\mathit{ADU}$
+
+Measurement uncertainties.
+$Z$ has a prior for calibration.
+
+\section{Misc}
 The simulation of data from the model presented in
 and their analysis is implemented in Python and are available
 on GitHub\footnote{{git@github.com:AlexGKim/abc.git}}.
