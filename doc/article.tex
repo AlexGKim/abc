@@ -701,7 +701,8 @@ In the following discussion,
 spectroscopic and galaxy measurements are assumed
 to provide prefect determinations of transient type and parameters, and
 galaxy redshifts and parameters.  The working group is striving to get spectroscopic
-redshifts of all potential hosts.
+redshifts of all potential hosts.  People who are interested in SN spectral features
+or host-galaxy correlations (Chris, Rachel, Mat) can develop these models.
 
 The measured counts depend on the expected counts and measurement uncertainty
 $C_P$ as a Poisson (or considering the high sky background Normal) distribution
@@ -709,24 +710,25 @@ $C_P$ as a Poisson (or considering the high sky background Normal) distribution
 \mathit{ADU} \sim \mathcal{N} (\overline{\mathit{ADU}}+\overline{\mathit{ADU}}_g ,C_P).
 \label{ADU:eqn}
 \end{equation}
-
-
 Practically, the photometric extraction is handled by independent software, which calculates
 the pdf of $\mathit{ADU}_{\mathit{SN}}$, the realized contribution of supernova light,
 replacing this and the previous two bullet points.  Dillon is providing this.
 For the rest of the discussion, $\mathit{ADU}_{\mathit{SN}}$ is treated a measurement
 directly connected to the expected mean signal of the supernova
-$\overline{\mathit{ADU}}$.
+$\overline{\mathit{ADU}}$
+\begin{equation}
+\mathit{ADU}_{SN} \sim \mathcal{N} (\overline{\mathit{ADU}} ,C_P).
+\end{equation}
 
-\subsubsection{Likelihood}
+\subsubsection{Constructing the Likelihood}
 
-
-The above describes the model for the underlying distribution.  Needed
-is the distribution for the population that enter the analysis; detection and spectroscopic
-follow-up have parameter-dependent selection efficiencies.  For the analysis sample
-imposing slightly more stringent criteria at the expense
-of losing a few captured transients may be more convenient than reconstructing
-the live-time decision making process.
+The analysis sample satisfy certain photometric and no successful spectroscopy
+({\it mis} Set)  and photometric
+and successful spectroscopic classification ({\it obs} Set) selection criteria, which for convenience
+probably should  be chosen to be stringent than the live-time decisions made during the survey.
+Neither the photometric nor spectroscopic selection criteria have been defined.
+Identifying good spectroscopic criteria needs to be done: the OzDES folks and Ryan are natural
+candidates.
 
 %The likelihood for the analysis sample is related to the underlying likelihood through
 %\begin{multline}
@@ -740,12 +742,15 @@ the live-time decision making process.
 
 %The efficiencies for photometric and spectroscopic selection are taken to be independent.
 %The efficiency  to pass photometric selection is denoted as $\epsilon_P$.
-The acceptance criteria based on photometry has not yet defined; the following is a sketch
-of how it would be considered for a criterion of $\ge N$ photometric points
-above a signal-to-noise threshold (translating to a distinct limiting signal $ADU_0$
-for each measurement of each transient) given $M$ available measurements. 
-The fail/pass status of each of the measurements is denoted as
-$b$ of 0/1, and there are $\sum_{k=N}^M \binom{M}{k}$ 
+
+
+The following is a sketch of the likelihood calculation for an example 
+photometric selection criterion, which should serve as a useful guide once the criteria are fixed.
+The criterion is for $\ge N$ photometric points
+above a signal-to-noise threshold (translating to a distinct limiting signal $ADU_{0i}$
+for measurement $i$ of a given transient) given $M$ available measurements. 
+The fail/pass status of the measurements are stored as 0/1 in an array $b$.
+There are $\sum_{k=N}^M \binom{M}{k}$ 
 distinct $b$'s that allow acceptance of the light curve.
 
 
@@ -793,59 +798,84 @@ The likelihood without the configuration condition is
 \begin{multline}
 p(\mathit{ADU}_{SN}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G | L, \ldots) \\
 = \delta(z_S - g_z) \delta(\theta_S-\theta_T) \delta(\theta_G -g) \delta(T_S-T)  \mathcal{N}
-\left(\mathit{ADU}_{SN} -\overline{\mathit{ADU}}_j(L ,\ldots), \sigma \right),
+\left(\mathit{ADU}_{SN} -\overline{\mathit{ADU}}_j(L ,\ldots), C_P \right),
 \end{multline}
 where $\mathcal{N}$ is an $M$-dimensional Normal distribution
-and $\sigma$ is the photometric uncertainty.  
+and $\sigma$ is the photometric uncertainty. 
 
-The probability for failing (passing) the selection criterion for a single point is
-\begin{equation}
-P(b_{ij} | L, \ldots) = b_{ij} + (-1)^{b_{ij}}\int_{-\infty}^{ADU_0} d\mathit{ADU}_{SN,i}  \mathcal{N}\left(\mathit{ADU}_{SN} - \overline{\mathit{ADU}}_j(L ,\ldots), \sigma_T \right),
-\end{equation}
-the (complementary) cumulative distribution function for a normal distribution
-with variable
-$\mathit{ADU}_0$.
+
+%
+%The probability for failing (passing) the selection criterion for a single point is
+%\begin{equation}
+%P(b_{ij} | L, \ldots) = b_{ij} + (-1)^{b_{ij}}\int_{-\infty}^{ADU_0} d\mathit{ADU}_{SN,i}  \mathcal{N}\left(\mathit{ADU}_{SN} - \overline{\mathit{ADU}}_j(L ,\ldots), C_P \right),
+%\end{equation}
+%the (complementary) cumulative distribution function for a normal distribution
+%with variable
+%$\mathit{ADU}_0$, i.e.\ 2 times the error function.
+
+Assembling this together, the likelihood for the {\it obs} Set is
+\begin{multline}
+p(\mathit{ADU}_{SN}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G |  \Omega_M, w, \theta_r, \alpha_{Ia}, \beta_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\beta_{\mathit{non-Ia}}, \sigma_{\mathit{non-Ia}},  Z, g, g_N, f_g)\\
+= \sum_i \int_L dL\, 
+\prod_j
+ \epsilon(\mathit{ADU}_{SN,j}; b_{ij}) 
+\mathcal{N}\left(\mathit{ADU}_{SN} - \overline{\mathit{ADU}}_j(L ,
+g_z=z_S, \theta_T=\theta_S, g=\theta_G, T=T_S, \ldots), C_P \right)\\
+P(L|g_z=z_S, \theta_T=\theta_S, g=\theta_G, T=T_S, \ldots),
+\end{multline} 
+where the latent parameters $T$, $\theta_T$ are not integrated over.
 
 \subsubsection{Likelihood for the {\it mis} Set}
-The likelihood for the {\it mis} set does not have to account for spectroscopic data
+The likelihood for the {\it mis} set follow the same pattern as that of the
+{\it obs} set except for not having to account for spectroscopic data.
 \begin{multline}
-p(\mathit{ADU}_{SN}, \theta_G |  \Omega_M, w, \theta_r, \alpha_{Ia}, \beta_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\beta_{\mathit{non-Ia}}, \sigma_{\mathit{non-Ia}},  Z, g, g_N, f_g)\\
-= \sum_i \int_L dL\, p(\mathit{ADU}_{SN}, \theta_G | b_i, L, \ldots)
-P(b_{i} |L, \ldots) P(L|\ldots) ,
+p(\mathit{ADU}_{SN}, \theta_{G_1} |  \Omega_M, w, \theta_r, \alpha_{Ia}, \beta_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\beta_{\mathit{non-Ia}}, \sigma_{\mathit{non-Ia}},  Z, g, g_N, f_g) \\
+ = \sum_i \int_L dL\, 
+\prod_j
+ \epsilon(\mathit{ADU}_{SN,j}; b_{ij}) \sum_k 
+\pi_k\mathcal{N}\left(\mathit{ADU}_{SN} - \overline{\mathit{ADU}}_j(L ,
+g=\theta_{G_k}, \ldots), C_P \right)
+P(L|g=\theta_{G_k}, \ldots), 
 \end{multline} 
-\begin{equation}
-p(\mathit{ADU}_{SN}, \theta_G | b_i, L, \ldots)
-  =  \frac{ \prod_j
- \epsilon(\mathit{ADU}_{SN,j}; b_{ij})
-  p(\mathit{ADU}_{SN}, \theta_G | L, \ldots)}
-  {\prod_j P(b_{ij}{ |L,\dots)}}.
-\label{misconf:eqn}
-\end{equation}
+where $\pi_k$ is the probability that the $k$'th galaxy is the host, provided by Ravi.
 
-Suppose Ravi provides for each transient a set of potential host galaxies
-each with an associated probability.  For the case of two potential hosts,
-the likelihood without the configuration condition is
-\begin{multline}
-p(\mathit{ADU}_{SN}, \theta_{G}| L, \ldots) = \\
- \left(\pi_{host} p(z-\theta_{G1})\delta(z_N-\theta_{G2}) +
-	(1-\pi_{host}) \delta(z-\theta_{G2})\delta(z_N-\theta_{G1})
-\right) \mathcal{N}
-\left(\mathit{ADU}_{SN} -\overline{\mathit{ADU}}_j(L ,\ldots), \sigma \right);
-\end{multline}
-this is trivially generalized for only one or more than two potential hosts.
-FIX FOR PHOTO-Z.
+%\begin{multline}
+%p(\mathit{ADU}_{SN}, \theta_G |  \Omega_M, w, \theta_r, \alpha_{Ia}, \beta_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\beta_{\mathit{non-Ia}}, \sigma_{\mathit{non-Ia}},  Z, g, g_N, f_g)\\
+%= \sum_i \int_L dL\, p(\mathit{ADU}_{SN}, \theta_G | b_i, L, \ldots)
+%P(b_{i} |L, \ldots) P(L|\ldots) ,
+%\end{multline} 
+%\begin{equation}
+%p(\mathit{ADU}_{SN}, \theta_G | b_i, L, \ldots)
+%  =  \frac{ \prod_j
+% \epsilon(\mathit{ADU}_{SN,j}; b_{ij})
+%  p(\mathit{ADU}_{SN}, \theta_G | L, \ldots)}
+%  {\prod_j P(b_{ij}{ |L,\dots)}}.
+%\label{misconf:eqn}
+%\end{equation}
 
-All other terms are as for the {\it obs} Set case.
 
-\subsubsection{Spectroscopic Selection}
-The efficiency for a successful spectroscopic observation $\epsilon_S$ has
-to be determined.  There are volunteers.
-
-\subsubsection{Measurement Uncertainties}
-The measurements $\mathit{ADU}$
-
-Measurement uncertainties.
-$Z$ has a prior for calibration.
+\section{Tasks}
+\begin{table}[htdp]
+\caption{default}
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+Task/Deliverable & Responsible \\ \hline
+Model Design & \\
+Sampler &\\
+Photometric Selection &\\
+Spectroscopy Selection &\\
+Host Galaxy Association &\\
+Host Galaxy Parameters &\\
+SN~Ia Models Selection &\\
+Non-Ia Models Selection &\\
+SN light curves (ADU) &\\
+Photometric Zeropoints &\\
+\hline
+\end{tabular}
+\end{center}
+\label{Tasks and Responsible Parties}
+\end{table}%
 
 \section{Misc}
 The simulation of data from the model presented in
