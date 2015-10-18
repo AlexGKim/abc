@@ -1,4 +1,5 @@
 \documentclass[preprint,3p]{elsarticle}
+%\documentclass[preprint]{aastex}
 \usepackage{aas_macros}
 \usepackage{amsmath,amssymb}
 \usepackage{mathrsfs}
@@ -694,13 +695,20 @@ over the transmission
 light $\overline{\mathit{ADU}} + \overline{\mathit{ADU}}_g$.
 \end{itemize}
 
-\subsection{Likelihood}
-
-\subsubsection{Measurements}
+\subsection{Measurements}
+\label{measurements:sec}
 In the following discussion,
 spectroscopic and galaxy measurements are assumed
 to provide prefect determinations of transient type and parameters, and
-galaxy redshifts and parameters.  The working group is striving to get spectroscopic
+galaxy redshifts and parameters. 
+\begin{align}
+p(T_S|T) &= \delta(T_S-T),\\
+p(\theta_S|\theta_T) &= \delta(\theta_S|\theta_T),\\
+p(\theta_G|g) &= \delta(\theta_G-g)\\
+p(z_S|g_z) &= \delta(z_S-g_z)\\.
+\label{specz:eqn}
+\end{align}
+The working group is striving to get spectroscopic
 redshifts of all potential hosts.  People who are interested in SN spectral features
 or host-galaxy correlations (Chris, Rachel, Mat) can develop these models.
 
@@ -720,7 +728,7 @@ $\overline{\mathit{ADU}}$
 \mathit{ADU}_{SN} \sim \mathcal{N} (\overline{\mathit{ADU}} ,C_P).
 \end{equation}
 
-\subsubsection{Constructing the Likelihood}
+\subsection{Constructing the Likelihood}
 
 The analysis sample satisfy certain photometric and no successful spectroscopy
 ({\it mis} Set)  and photometric
@@ -751,7 +759,9 @@ above a signal-to-noise threshold (translating to a distinct limiting signal $AD
 for measurement $i$ of a given transient) given $M$ available measurements. 
 The fail/pass status of the measurements are stored as 0/1 in an array $b$.
 There are $\sum_{k=N}^M \binom{M}{k}$ 
-distinct $b$'s that allow acceptance of the light curve.
+distinct $b$'s that allow acceptance of the light curve.  In the notation $b_{ijk}$, $i$ indexes
+the configuration, $j$ the transient, and $k$ the photometric point of transient $j$.
+
 
 
 
@@ -760,49 +770,26 @@ distinct $b$'s that allow acceptance of the light curve.
 The likelihood for the {\it obs} set is
 \begin{multline}
 p(\mathit{ADU}_{SN}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G |  \Omega_M, w, \theta_r, \alpha_{Ia}, \beta_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\beta_{\mathit{non-Ia}}, \sigma_{\mathit{non-Ia}},  Z, g, g_N, f_g)\\
-= \sum_i \int_L dL\, p(\mathit{ADU}_{SN}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G | b_i, L, \ldots)
-P(b_{i} |L, \ldots) P(L|\ldots) ,
+= \sum_i \int_L dL\, p(\mathit{ADU}_{SN}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G , b_i|  L, \ldots)
+ P(L|\ldots) \\
+ \propto \sum_i  \epsilon(\mathit{ADU}_{SN}; b_{i}) \int_L dL\, p(\mathit{ADU}_{SN}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G|  L, \ldots)P(L|\ldots).
 \end{multline} 
-where $L$ are the latent parameters.
-The first term is the likelihood for the data given the condition for the  $b_i$ configuration
-of threshold pass/fails  and all parameters.  The second term and
-third terms are the probabilities of achieving the configuration
-and latent parameters
-respectively.
-
-The likelihood for one of the $b$ configurations is derived from the likelihood without the configuration condition
+It is proportional to the truncated likelihood of the underlying sample, where the truncation
+is achieved through $\epsilon(\mathit{ADU}_{SN}; b_{i})$, the efficiency that a light curve is 
+selected in for a given configuration.  For the limiting flux criteria
 \begin{equation}
-p(\mathit{ADU}_{SN}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G | b_i, L, \ldots)
-%=\frac{
-% \epsilon(\mathit{ADU}_{SN}; b_i)
-%  p(\mathit{ADU}_{SN}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G | L, \ldots)}
-%  {\sum_{T_S} \int d\mathit{ADU}_{SN}\, dz_S\, d\theta_S\, d\theta_G\, 
-% \epsilon(\mathit{ADU}_{SN}; b_i)
-%  p(\mathit{ADU}_{SN}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G | L, \ldots)}\\
-  =  \frac{ \prod_j
- \epsilon(\mathit{ADU}_{SN,j}; b_{ij})
-  p(\mathit{ADU}_{SN}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G | L, \ldots)}
-  {\prod_j P(b_{ij}{ |L,\dots)}} ,
-\label{obsconf:eqn}
+\epsilon(\mathit{ADU}_{SN}; b_{i})= \prod_{jk}\mathcal{H}\left((-1)^{b_{ijk}+1}(ADU_{SN,jk}-ADU_{0,jk})\right),
 \end{equation}
-where $j$ indexes photometric points and
-$\epsilon$ is the efficiency of acceptance of that point from the underlying distribution.
-For flux thresholds, the efficiency is
-\begin{equation}
-\epsilon(\mathit{ADU}_{SN,j}; b_{ij})= \mathcal{H}\left((-1)^{b_{ij}+1}(ADU_{SN,j}-ADU_{0,j})\right),
-\end{equation}
-where $\mathcal{H}$ is the Heaviside step function; when $b_{ij}=1$ the step in the efficiency
-is up and for $b_{ij}=0$ the step is down.
+where $\mathcal{H}$ is the Heaviside step function; when $b_{ijk}=1$ the step in the efficiency
+is up and for $b_{ijk}=0$ the step is down.
 
-The likelihood without the configuration condition is
-\begin{multline}
-p(\mathit{ADU}_{SN}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G | L, \ldots) \\
-= \delta(z_S - g_z) \delta(\theta_S-\theta_T) \delta(\theta_G -g) \delta(T_S-T)  \mathcal{N}
-\left(\mathit{ADU}_{SN} -\overline{\mathit{ADU}}_j(L ,\ldots), C_P \right),
-\end{multline}
-where $\mathcal{N}$ is an $M$-dimensional Normal distribution
-and $\sigma$ is the photometric uncertainty. 
-
+%The likelihood without the configuration condition for our measurements is
+%\begin{multline}
+%p(\mathit{ADU}_{SN}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G | L, \ldots) \\
+%= \delta(z_S - g_z) \delta(\theta_S-\theta_T) \delta(\theta_G -g) \delta(T_S-T)  \mathcal{N}
+%\left(\mathit{ADU}_{SN} -\overline{\mathit{ADU}}_j(L ,\ldots), C_P \right).
+%\end{multline}. 
+%
 
 %
 %The probability for failing (passing) the selection criterion for a single point is
@@ -813,26 +800,28 @@ and $\sigma$ is the photometric uncertainty.
 %with variable
 %$\mathit{ADU}_0$, i.e.\ 2 times the error function.
 
-Assembling this together, the likelihood for the {\it obs} Set is
+For measurements described in \S\ref{measurements:sec}, the likelihood for the {\it obs} Set is
 \begin{multline}
 p(\mathit{ADU}_{SN}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G |  \Omega_M, w, \theta_r, \alpha_{Ia}, \beta_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\beta_{\mathit{non-Ia}}, \sigma_{\mathit{non-Ia}},  Z, g, g_N, f_g)\\
-= \sum_i \int_L dL\, 
-\prod_j
- \epsilon(\mathit{ADU}_{SN,j}; b_{ij}) 
+\propto \sum_i  \epsilon(\mathit{ADU}_{SN}; b_{i})  \int_L dL\, 
 \mathcal{N}\left(\mathit{ADU}_{SN} - \overline{\mathit{ADU}}_j(L ,
 g_z=z_S, \theta_T=\theta_S, g=\theta_G, T=T_S, \ldots), C_P \right)\\
 P(L|g_z=z_S, \theta_T=\theta_S, g=\theta_G, T=T_S, \ldots),
 \end{multline} 
 where the latent parameters $T$, $\theta_T$ are not integrated over.
+The normalization factor is parameter-dependent and is set by the condition
+\begin{equation}
+\sum_{T_S} \int d\mathit{ADU}_{SN}\,d{{z}}_S\,d\theta_{S}\,d\theta_G\,p(\mathit{ADU}_{SN}, {{T}}_S,{{z}}_S, \theta_{S}, \theta_G |  \ldots)=1.
+\end{equation}  
 
 \subsubsection{Likelihood for the {\it mis} Set}
 The likelihood for the {\it mis} set follow the same pattern as that of the
 {\it obs} set except for not having to account for spectroscopic data.
 \begin{multline}
 p(\mathit{ADU}_{SN}, \theta_{G_1} |  \Omega_M, w, \theta_r, \alpha_{Ia}, \beta_{Ia},\sigma_{Ia}, \alpha_{\mathit{non-Ia}},\beta_{\mathit{non-Ia}}, \sigma_{\mathit{non-Ia}},  Z, g, g_N, f_g) \\
- = \sum_i \int_L dL\, 
-\prod_j
- \epsilon(\mathit{ADU}_{SN,j}; b_{ij}) \sum_k 
+ \propto \sum_i  \epsilon(\mathit{ADU}_{SN}; b_{i}) 
+\int_L dL\, 
+\sum_k 
 \pi_k\mathcal{N}\left(\mathit{ADU}_{SN} - \overline{\mathit{ADU}}_j(L ,
 g=\theta_{G_k}, \ldots), C_P \right)
 P(L|g=\theta_{G_k}, \ldots), 
