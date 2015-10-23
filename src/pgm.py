@@ -98,7 +98,7 @@ pgm.add_plate(Plate([1.4, 0.5, 6.2, 7.],
 
 pgm.add_plate(Plate([4.5, 0.6, 3, 4.],
                     label=r"{\centering LC Point $j = 1, \cdots, N_{band}$, $k = 1, \cdots, N_{date}$}",
-                    shift=-0.2,label_offset=[2,5]))
+                    shift=-0.2,label_offset=[2,2]))
 
 
 # Render and save.
