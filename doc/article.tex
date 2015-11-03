@@ -417,12 +417,14 @@ Here are desired properties of the set (or sets) of objects obtained from photom
 \item Sufficient data-quality to have a chance at photometric classification.
 SNe~Ia do look different from other transients: the principal source of type  ambiguity
 comes from poor signal-to-noise and poor temporal/wavelength sampling.
+Having enough points with sufficient signal-to-noise over three adjacent bands over a 
+sufficiently large time window.
 \item A large set of likely SNe~Ia.
 \item All objects with photometry-only must have spectroscopically-typed analogs, preferably though not necessarily at the same redshift.  SNe~Ia subpopulations whose characteristics
 are unconstrained are not useful for cosmology.
 \item Obvious non-Ia's from populations that could be misconstrued as SN~Ia.  For example,
 a non-Ia at low redshift could be
-mistaken to be SN~Ia at high redshift due to degraded signal.
+mistaken to be SN~Ia at high redshift due to degraded signal.  
 \item Exclusion of objects that are not part of populations that could be misconstrued as SN~Ia.
 They would pollute inference of the non-Ia population.
 \end{itemize}
@@ -437,19 +439,59 @@ threshold(point, S/N).
 If we work in the sky-noise dominated regime, I believe this information is already
 calculated by DM.
 \end{itemize}
-\subsection{Others}
 
-\begin{itemize}
-\item Identification of selection criteria for spectroscopic success, as a function
+\subsection{Spectroscopic Selection}
+Identification of selection criteria for spectroscopic success, as a function
 of data.
-\item A rates model for transient types and subtypes
+
+\subsection{Relative Rates}
+\label{rates:sec}
+A rates model for transient types and subtypes
 \begin{equation}
 \pi(z;r).
 \end{equation}
-\item Decision on how to model the distribution of $x_1$ and $c$.  For a first try a
+\subsection{SALT2}
+Decision on how to model the distribution of $x_1$ and $c$.  For a first try a
 single normal distribution seems sufficient but do we want to be more ambitious?
-\item A non-Ia transient model.  Much of its usage is in classification, PSNID or
-Karpenka could be places to start.
+\subsection{Non-Ia Transient Model}
+Needed is a model(s) for non-transients that could be mistaken as SN~Ia:
+both a description of the time-evolving SED and the relative rates
+with respect to Type~Ia's (see \S\ref{rates:sec}).
+
+The SED model is of the time evolving luminosity (or more precisely $\mathcal{M}$)
+for the range of possible non-Ia's.  It describes not only colors and light curve shapes,
+but also absolute magnitude.  Its parameters can be constrained part of the
+global analysis, indeed the pdf of the absolute magnitude is candidate.
+
+As much of its usage is in classification, PSNID is a place to start.
+Natasha Karpenka has been compiling a descriptions of non-Ia-Type~I's.  Can these
+be packaged into the following deliverable?
+
+The deliverable is a parameterized SED model that can be accessed through
+an interface such as $L(t,\lambda; \text{Non-Ia parameters})$. 
+
+\subsection{Host-Galaxy Parameter Determination}
+Although a different group within DES is charged with deriving properties
+of galaxies (including our hosts), results do not seem to be forthcoming.
+Mat has said that there is a group within the SNWG interested in
+taking over this task.  Chris has discussed getting deep
+co-adds of galaxies uncontaminated by supernova light.
+Can we confirm who is part of this effort, if there is forward momentum,
+and get a single name that used as the point of contact?
+
+The deliverable are galaxy properties and a covariance matrix of their uncertainties,
+which are treated in the analysis as data.
+
+\subsection{NIR Data}
+VISTA NIR data have important probative value that can enhance about all aspects
+of our analysis even if available for a subset of objects.
+We should decide our intents on the timing of the use of this data.
+For example, on whether we plan on a DES-only paper and DES+NIR, and if
+we want to focus efforts on the former in the short term.
+
+\subsection{Others}
+
+\begin{itemize}
 \item Calibration model and uncertainties. Assuming we work with zeropoints
 $p(Z)$ is needed.
 \item Data! Spectroscopic Type and uncertainties, Spectroscopic redshifts and
