@@ -259,6 +259,7 @@ p(data, b_k| model)  = \epsilon(Photometry_o, b_k)p(data| model)\\
 where
 \begin{equation}
 \epsilon(Photometry_o; b_{k})= \prod_{\nu i}\mathcal{H}\left((-1)^{b_{k\nu i}+1}(Photometry_{o,k\nu i}-Threshold_{\nu i})\right),
+\label{eff:eqn}
 \end{equation}
 where $\mathcal{H}$ is the Heaviside step function; when $b_{k\nu i}=1/0$ the step in the efficiency
 is up/down.  The indices correspond to configuration $k$,
@@ -429,10 +430,26 @@ mistaken to be SN~Ia at high redshift due to degraded signal.
 They would pollute inference of the non-Ia population.
 \end{itemize}
 
-A clean deliverable would be:
+\subsection{Detection Criteria (Malmquist Bias)}
+The photometric selection criteria are expected to be significantly more rigorous that
+the detection criteria.  Nevertheless, the detection efficiencies need to be characterized.
+Fakes already provide a good measure of this.  To first order, the efficiency depends
+on $S/N$, but a secondary dependence on the structure of background galaxies.
+The detection efficiency is more complicated than the step function
+shown in Eqn.~\ref{eff:eqn}.
+
+Deliverable is the detection efficiency to take the place of Eqn.~\ref{eff:eqn}.
+
+\subsection{Per-Exposure Thresholds}
+To understand the effect of sample-selection criteria and detection efficiency
+on a specific object, the
+properties of each photometric point is needed.  Although the photometric criteria
+have not been formalized, a $S/N$ threshold is a possible statistic to be used.
+As such, a clean deliverable would be:
 \begin{itemize}
-\item Determination of flux thresholds for each photometric point given
-a $S/N$ threshold
+\item Determination of flux thresholds for each photometric point of each candidate
+given
+a $S/N$
 \begin{equation}
 threshold(point, S/N).
 \end{equation}
@@ -489,11 +506,27 @@ We should decide our intents on the timing of the use of this data.
 For example, on whether we plan on a DES-only paper and DES+NIR, and if
 we want to focus efforts on the former in the short term.
 
+\subsection{Photometric Data}
+
+Deliverable:
+transient counts and associated covariance matrix.  For flexibility, the counts and the
+flux calibration are delivered separately.
+
+\subsection{Calibration model and uncertainties}
+For the first analysis, it is presumably sufficient to describe calibration uncertainties
+as global zeropoints.  In the long term, it would be great to have a transmission
+function for every photometric point.
+
+It has to be decided whether calibration should be included
+as part of the photometric uncertainties, or as model parameters.
+The former requires the inversion of a full covariance matrix for all photometric
+points.  The latter may have a per-SN solution through importance sampling.
+
+Deliverable of $p(Z)$.
+
 \subsection{Others}
 
 \begin{itemize}
-\item Calibration model and uncertainties. Assuming we work with zeropoints
-$p(Z)$ is needed.
 \item Data! Spectroscopic Type and uncertainties, Spectroscopic redshifts and
 uncertainties, galaxy properties and uncertainties, host-galaxy associations
 and uncertainties, photometry and uncertainties.
