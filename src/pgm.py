@@ -7,14 +7,14 @@ rc("font", family="serif", size=8)
 rc("text", usetex=True)
 
 
-pgm = PGM([8.5, 8.5], origin=[0., 0.2], observed_style='inner')
+pgm = PGM([9.5, 8.5], origin=[0., 0.2], observed_style='inner')
 
 #pgm.add_node(Node('dispersion',r"\center{$\sigma_{Ia}$ \newline $\sigma_{!Ia}$}", 1,6,scale=1.2,aspect=1.8))
 pgm.add_node(Node('rate',r"{\center Relative \newline Rates}", 2,8,scale=1.6,aspect=1.2))
 #pgm.add_node(Node('theta_T',r"\center{$\alpha_{Ia}$, $\alpha_{!Ia}$ \newline $\beta_{Ia}$, $\beta_{!Ia}$}", 4,6,scale=1.4,aspect=1.8))
-pgm.add_node(Node('theta_T',r"\center{SNe~Ia, Non-Ia \newline Populations}", 5,8,scale=1.8,aspect=1.2))
+pgm.add_node(Node('theta_T',r"\center{SNe~Ia, Non-Ia \newline Populations}", 6,8,scale=1.8,aspect=1.2))
 #pgm.add_node(Node('theta_T2',r"{Non-Ia}", 4,8,scale=1.6,aspect=1.2))
-pgm.add_node(Node('mu',r"{\center Cosmology}", 7,8, scale=1.6,aspect=1.2))
+pgm.add_node(Node('mu',r"{\center Cosmology}", 8,8, scale=1.6,aspect=1.2))
 
 #pgm.add_node(Node('G_Ni',r"$g_{Ni}$", 8,5))
 
@@ -35,13 +35,13 @@ pgm.add_node(Node('Type',r"\centering{Type \newline Subtype}", 2, 6, scale=1.6,a
 
 
 #pgm.add_node(Node('theta_Ti',r"\centering{Transient \newline Parameters}", 1,5,scale=1.5,aspect=1.2))
-pgm.add_node(Node('HD',r"Distance", 7,6,fixed=True,offset=(-25,-15)))
+pgm.add_node(Node('HD',r"Distance", 8,6,fixed=True,offset=(-25,-15)))
 
 
-pgm.add_node(Node('Luminosity',r"Luminosity", 5, 4,scale=1.6,aspect=1.2))
+pgm.add_node(Node('Luminosity',r"Luminosity", 6, 4,scale=1.6,aspect=1.2))
 
 
-pgm.add_node(Node('Flux',r"Flux", 7, 3, scale=1.2,fixed=True,offset=(-20,-20)))
+pgm.add_node(Node('Flux',r"Flux", 8, 3, scale=1.2,fixed=True,offset=(-20,-20)))
 
 
 pgm.add_node(Node('Transmission',r"Throughput", 5, 2,scale=1.6,aspect=1.2))
@@ -50,7 +50,7 @@ pgm.add_node(Node('Transmission',r"Throughput", 5, 2,scale=1.6,aspect=1.2))
 #pgm.add_node(Node('Stheta',r"Indicators", 1, 1,  observed=True,scale=1.6,aspect=1.2))
 pgm.add_node(Node('ST',r"\centering{Type \newline Subtype$_o$}", 2, 1, observed=True,scale=1.6,aspect=1.2))
 pgm.add_node(Node('Sz',r"Redshift$_o$", 3, 1, observed=True,scale=1.6,aspect=1.2))
-pgm.add_node(Node('^Counts',r"Photometry$_o$", 7, 1, observed=True,scale=1.6,aspect=1.2))
+pgm.add_node(Node('^Counts',r"Photometry$_o$", 8, 1, observed=True,scale=1.6,aspect=1.2))
 pgm.add_node(Node('Gals',r"\centering{Host \newline Properties$_o$}", 4,1, observed=True,scale=1.6,aspect=1.2))
 
 
@@ -91,12 +91,12 @@ pgm.add_edge("Type","ST")
 #pgm.add_edge("Counts_g","^Counts")
 
 # Big Plate: Galaxy
-pgm.add_plate(Plate([1.4, 0.5, 6.2, 7.],
+pgm.add_plate(Plate([1.4, 0.5, 7.2, 7.],
                     label=r"SNe $i = 1, \cdots, N_{SN}$",
                     shift=-0.2,label_offset=[20,2]))
 
 
-pgm.add_plate(Plate([4.5, 0.6, 3, 4.],
+pgm.add_plate(Plate([5.5, 0.6, 3, 4.],
                     label=r"{\centering LC Point $j = 1, \cdots, N_{band}$, $k = 1, \cdots, N_{date}$}",
                     shift=-0.2,label_offset=[2,2]))
 
