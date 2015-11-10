@@ -6,382 +6,307 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import pystan
 import numpy.random
-from astropy.cosmology import FlatLambdaCDM
+from astropy.cosmology import FlatwCDM
 import scipy
 import sncosmo
 import pickle
+import astropy.units as u
+import abc
 
-cosmology=FlatLambdaCDM(73.,0.28)
+class Source(object):
 
-class HostGalaxies(object):
-	"""docstring for HostGalaxy"""
-
-	zmin = 0.1
-	zmax = 1.4
-	def __init__(self, N_sn):
-		super(HostGalaxies, self).__init__()
-		self.N_sn = N_sn
-		self.zs = numpy.sort(numpy.random.uniform(HostGalaxies.zmin**3, HostGalaxies.zmax**3,size=self.N_sn)**(1./3))
-		self.parameters=None
+	__metaclass__ = abc.ABCMeta
+	__input__ = None
 	
-	def redshift(self, index):
-		return self.zs[index]
+	#must have rates rule and luminosity 
+	# @abc.abstractmethod
+	# def luminosity(self):
+	# 	return
 
-	def redshifts(self):
-		return self.zs
+	# @abc.abstractmethod
+	# def relativeRates(self):
+	# 	return
+
+class Cosmology(object):
+	"""docstring for Cosmology"""
+
+	__input__ = None
+	__par_names__ = ['H0', 'Omega_M' 'w']
+
+	H0 = 72.
+	Omega_M = 0.28
+	w =-1
+
+	cosmology = FlatwCDM(H0,Omega_M,w)
+
 
 class Throughput(object):
 	"""docstring for Throughput"""
+	__input__ = None
+	__par_names__ = ['zp']
+
+	filters = [sncosmo.get_bandpass('desg'),sncosmo.get_bandpass('desr'),sncosmo.get_bandpass('desi'),
+		sncosmo.get_bandpass('desz')]
+
+	zp = numpy.array([22.,22,22,22])
+
+
+class HostGalaxy(object):
+	"""docstring for HostGalaxy"""
+
+	__input__ = None
+	__par_names__ = ['host_z']
+
+	zmin = 0.1
+	zmax = 1.4
 
 	def __init__(self):
-		super(Throughput, self).__init__()
-		self.zp_0 = numpy.array([22.,22,22,22])
-		self.stdev = numpy.array([0.01,0.01,0.01,0.02])
-		self.zp = numpy.random.normal(loc=self.zp_0, scale=self.stdev)
+		super(HostGalaxy, self).__init__()
+		self.host_z = numpy.random.uniform(HostGalaxy.zmin**3, HostGalaxy.zmax**3)**(1./3)
 
-	def zeropoints(self):
-		return numpy.array(self.zp)
-
-
-wefew
-
-class SNIa(object):
-	"""docstring for SNIa"""
-	__par_names__ = ['x0', 'x1', 'c','ebv', 'r_v']
-	def __init__(self):
-		super(SNIa, self).__init__()
-		self.source = sncosmo.SALT2Source(modeldir="../data/salt2-4")
-		self.dust = sncosmo.CCM89Dust()
-		self.model = sncosmo.Model(source=self.source, effects=[self.dust],effect_names=['host'], effect_frames=['rest'])
-		self.model.set(z=0.0001)
-
-
-	def luminosity(self, phase, **kwargs):
-		self.model.set(**kwargs)
-		self.model.set_source_peakabsmag(-19.0, 'bessellb', 'ab')
-		return self.model.flux(phase, 4000.)
-
-sn = SNIa()
-sn_args={'x0':1., 'x1':0. ,'c':0., 'hostebv':0., 'hostr_v':3.1 }
-print type(sn.luminosity(0., **sn_args))
-
-class NonIa(object):
-	"""docstring for NonIa"""
-	def __init__(self, arg):
-		super(NonIa, self).__init__()
-		self.arg = arg
 		
-	def luminosity(self, phase):
-		return 1.
 
+
+class SNIa(Source):
+	"""docstring for SNIa"""
+	__input__ = None
+	__par_names__ = ['alpha', 'beta', 'x1_sigma', 'c_sigma', 'ebv_sigma','r_v_sigma']
+
+
+	model_pars = ['x1', 'c','hostebv', 'hostr_v']
+
+	alpha= 0.14
+	beta= 0.31
+	x1_sigma = 0.1
+	c_sigma = 0.1
+	ebv_sigma = 0.1
+	r_v_sigma = 0.1
+
+	sphere_area_cm2 = 4 * numpy.pi * (10. * u.pc.to(u.cm))**2
+
+	@staticmethod
+	def luminosity(**kwargs):
+		#still have to do dust
+		# self.
+		# self.model = sncosmo.Model(source=self.source, effects=[self.dust],effect_names=['host'], effect_frames=['rest'])
+
+		source = sncosmo.get_source('salt2')
+
+		source.set_peakmag(-19.5-SNIa.alpha*kwargs['x1']+SNIa.beta*kwargs['c'], 'bessellb', 'ab') # magnitude at 10pc
+
+		dust = sncosmo.CCM89Dust()
+		model = sncosmo.Model(source=source,effects=[dust], effect_names=['host'], effect_frames=['rest'])
+		model.set(**kwargs)
+		return model
+
+#		wave = numpy.linspace(source.minwave(), source.maxwave(), 1000)
+#		flux = source.flux(phase, wave) # flux in erg/s/cm^2/A at phase=0 at 10pc 
+#		flux = source.flux(phase, wave) # flux in erg/s/cm^2/A at phase=0 at 10pc 
+		# now integrate flux over wavelength and sphere:
+		
+		#luminosity = numpy.sum(flux * numpy.gradient(wave)) * sphere_area_cm2 # result is 1.349e43 erg/s
+#		return flux * SNIa.sphere_area_cm2
+
+		# return self.model.flux(phase, 4000.)
+
+	@staticmethod
+	def realize_model_params(host):
+		params= numpy.random.normal([0,0,0,3.1],[SNIa.x1_sigma,SNIa.c_sigma,SNIa.ebv_sigma,SNIa.r_v_sigma])
+		return dict(zip(SNIa.model_pars,params))
+
+class NonIa(Source):
+	"""docstring for NonIa"""
+	__input__=None
+	__model_pars__ = None
+
+	@staticmethod
+	def luminosity(**kwargs):
+		source = sncosmo.get_source("nugent-sn1bc")	
+		source.set_peakmag(-20.5, 'bessellb', 'ab') # magnitude at 10pc	
+		return sncosmo.Model(source=source)
+	@staticmethod
+	def realize_model_params(host):
+		return dict()
 
 class RelativeRates(object):
 	"""docstring for RelativeRates"""
 
-	_populations = [SNIa, NonIa]
-	def __init__(self):
-		super(RelativeRates, self).__init__()
-		self.zmin = 0.
-		self.zmax = 1.5
-		self.iarate_zmin =0.95
-		self.iarate_zmax = 0.2
+	__input__ = None
+	__model_pars_ = ['iarate_zmin','iarate_zmax']
 
-	def rates(self,z):
-		slope = (self.iarate_zmax-self.iarate_zmin)/(self.zmax-self.zmin)
-		iarate = self.iarate_zmin + slope * (z-self.iarate_zmin)
+
+	populations = [SNIa, NonIa]
+
+	zmin=0.
+	zmax=1.5
+
+	iarate_zmin = 0.85
+	iarate_zmax = 0.2
+
+	#for debugging
+	# iarate_zmin = 1
+	# iarate_zmax = 1
+	slope = (iarate_zmax-iarate_zmin)/(zmax-zmin)
+
+	@staticmethod
+	def rates(z):
+		iarate = RelativeRates.iarate_zmin + RelativeRates.slope * (z-RelativeRates.zmin)
 		return [iarate,1-iarate]
 
+class TType(object):
+	"""docstring for TType"""
+
+	__input__=[RelativeRates, HostGalaxy]
+
+	def __init__(self, rates, host):
+		super(TType, self).__init__()
+		self.rates = rates
+		self.host = host
+		self.realize()
+
+	def realize(self):
+		rate =  self.rates.rates(self.host.host_z)
+		draw = numpy.random.uniform()
+
+		self.ttype = int(draw > rate[0])
+		self.population = self.rates.populations[self.ttype]
+		self.subtype = self.population.realize_model_params(self.host)
+		self.t0 = numpy.random.uniform(53000, 53000+1000)
+
 		
-rate  = RelativeRates()
-print rate.rates(1)
+class Distance(object):
+	"""docstring for Distance"""
 
-wef	
+	__input__=[Cosmology, HostGalaxy]
+	def __init__(self, cosmology, host):
+		super(Distance, self).__init__()
+		self.cosmology = cosmology
+		self.host = host
 
+		self.luminosity_distance = self.cosmology.cosmology.luminosity_distance(self.host.host_z).value
 
+class Luminosity(object):
+	"""docstring for Luminosity"""
 
+	__input__=[TType, HostGalaxy, Source]
+	def __init__(self, ttype_, host):
+		super(Luminosity, self).__init__()
+		self.ttype = ttype_
+		self.host = host
 
-
-class Data(object):
-	"""docstring for Data"""
-	def __init__(self, N_sn, seed, pop2=False, asifIa = False):
-		super(Data, self).__init__()
-		self.N_sn = N_sn
-		self.seed = seed
-
-		self.omega_M=0.28
-		self.cosmo=FlatLambdaCDM(70,self.omega_M)
-
-		self.zmin=0.1
-		self.zmax=1.4
-
-		self.sigma_snIa=0.1
-		self.sigma_nonIa=1.
-		self.sigma_nonIa_2=0.25
-
-		self.alpha_snIa=2.
-		self.alpha_nonIa=self.alpha_snIa*10**(-2./2.5)
-		self.alpha_nonIa_2=self.alpha_snIa*10**(-0.5/2.5)
-
-		self.frac_Ia_0=.95
-		self.frac_Ia_1=.2
-
-		self.asifIa = asifIa
+		self.model = self.ttype.population.luminosity(**self.ttype.subtype)
 
 
-		if pop2:
-			self.frac_nonIa_0=1.
-			self.frac_nonIa_1=0.2
+class Flux(object):
+	"""docstring for Flux"""
+
+	__input__=[Luminosity,HostGalaxy,Distance]
+	def __init__(self, luminosity, host, distance):
+		super(Flux, self).__init__()
+		self.luminosity = luminosity
+		self.host = host
+		self.distance = distance
+
+		if self.luminosity.ttype.ttype ==0:
+			index = self.luminosity.model.param_names =='x0'
+			x0=self.luminosity.model.parameters[index]
+			self.luminosity.model.set(z=host.host_z,x0=x0/4/numpy.pi/distance.luminosity_distance**2)
 		else:
-			self.frac_nonIa_0=1.
-			self.frac_nonIa_1=1.
+			index =self.luminosity.model.param_names =='amplitude'
+			x0=self.luminosity.model.parameters[index]
+			self.luminosity.model.set(z=host.host_z,amplitude=x0/4/numpy.pi/distance.luminosity_distance**2)
+		self.luminosity.model.set(t0=self.luminosity.ttype.t0)
+		self.model = self.luminosity.model
+
+class SpecType(object):
+	"""docstring for SpecType"""
+
+	__input__ = [TType]
+
+	def __init__(self, ttype):
+		super(SpecType, self).__init__()
+		self.ttype = ttype.ttype
 
 
-		numpy.random.seed(seed)
-		self.initialize_()
+class SpecRedshift(object):
+	"""docstring for ORedshift"""
 
-	def initialize_(self):
-		self.redshifts_()
-		self.types_()
-		self.adus_()
-		self.hosts_()
+	__input__ = [HostGalaxy]
+	def __init__(self, host):
+		super(SpecRedshift, self).__init__()
+		self.host = host
+		self.redshift = host.host_z
 
-	def redshifts_(self):
-		# zs : the true redshifts
-		# volume_zero = self.cosmo.comoving_volume(self.zmin).value
-		# volume_norm = self.cosmo.comoving_volume(self.zmax).value- volume_zero
+class PhotRedshift(object):
+	"""docstring for PhotRedshift"""
 
-		# self.zs = numpy.sort(numpy.random.uniform(size=self.N_sn))
-
-		#self.zs=numpy.sort(numpy.random.uniform((1+self.zmin)**3,(1+self.zmax)**3,size=self.N_sn)**(1./3)-1)
-		#self.zs=numpy.sort(numpy.random.uniform((1+self.zmin)**3,(1+self.zmax)**3,size=self.N_sn)**(1./3)-1)
-		# for i in xrange(len(self.zs)):
-		# 	self.zs[i]=scipy.optimize.newton(lambda z: (self.cosmo.comoving_volume(z).value - volume_zero)/volume_norm-self.zs[i], 0.5)		
-		self.zs = numpy.sort(numpy.random.uniform(self.zmin**3, self.zmax**3,size=self.N_sn)**(1./3))
-
-
-	def types_(self):
-		self.snIa = numpy.random.uniform(size=self.N_sn)
-		self.snIa = numpy.less_equal(self.snIa, self.frac_Ia_0 + (self.frac_Ia_1-self.frac_Ia_0)*self.zs/self.zmax/1.1).astype(int)
-		self.nonIa = numpy.random.uniform(size=self.N_sn)
-		self.nonIa = numpy.less_equal(self.nonIa, self.frac_nonIa_0 + (self.frac_nonIa_1-self.frac_nonIa_0)*(self.zs**2)/((self.zmax/1.1))**2).astype(int)
-
-	def adus_(self):
-		adu = 1/(self.cosmo.luminosity_distance(self.zs).value/self.cosmo.hubble_distance.value)**2
-		adu_random = numpy.random.normal(size=self.N_sn)
-		wsnIa = numpy.where(self.snIa)[0]
-		wnonIa = numpy.where(numpy.logical_and(self.snIa ==0, self.nonIa ==1))[0]
-		adu[wsnIa] = self.alpha_snIa*adu[wsnIa]*10**(adu_random[wsnIa]*self.sigma_snIa/2.5)
-		adu[wnonIa] = self.alpha_nonIa*adu[wnonIa]*10**(adu_random[wnonIa]*self.sigma_nonIa/2.5)
-		wpop2 = numpy.where(numpy.logical_and(self.snIa ==0, self.nonIa ==0))[0]
-		adu[wpop2] = self.alpha_nonIa_2*adu[wpop2]*10**(adu_random[wpop2]*self.sigma_nonIa_2/2.5)
-		self.adu = adu
-
-	def hosts_(self):
-		self.host_choice = numpy.random.binomial(1,0.98,size=self.N_sn)
-
-		# zs : the true redshifts
-#		volume_zero = self.cosmo.comoving_volume(self.zmin/1.1).value
-#		volume_norm = self.cosmo.comoving_volume(self.zmax*1.1).value- volume_zero
-#		self.neighbor_zs = numpy.sort(numpy.random.uniform(size=self.N_sn))
-#		for i in xrange(len(self.zs)):
-#			self.neighbor_zs[i]=scipy.optimize.newton(lambda z: (self.cosmo.comoving_volume(z).value - volume_zero)/volume_norm-self.zs[i], 0.5)		
-		# self.neighbor_zs=numpy.random.uniform((1+self.zmin/1.1)**3,(1+self.zmax*1.1)**3,size=self.N_sn)**(1./3)-1
-		self.neighbor_zs=numpy.random.uniform((self.zmin/1.1)**3, (self.zmax*1.1)**3,size=self.N_sn)**(1./3)
-		self.host_zs_random = self.zs*self.host_choice + self.neighbor_zs*(1-self.host_choice)
-		self.neighbor_zs_random = self.zs*(1-self.host_choice) + self.neighbor_zs*self.host_choice
-
-
-	def found(self, ADU0):
-		self.ADU0 =ADU0
-		self.found_ = self.adu>=ADU0
-		self.s_obs_random = numpy.where(self.found_)[0]
-		numpy.random.shuffle(self.s_obs_random)
-
-	def spectrum(self, frac_obs):
-		if self.asifIa:
-			frac_obs=1.
-		self.N_s_obs = frac_obs*self.found_.sum()
-		s_obs=numpy.sort(self.s_obs_random[:self.N_s_obs])
-		s_mis= numpy.sort(self.s_obs_random[self.N_s_obs:])
-		self.s_obs = s_obs
-		self.s_mis = s_mis
-
-	def observe(self, ADU0, frac_obs):
-		data.found_(ADU0)
-		data.spectrum(frac_obs)
-
-	def dict(self, ia_only = False):
-
-		if ia_only:
-			s_obs = self.s_obs[self.snIa[self.s_obs]==1]
-			return 	{'N_sn': self.snIa[s_obs].sum(),
-				'N_obs': self.snIa[s_obs].sum(),
-				'N_SNIa': self.snIa[s_obs].sum(),
-				'N_adu_max':1,
-
-				'zmin':self.zmin,
-				'zmax':self.zmax,
-
-				'adu_obs': self.adu[s_obs],
-				'adu_mis': [],
-
-				'trans_ainv_obs': 1+self.zs[s_obs],
-				'snIa_obs': self.snIa[s_obs],
-
-				'host_zs_obs': self.host_zs_random[s_obs], #zs[s_obs],
-				'host_zs_mis': [],
-				'host2_zs_mis': [],
-
-				'ADU0': self.ADU0,
-				'bias_anal':0
-			}
+	__input__ = [HostGalaxy]
+	probability = [0.98,0.02]
+	zmin =0.1
+	zmax=2
+	def __init__(self, host):
+		super(PhotRedshift, self).__init__()
+		self.host = host
+		ran = numpy.random.uniform()
+		if ran<PhotRedshift.probability[0]:
+			self.redshift=[host.host_z, numpy.random.uniform((PhotRedshift.zmin)**3, (PhotRedshift.zmax)**3)**(1./3)]
 		else:
-			self.s_obs = self.s_obs.tolist()
-			self.s_mis = self.s_mis.tolist()
-
-			dum= self.snIa[self.s_obs]
-
-			if self.asifIa:
-				dum[:]=1
-
-			return 	{'N_sn': self.found_.sum(),
-				'N_obs': len(self.s_obs),
-				'N_SNIa': dum.sum(),
-				'N_adu_max':1,
-
-				'zmin':self.zmin,
-				'zmax':self.zmax,
-
-				'adu_obs': self.adu[self.s_obs],
-				'adu_mis': self.adu[self.s_mis],
-
-				'trans_ainv_obs': 1+self.zs[self.s_obs],
-				'snIa_obs': dum,
-
-				'host_zs_obs': self.host_zs_random[self.s_obs], #zs[s_obs],
-				'host_zs_mis': self.host_zs_random[self.s_mis],
-				'host2_zs_mis': self.neighbor_zs_random[self.s_mis],
-
-				'ADU0': self.ADU0, 
-				'bias_anal':0
-				}
-
-	def init(self, n):
-		ans=[]
-		for i in xrange(n):
-			rate = min(numpy.random.lognormal(numpy.log(self.frac_Ia_0),0.01),.99)
-			rate1 = min(numpy.random.lognormal(numpy.log(self.frac_Ia_1),0.01),.99)
-			ans.append( {
-				'Omega_M':numpy.random.normal(self.omega_M,0.05),
-				'Omega_L':1-self.omega_M,
-				'w': numpy.random.normal(-1.,0.05),
-				# 'ainv_true_obs': 1+zs[s_obs],
-			 #  	'ainv_true_mis': (i % 2)*(1+host_zs_random[s_mis]) + (1-(i%2))*(1+zs[s_mis]), #host_zs_mis_init,
-			  	'alpha_Ia': numpy.random.normal(self.alpha_snIa,0.05),
-			 	'alpha_nonIa': numpy.random.normal(self.alpha_nonIa,0.05),
-			  	'sigma_Ia': numpy.random.lognormal(numpy.log(self.sigma_snIa),0.05),
-			  	'sigma_nonIa':numpy.random.lognormal(numpy.log(self.sigma_nonIa),0.05),
-			  	'snIa_rate_0': rate,
-			  	'snIa_rate_1': rate1
-				})
-		return ans
-
-	def plot(self):
-		with PdfPages('foo.pdf') as pdf:
-		     # As many times as you like, create a figure fig and save it:
-		     fig = plt.figure()
-		     f = plt.hist([self.zs[numpy.logical_and(self.found_, self.snIa ==1)], self.zs[numpy.logical_and(self.found_, self.snIa ==0)]],label=['SN Ia','non-Ia'])
-		     plt.legend()
-		     pdf.savefig(fig)
-		     fig = plt.figure()
-		     w  = self.s_obs_random[:self.N_s_obs]
-		     w2 = numpy.logical_and(self.snIa[w]==1, self.found_[w])
-		     plt.scatter(self.zs[w[w2]], -2.5*numpy.log10(self.adu[w[w2]]),color='b',label='Spectroscopic Typed SNe Ia',facecolors='none')
-		     plt.scatter(self.zs[w[w2]], -2.5*numpy.log10(self.adu[w[w2]]),marker='.',s=20,color='k')
-		     plt.ylim((-6,2))
-		     plt.xlim((0,1.5))
-		     plt.xlabel(r'$z$')
-		     plt.ylabel(r'$m$')
-		     plt.legend(loc=4)
-		     pdf.savefig(fig)
-		     fig = plt.figure()
-		     plt.scatter(self.zs[numpy.logical_and(self.found_, self.snIa ==1)], -2.5*numpy.log10(self.adu[numpy.logical_and(self.found_, self.snIa ==1)]),label='SN Ia',color='b',facecolors='none')
-		     plt.scatter(self.zs[numpy.logical_and(self.found_, self.snIa ==0)], -2.5*numpy.log10(self.adu[numpy.logical_and(self.found_, self.snIa ==0)]),label='non-Ia',color='r',facecolors='none')
-		     plt.scatter(self.zs[self.snIa ==1], -2.5*numpy.log10(self.adu[self.snIa ==1]),alpha=0.1,color='b')
-		     plt.scatter(self.zs[self.snIa ==0], -2.5*numpy.log10(self.adu[self.snIa ==0]),alpha=0.1,color='r')
-		     plt.scatter(self.zs[self.s_obs_random[:self.N_s_obs]], -2.5*numpy.log10(self.adu[self.s_obs_random[:self.N_s_obs]]),marker='.',color='k',label='Spectrum',s=20)
-		     w  = self.s_obs_random[self.N_s_obs:]
-		     w2 = numpy.logical_and(numpy.logical_not(self.host_choice[w]), self.found_[w])
-		     plt.scatter(self.host_zs_random[w[w2]], -2.5*numpy.log10(self.adu[w[w2]]),marker='x',color='g',label='Wrong Host',s=40)
-		     plt.ylim((-6,2))
-		     plt.xlim((0,1.5))
-		     plt.xlabel(r'$z$')
-		     plt.ylabel(r'$m$')			
-#		     ax=plt.gca()
-#		     ax.invert_yaxis()
-		     plt.legend(loc=4)
-		     pdf.savefig(fig)
+			self.redshift=[numpy.random.uniform((PhotRedshift.zmin)**3, (PhotRedshift.zmax)**3)**(1./3),host.host_z]
 
 
-def dataPlot():
-	N_sn=2000
-	ADU0=.75
-	pop2=True
 
-	ia_only=False
+						
+class Photometry(object):
+	"""docstring for OPhotometry"""
+	def __init__(self, arg):
+		super(Photometry, self).__init__()
+		self.arg = arg
+		
 
-	data= Data(N_sn, 2, pop2=pop2)
-	data.found(ADU0)
-	data.spectrum(0.2)
-	data.plot()
+
 
 def main():
-	Nchains=4
-	N_sn=2000
-	pop2=False
-	asifIa = False
 
-	ia_only = False
+	N_sn=5
+	cosmology=Cosmology()
+#	print cosmology.cosmology.luminosity_distance(0.5)
 
-	if pop2:
-		dire='_pop2'
-	else :
-		dire=''
+	throughput = Throughput()
+#	print throughput.zp
 
-	data= Data(N_sn, 2, pop2=pop2, asifIa=asifIa)
+	rates = RelativeRates()
+#	print rates.rates(0.5)
 
-	sm = pystan.StanModel(file='des.stan')
+	snIa = SNIa()
 
-	ADU0s = [0.75]
-	for ADU0 in ADU0s:
-		app='.'+str(N_sn)+'.'
-		if ADU0 == 0.:
-			app+='noMalm.'
+	for i in xrange(N_sn):
+		host  = HostGalaxy()
+	#	print host.host_z
 
-		if asifIa:
-			app+='asifIa.'
-		
-		data.found(ADU0)
-
-		fracspec = [0., 0.2, 0.6, 1.0]
-		for ns in fracspec:
-			data.spectrum(ns)
-
-			fit = sm.sampling(data=data.dict(ia_only=ia_only), iter=1000, thin=1, n_jobs=-1, chains=Nchains, init=data.init(Nchains))
-
-			logposterior = fit.get_logposterior()
-
-
-			if ia_only:
-				app+='ia_only.'
-
-			with open('../results/temp'+dire+'/model'+app+str(ns)+'.pkl', 'wb') as f:
-				pickle.dump([fit.extract(), logposterior], f)
+	#	model_pars = {'x0':1, 'x1':0, 'c':0 } #,'ebv':0, 'r_v':3.1}
+	#	print snIa.luminosity(0.,4400.,**model_pars)
 
 
 
+		ttype = TType(rates, host)
+		# print ttype.ttype, ttype.subtype
 
+		distance = Distance(cosmology, host)
+	#	print distance.luminosity_distance()
+
+		luminosity = Luminosity(ttype,host)
+
+		flux = Flux(luminosity,host,distance)
+
+		#Data
+		specType = SpecType(ttype)
+		print specType.ttype
+
+		photRedshift = PhotRedshift(host)
+		print photRedshift.redshift
+
+		specRedshift = SpecRedshift(host)
+		print specRedshift.redshift
 
 if __name__ == "__main__":
-#	dataPlot()
-    main()
+	main()
