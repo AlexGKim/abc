@@ -187,7 +187,7 @@ any other galaxies that may be confused as the host.
 
 \begin{figure}[htbp] %  figure placement: here, top, bottom, or page
    \centering
-   \includegraphics[width=6.5in]{/Users/akim/project/abc/results/hdpgm.pdf} 
+   \includegraphics[width=6.5in]{../results/hdpgm.pdf} 
    \caption{Probabilistic Graphical Model for the SN~Ia analysis.  
    The description of the elements and dependencies of the model are given in
    \S\ref{model:sec}.
@@ -409,6 +409,12 @@ possible hosts.
 This accounts for all the terms needed to assemble to pdf of the underlying distribution,
 from which the likelihood of the analysis sample is assembled.
 
+\section{Design}
+\subsection{Data}
+There is photometry, redshift, host properties, type/subtype.  The pdf's of redshift and
+host-properties may be more complicated than a normal distribution due to uncertain host
+determination and photometric redshifts.  The photometry is expected to be a Gaussian
+with a full covariance matrix due to the host-galaxy subtraction.  
 
 \section{Tasks}
 Here are a list of initial tasks and ingredients needed to proceed.
@@ -956,7 +962,7 @@ Danny writes everything!
 
 
 \bibliographystyle{elsarticle-num} 
-\bibliography{/Users/akim/Documents/alex}
+\bibliography{alex}
 
 \end{document}
 

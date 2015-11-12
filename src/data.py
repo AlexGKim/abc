@@ -256,10 +256,10 @@ class Flux(object):
 
 		if self.luminosity.type.type ==0:
 			x0=self.model.get('x0')
-			self.model.set(z=host.host_z,x0=x0/distance.luminosity_distance**2/1e10*(1+self.host.host_z)**2)
+			self.model.set(z=host.host_z,x0=x0/distance.luminosity_distance**2/1e10)
 		else:
 			x0=self.model.get('amplitude')
-			self.model.set(z=host.host_z,amplitude=x0/distance.luminosity_distance**2/1e10*(1+self.host.host_z)**2)
+			self.model.set(z=host.host_z,amplitude=x0/distance.luminosity_distance**2/1e10)
 
 		self.model.set(t0=self.luminosity.type.t0)
 		
