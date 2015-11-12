@@ -317,10 +317,10 @@ class Photometry(object):
 
 	sky_sigma = 1.
 	correlated_noise = .01
-	def __init__(self, flux, throughput):
+	def __init__(self, flux, throughputs):
 		super(Photometry, self).__init__()
 		self.flux = flux
-		self.throughput = throughput
+		self.throughputs = throughputs
 
 	def photometry(self,mjds,bands):
 		ans=dict()
@@ -329,7 +329,7 @@ class Photometry(object):
 			corr = numpy.random.normal(0,Photometry.correlated_noise)
 			for mjd in mjds:
 				try:
-					mn=self.flux.model.bandflux(b, mjd, zp = self.throughput.zeropoints[b], zpsys='ab')
+					mn=self.flux.model.bandflux(b, mjd, zp = self.throughputs[b][mjd].zeropoints[b], zpsys='ab')
 				except:
 					mn=0.
 
@@ -337,13 +337,24 @@ class Photometry(object):
 				ans[b][mjd]=mn+corr
 		return ans
 
+class ExtractedPhotometry(object):
+	"""docstring for MeasuredPhotometry"""
+
+	__input__ = [Photometry]
+	__par_names__ = ["ExtractedPhotometry_o"]
+	def __init__(self, arg):
+		super(ExtractedPhotometry, self).__init__()
+		self.arg = arg
+		
+
 
 def data(N_sn):
 
+	mjds=numpy.arange(53010, 53210,6)
 	out=dict()
 
 
-	gThroughput = GlobalThroughput()
+	#	gThroughput = GlobalThroughput()
 	for i in xrange(N_sn):
 		host  = HostGalaxy()
 	#	print host.host_z
@@ -363,7 +374,6 @@ def data(N_sn):
 
 		flux = Flux(luminosity,host,distance)
 
-		photometry = Photometry(flux, gThroughput)
 
 		#Data
 		specType = SpecType(modeltype)
@@ -375,8 +385,18 @@ def data(N_sn):
 		specRedshift = SpecRedshift(host)
 		print specRedshift.redshift_spec_o
 
+		throughput  = Throughput(GlobalThroughput)
 
-		phot = photometry.photometry(numpy.arange(53010, 53210,6), gThroughput.filters())
+
+		throughputs = dict()
+		for b in GlobalThroughput.filters():
+			throughputs[b] = dict()
+			for mjd in mjds:
+				throughputs[b][mjd] = throughput
+
+		photometry = Photometry(flux, throughputs)
+
+		phot = photometry.photometry(mjds, GlobalThroughput.filters())
 
 		for pkey in phot.keys():
 			print pkey.name
