@@ -173,7 +173,7 @@ class Throughput(object):
 	def __init__(self, gthroughput):
 		super(Throughput, self).__init__()
 		self.global_throughput = gthroughput
-		self.zeropoints = gthroughput.filters
+		self.zeropoints = gthroughput.zeropoints
 
 	def filters(self):
 		return self.global_throughput.filters()
@@ -321,7 +321,6 @@ class Photometry(object):
 					mn=self.flux.model.bandflux(b, mjd, zp = self.throughputs[b][mjd].zeropoints[b], zpsys='ab')
 				except:
 					mn=0.
-
 				mn = numpy.random.normal(mn,Photometry.sky_sigma)
 				ans[b][mjd]=mn+corr
 		return ans
@@ -340,7 +339,7 @@ class Survey(object):
 	def __init__(self):
 		super(Survey, self).__init__()
 		self.mjds = mjds=numpy.arange(53010, 53210,6)
-		self.n_sn = 5
+		self.n_sn = 1
 		
 
 class SurveyModel(object):
