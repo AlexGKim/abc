@@ -25,7 +25,17 @@ def data():
 	global_throughput=  Sim.GlobalThroughput
 
 	sim   = Sim.SurveyModel(cosmology, rates, host, global_throughput)
-	sim.realize(survey)
+	ans = sim.realize(survey)
+
+	for k in iter(ans):
+		print 'SN ',k
+		print ans[k]['Spec Type']
+		print ans[k]['Phot Type']
+		print ans[k]['Spec z']
+		for pkey in ans[k]['Photometry'].keys():
+			print pkey.name
+			for mkey in ans[k]['Photometry'][pkey]:
+				print mkey, ans[k]['Photometry'][pkey][mkey]
 
 def data2(N_sn):
 

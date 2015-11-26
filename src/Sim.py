@@ -353,7 +353,11 @@ class SurveyModel(object):
 		self.global_throughput=global_throughput
 
 	def realize(self, survey):
+
+		ans = dict()
+
 		for i in xrange(survey.n_sn):
+			ans[i] = dict()
 			host  = self.host()
 
 			modeltype = ModelType(self.rates, host)
@@ -369,13 +373,13 @@ class SurveyModel(object):
 
 			#Data
 			specType = SpecType(modeltype)
-			print RelativeRates.sources[specType.type_o].__name__
+			ans[i]['Spec Type']= RelativeRates.sources[specType.type_o].__name__
 
 			photRedshift = PhotRedshift(host)
-			print photRedshift.redshift_phot_o
+			ans[i]['Phot Type']= photRedshift.redshift_phot_o
 
 			specRedshift = SpecRedshift(host)
-			print specRedshift.redshift_spec_o
+			ans[i]['Spec z']= specRedshift.redshift_spec_o
 
 			throughput  = Throughput(self.global_throughput)
 
@@ -386,12 +390,12 @@ class SurveyModel(object):
 				for mjd in survey.mjds:
 					throughputs[b][mjd] = throughput
 
+			ans[i]['Throughputs'] = throughputs
+
 			photometry = Photometry(flux, throughputs)
 
 			phot = photometry.photometry(survey.mjds, GlobalThroughput.filters())
 
-			for pkey in phot.keys():
-				print pkey.name
-				for mkey in phot[pkey]:
-					print mkey, phot[pkey][mkey]
+			ans[i]['Photometry'] = phot
+		return ans
 		
