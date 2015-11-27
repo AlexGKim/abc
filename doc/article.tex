@@ -296,12 +296,12 @@ The likelihood of the analysis sample is calculated from the underlying pdf of d
 p(data|model) &=\int dType\, dLuminosity\, p(Photometry_o |  Luminosity, Cosmology,Host,Throughput)  \nonumber\\
 & p(Luminosity| Type
 , Host, Population) p(Type | Rates, Host)  \nonumber\\
-& \times \int dType\, p(Type_0|Type) p(Type|Rates, Host) \nonumber \\
+& \times \int dType\, p(Type_o|Type) p(Type|Rates, Host) \nonumber \\
 & \times p(Redshift_o, Host_o| Host),
 \label{like:eqn}
 \end{align}
 where $data=\{Photometry_o, Type_o, Redshift_o, Host_o\}$,
-$model=\{Cosmology, Populations, Rates\}$, and the independence
+$model=\{Cosmology, Populations, Rates, Throughput, Host\}$, and the independence
 of photometric and spectroscopic typing measurements is anticipated.
 
 For specificity candidate models for the pdf's that appear in Eqn.~\ref{like:eqn}
