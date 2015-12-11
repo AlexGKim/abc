@@ -50,9 +50,9 @@ pgm.add_node(Node('Flux',r"Flux", 7, 3, scale=1.2,fixed=True,offset=(-20,-20)))
 
 #pgm.add_node(Node('Stheta',r"Indicators", 1, 1,  observed=True,scale=1.6,aspect=1.2))
 pgm.add_node(Node('ST',r"\centering{Type \newline Subtype$_o$}", 2, 1, observed=True,scale=1.6,aspect=1.2))
-pgm.add_node(Node('Sz',r"Redshift$_o$", 3, 1, observed=True,scale=1.6,aspect=1.2))
+pgm.add_node(Node('Sz',r"\centering{Redshift$_o$\newline Phot \& Spec}", 3, 1, observed=True,scale=1.6,aspect=1.2))
 pgm.add_node(Node('^Counts',r"Photometry$_o$", 8, 1, observed=True,scale=1.6,aspect=1.2))
-pgm.add_node(Node('Gals',r"\centering{Host \newline Properties$_o$}", 4,1, observed=True,scale=1.6,aspect=1.2))
+pgm.add_node(Node('Gals',r"\centering{Host Properties$_o$\newline Phot \& Spec}", 4,1, observed=True,scale=1.6,aspect=1.2))
 
 
 #pgm.add_node(Node('Soectroscopy',r"Transient Spectroscpy", 1, 1,  observed=True))
