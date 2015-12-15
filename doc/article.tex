@@ -266,11 +266,14 @@ is up/down.  The indices correspond to configuration $k$,
 transient $\nu$, and photometric point $i$.
 
 Assembling this together, the likelihood is
-\begin{equation}
-\mathcal{L}(data|\mathcal{S}, model) = \frac{\sum_{k=1}^{\prod_\nu \sum_{k=N}^{M_{\nu}} \binom{M_{\nu}}{k}} \epsilon(Photometry_o, b_k)p(data| model)}{\int ddata\,
-\sum_{k=1}^{\prod_\nu \sum_{k=N}^{M_{\nu}} \binom{M_{\nu}}{k}} \epsilon(Photometry_o, b_k)p(data| model)
+\begin{align}
+\mathcal{L}(data|\mathcal{S}, model) & = \frac{\sum_{k=1}^{\prod_\nu \sum_{k=N}^{M_{\nu}} \binom{M_{\nu}}{k}} \epsilon(Photometry_o, b_k)p(data| model)}{\int ddata'\,
+\sum_{k=1}^{\prod_\nu \sum_{k=N}^{M_{\nu}} \binom{M_{\nu}}{k}} \epsilon(Photometry_o', b_k)p(data'| model)
+}\\
+& = \frac{p(data| model)}{\int ddata'\,
+\sum_{k=1}^{\prod_\nu \sum_{k=N}^{M_{\nu}} \binom{M_{\nu}}{k}} \epsilon(Photometry_o', b_k)p(data'| model)
 }
-\end{equation}
+\end{align}
 where the normalizing factor is included explicitly as it has 
 parameter dependence and must not be neglected in calculations.
 
