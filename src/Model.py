@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import numpy.random
 from astropy.cosmology import FlatwCDM
 from collections import OrderedDict
@@ -454,3 +456,37 @@ class SurveyModel(object):
 			ans[i]['Photometry'] = phot
 		return ans
 		
+"""
+A generator of all combinations of observation success given a minimum number of successes. 
+"""		
+import itertools
+# def sampleCombinations(obs_list, ntrue):
+# 	num = ntrue
+# 	while num <= len(obs_list):
+# 		for a in itertools.combinations(obs_list,num):
+# 			yield a
+# 		num+=1
+
+def sampleCombinations(nlist, ntrue):
+	num = ntrue
+	indeces=xrange(nlist)
+	while num <= nlist:
+		for a in itertools.combinations(indeces,num):
+			a = numpy.array(a)
+			ans = numpy.zeros(nlist,dtype='bool')
+			if len(a) != 0:
+				ans[a]=True
+			yield ans
+		num+=1
+
+def sampleProbability(obsnode, conditions, ntrue):
+	nlist = len(obsnode)
+	ans=0.
+	for combo in sampleCombinations(nlist, ntrue):
+		combo = numpy.array(combo)
+		ans +=numpy.prod(obsnode[combo])* numpy.prod(1-obsnode[numpy.logical_not(combo)])
+			# ans +=numpy.prod(obsnode[combo].rcdf(conditions[combo]))* numpy.prod(
+			# obsnode[not combo].cdf(conditions[not combo]))
+	return ans
+
+print sampleProbability(numpy.arange(.1,.61,.1),xrange(5),5)
