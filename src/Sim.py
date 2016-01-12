@@ -5,24 +5,70 @@ import sncosmo
 import abc
 import copy
 
-"""
-Each bubble of the PGM is described by a class.  The has internal variables __input__ and __par_names__
-to specify the anteceding bubbles and the PGM parameters that are realized in the bubble.  The values
-of the parameters are stored in class/object variables.  The parameters are either a class variable or
-created by the constructor.
+""" 
 
+This is a sandbox for the development of code to describe models based on PGMs
+for the SN Hubble cosmology analysis.  It contains implementations of
+supernova-specific models.  However, it would be prefered to have an
+abstraction beyond what is currently implemented : a framework for describing
+models based on PGMs.
 
-There is one object per bubble.  For example, there is only one Cosmology, therefore the Cosmology
-class is a singleton.  There are many HostGalaxy's, and a distinct object is used
-to represent each one.
+The framework is meant to describe models for use in the
 
-The top-level Universal bubbles (Cosmolgy, Rates, Source, Throughput) have parameters that are fixed.
-For simulating data, they are fixed so we can precisely control the top-level configuration.
-We may want to change this.  In the analysis these parameters are probabilisitic.
+1) Simulation of data (in conjunction with a description of the experiment).
 
-The Luminosity and Flux information are stored as an sncosmo.Model.
+2) Fitting a model (in conjunction with data from an experiment).
 
-All the observed parameters are distinguished with _o.
+Therefore the framework needs to make available the likeihood both as a pdf
+for data simulation and as a function for model fitting. Maybe the framework
+will encompass the simulation and fitting. For the moment we have not settled
+on what code will be used:  emcee is an example of code that for a set of
+parameters returns a scalar likelihood. real likelihood(array parameters);
+there is no candidate code at the moment that realizes data, we may have to
+write our own.
+
+The model is assembled through a probabilistic graphical model (PGM).  A PGM
+is composed of nodes and nodes are connected by edges.  Each node has its set
+of model parameters (names and values).  There are two kinds of parameters:
+
+The probabilistic are described by a pdf
+
+pdf(A|B)
+
+while the fixed are described by a function
+
+A=f(B),
+
+where there is an edge that connects node B to A.
+
+The likelihood for a model is described as follows.  Lets call B the set of
+nodes that have no inputs, A the nodes without outputs (i.e. the A are data),
+and C are all other nodes.  The pdfs of interest are pdf(AC|B) and
+pdf(A|B)=Sum_C pdf(AC|B).  The former is used in fitting, the latter in
+simulation.
+
+For practical purposes it is useful to describe the model only in terms of
+nodes with continuous parameters, that is to say with no discrete parameters.
+If the PGM does have nodes with discrete parameters, a "supernode" that
+margninalizes over the discrete parameters.
+
+Each node has
+
+	parameters and associated unique parameter names
+	knowledge of other nodes on which it depends (edges)
+	pdf(A|B) of A=f(B), where A are the node parameters and B are the
+	parameters of what it depends on.  Practically for supernovae we use the
+	sncosmo package which has an object from which A=f(B) is a method.
+
+STAN has sections for "data", "parameters", and "transformed parameters" where
+the parameters and corresponding pdf's are provided.  STAN knows how to
+connect these together.
+
+emcee requires a likelihood.  Our framework could provide a way to take a
+bunch of nodes and from them derive the total likelihood.  Danny in his code
+just does this by hand.  I think for now doing it by hand is OK. If we find
+that users would benefit by having the framework take care of this we can
+expand the framework.
 
 """
 
