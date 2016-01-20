@@ -4,6 +4,8 @@ import numpy
 from pymc3 import NUTS, Model, Normal, Lognormal, Flat, Bernoulli, Uniform
 from astropy.cosmology import FlatwCDM
 from pymc3.distributions import Continuous
+from pymc3.distributions.dist_math import bound
+import theano.tensor as T
 
 class LuminosityMarginalizedOverType(Continuous):
     r"""The distribution for the luminosity marginalized over two kinds
@@ -35,8 +37,116 @@ class LuminosityMarginalizedOverType(Continuous):
 		"""
 		Implementation of Sum_i pdf(L|Ti,X) pdf(Ti|X).
 		"""
-		return numpy.log(self.p*numpy.exp(self.pdf1.logp(value)) +
-    		(1-self.p)*numpy.exp(self.pdf2.logp(value)))
+		return T.log(self.p*numpy.exp(self.pdf1.logp(value)) +
+    		(1-self.p)*T.exp(self.pdf2.logp(value)))
+
+class LuminosityGivenSpectype(Lognormal):
+    r"""The distribution for the joint spectype and luminosity
+
+	.. math::
+		p(spectype, luminosity|rate_II_r,L_Ia,L_II) =
+						p(spectype,luminosity| ttype=snIa,rate_II_r,L_Ia,L_II)p(ttype=snIa|rate_II_r) +
+						p(spectype,luminosity| ttype=snII,rate_II_r,L_Ia,L_II)p(ttype=snII|rate_II_r)
+						= p(luminosity | ttype=spectype,L_Ia,L_II) p((ttype=spectype|rate_II_r))
+
+    This class should be generalized to handle multiple types
+
+		
+    Parameters
+    -----------
+    p : Theano.Tensor
+    	pdf(T|X)
+    """
+
+    def __init__(self, p=1, *args, **kwargs):
+    	super(LuminosityGivenSpectype, self).__init__(*args, **kwargs)
+    	self.p = p
+
+	def logp(self, value):
+		"""
+		Implementation of Sum_i pdf(L|Ti,X) pdf(Ti|X).
+		""" 
+		mu = self.mu
+		tau = self.tau
+		return bound(T.log(p) + super(LuminosityGivenSpectype, self).logp(value), tau > 0)
+
+def pgm():
+	from daft import PGM, Node, Plate
+	from matplotlib import rc
+	rc("font", family="serif", size=8)
+	rc("text", usetex=True)
+
+	pgm = PGM([9.5, 8.5], origin=[0., 0.2], observed_style='inner')
+
+	#pgm.add_node(Node('dispersion',r"\center{$\sigma_{Ia}$ \newline $\sigma_{!Ia}$}", 1,6,scale=1.2,aspect=1.8))
+	pgm.add_node(Node('Rate_Ia',r"{SNIa Rate}", 1,8, fixed=1))
+	pgm.add_node(Node('Rate_II',r"{SNII Rate}", 2,8,scale=1.6,aspect=1.2))
+	pgm.add_node(Node('L_Ia',r"{SNIa L, $\sigma_L$}", 3,8,scale=1.6,aspect=1.2))
+	pgm.add_node(Node('L_II',r"{SNII L, $\sigma_L$}", 4,8,scale=1.6,aspect=1.2))
+	pgm.add_node(Node('Cosmology',r"Cosmology", 6,8, scale=1.6,aspect=1.2))
+	pgm.add_node(Node('Calibration',r"Calibration", 7, 8, scale=1.6,aspect=1.2))
+
+	pgm.add_node(Node('Redshift',r"{Redshift}", 5,7, scale=1.6,aspect=1.2))
+
+	pgm.add_node(Node('Type_prob',r"Type prob", 1,6, fixed=1,offset=(20,-10)))
+	pgm.add_node(Node('Distance',r"$L_D$", 6,6, fixed=1,offset=(10,10)))
+
+	pgm.add_node(Node('Type',r"Type", 1, 5, scale=1.6,aspect=1.2))
+
+	pgm.add_node(Node('Luminosity',r"Luminosity", 4, 4, scale=1.6,aspect=1.2))
+	pgm.add_node(Node('Flux',r"Flux", 6, 3, scale=1.2,fixed=True,offset=(-20,-20)))
+
+
+	pgm.add_node(Node('Spec_type',r"Spec type", 1, 1, scale=1.6,aspect=1.2,observed=1))
+	pgm.add_node(Node('Spec_redshift',r"Spec redshift", 5, 1, scale=1.6,aspect=1.2,observed=1))
+	pgm.add_node(Node('Counts',r"Counts", 7, 1, scale=1.2,observed=1))
+
+
+	pgm.add_edge("Rate_Ia","Type_prob")
+	pgm.add_edge("Rate_II","Type_prob")
+
+	pgm.add_edge("Cosmology","Distance")
+	pgm.add_edge("Redshift","Distance")
+
+	pgm.add_edge("Type_prob", "Type")
+
+	pgm.add_edge("Type","Luminosity")
+	pgm.add_edge("L_Ia", "Luminosity")
+	pgm.add_edge("L_II", "Luminosity")
+
+	pgm.add_edge("Luminosity","Flux")
+	pgm.add_edge("Redshift","Flux")
+	pgm.add_edge("Distance","Flux")
+
+	pgm.add_edge("Type","Spec_type")
+	pgm.add_edge("Redshift","Spec_redshift")
+
+	pgm.add_edge("Flux","Counts")
+	pgm.add_edge("Calibration","Counts")
+
+	# Big Plate: Galaxy
+	pgm.add_plate(Plate([0.4, 0.5, 7.2, 7.],
+	                    label=r"SNe $i = 1, \cdots, N_{SN}$",
+	                    shift=-0.2,label_offset=[20,2]))
+
+	pgm.add_plate(Plate([0.5, 3.5, 4., 2.],
+	                    label=r"Type $\in \{Ia, II\}$",
+	                    shift=-0.2,label_offset=[20,2]))
+	# Render and save.
+
+	pgm.render()
+
+	# pgm.figure.text(0.01,0.9,r'\underline{UNIVERSAL}',size='large')
+	# pgm.figure.text(0.01,0.55,r'{\centering \underline{INDIVIDUAL} \newline \underline{SN}}',size='large')
+	# pgm.figure.text(0.01,0.2,r'\underline{OBSERVATORY}',size='large')
+	# pgm.figure.text(0.01,0.1,r'\underline{DATA}',size='large')
+
+
+	pgm.figure.savefig("nodes_pgm.pdf")
+
+# pgm()
+
+# wefwe
 
 # the number of transients
 nTrans = 20
@@ -107,7 +217,7 @@ with basic_model:
 
 	Parameters
 	-----------
-	rate_Ia_r =1 	: the relative rates are relative to type Ia
+	rate_Ia_r =1 	: the relative rates are relative to type Ia. Fixed.
 
 	"""
 
@@ -121,81 +231,75 @@ with basic_model:
 	Parameters
 	----------
 
-	z0_snII_r	: float (>=0)
-		relative rate of SNe II compared to type Ia.  In the future we
+	z0_snII_r	: relative rate of SNe II compared to SNe Ia.  In the future we
 		want the model to be a function of host-galaxy parameters (including
-			redshift)
+		redshift)
 
 	"""
-	rate_II_r = Uniform('rate_II_r', lower=0, upper=10)
+	rate_II_r = Uniform('rate_II_r', lower=0.1, upper=10)
 
 	"""
-	SN Ia luminosity.  For the moment consider the SN to be time-indepemdent
-	with no internal parameters.
+	SN Ia luminosity.  For the moment consider the SN to be phase-indepemdent
+	with no internal parameters.  Eventually this will represent time-evolving
+	SED.
+
 
 	Parameters
 	----------
 
-	L_snIa 	: float (>0)
-		SN Ia mean luminosity
-	sigma_L_snIa : float (>0)
-		intrinsic luminosity dispersion (mag)
+	L_snIa 	:		SN Ia mean luminosity
+	sigma_L_snIa :	intrinsic luminosity dispersion (mag)
 
 	"""
 	L_snIa = Uniform('L_snIa', lower=0.01, upper=10)
-	sigma_L_snIa = Uniform('sigma_L_snIa', lower=0.01, upper=1)
+	sigma_L_snIa = Uniform('sigma_L_snIa', lower=0.01, upper=.2)
+	logL_snIa = T.log(L_snIa)
+	tau_snIa = 1/sigma_L_snIa/sigma_L_snIa
 
 
 	"""
 	SN II luminosity.  For the moment consider the SN to be time-indepemdent
-	with no internal parameters.
+	with no internal parameters.  Eventually this will represent time-evolving
+	SED.
 
 	Parameters
 	----------
 
-	L_snII 	: float (>0)
-		SN II mean luminosity
-	sigma_L_snII : float (>0)
-		intrinsic luminosity dispersion (mag)
+	L_snII 	: 		SN II mean luminosity
+	sigma_L_snII : 	intrinsic luminosity dispersion (mag)
 
 	"""
-	L_snII = Uniform('L_snII', lower=0.01, upper=10)
+	L_snII = Uniform('L_snII', lower=-10, upper=10)
 	sigma_L_snII = Uniform('sigma_L_snII', lower=0.01, upper=1)
+	logL_snII = T.log(L_snII)
+	tau_snII = 1/sigma_L_snII/sigma_L_snII
 
 
-	# Loop through parameters that are object-specific.  Note that
-	# the distribution names have the transient index
+	# Loop through parameters that are object-specific.
+	# Distribution names have the transient index
 	for i in xrange(nTrans):
 
-
 		"""
-		Host Redshift.  Eventually we will want to model the host,
-		for which redshift is just one parameter.  This is assumed
-		to be measured perfectly if there is a spectrum.
+		Probabilities of being a type of object.  For now only SN Ia, and SN II.
+
+		Dependencies
+		-------------
+
+		rate_Ia_r	:	Type Ia rate
+		rate_II_r	:	Type II rate
+		host galaxy :	Not implemented now but eventually depends on host properties
+
 
 		Parameters
 		----------
 
-		redshift : float
-		"""
-		if observation['spectype'][i] is not None:
-			redshift = Uniform('redshift'+str(i),lower =0.01, upper =5, observed=observation['spectype'][i])
-		else:
-			redshift = Uniform('redshift'+str(i),lower =0.01, upper =5)
-
-		"""
-		luminosity distance.  This is fixed given the cosmology.
-
-		for the moment the described by a linear model.  Need to implement
-		the real solution that needs an integration implemented in theano
-
-		Parameters
-		-----------
-
-		luminosity_distance : float
+		prob :			probability of the object being a type Ia.  Fixed.
 		"""
 
-		luminosity_distance = Om0 +  w0* redshift
+		prob = rate_Ia_r/(rate_Ia_r+rate_II_r)
+
+
+
 
 		"""
 		Type of the object. The type is a discrete parameter for the type
@@ -212,69 +316,124 @@ with basic_model:
 		which is challenging.  I am not ever sure that mcpy3 can handle a
 		mixed discrete and continuous pdf.
 
+		Therefore in this code type not considered explicitly
+
+		Dependencies
+		------------
+
+		prob :
+
 		Parameters
 		----------
 
-		prob : float
-			probability of the object being a type Ia
+		ttype :	the type, SN Ia=0, SNII=1
+
 		"""
 
-		prob = rate_Ia_r/(rate_Ia_r+rate_II_r)
-
 		if observation['spectype'][i] is not None:
+
 			"""
-			luminosity for the case where there is a spectrum and the type
-			is known
+			luminosity and spectype when spectype gives perfect spectroscopic typing.
+
+			p(spectype, luminosity|X) = p(luminosity| type_i, X) p(ttype=spectype| X)
+
+			which is handled by the class LuminosityGivenSpectype
+
+			Dependencies
+			-------------
+
+			prob
+			L_Ia, L_II, sigma_L_snIa, sigma_L_snII
 
 			Parameters
-			----------
+			-----------
 
-			luminosity 	: float
-				intrinsic luminosity of the object
+			spectype
+			luminosity
 			"""
+
 			if observation['spectype'][i] == 0:
-				luminosity = Lognormal('luminosity'+str(i), mu=L_snIa,tau=sigma_L_snIa)
+				luminosity = LuminosityGivenSpectype('luminosity'+str(i),
+					mu=logL_snIa,tau=tau_snIa, p=prob)
 			else:
-				luminosity = Lognormal('luminosity'+str(i), mu=L_snII,tau=sigma_L_snII)
-
-			"""
-			The observed spectroscopic type
-
-			Note that for bernoulli p is the probability of success and 0 (our
-				lablel for SNe Ia) is a failure.
-
-			Parameters
-			----------
-
-			ttype :	int
-				the type of the object
-			"""
-				
-			ttype = Bernoulli('type '+str(i), 1-prob, observed=observation['spectype'][i])
-
+				luminosity = LuminosityGivenSpectype('luminosity'+str(i),
+					mu=logL_snII,tau=tau_snII, p=1-prob)
 
 		else:
 			"""
 			luminosity for the case where the type is not known
 
-			Parameters
-			----------
+			 pdf(L|X) = \sum_i pdf(L|T_ii,X) pdf(T_i|X).
 
-			luminosity : float
-				intrinsic luminosity marginalized over the types
+			Dependencies
+			------------
+
+			prob 	:	probability of types
+			L_snIa, sigma_L_snIa : SN Ia parameters
+			L_snII, sigma_L_snII : SN II parameters
+
+			Parameters
+			-----------
+
+			luminosity : intrinsic luminosity marginalized over the types
 			"""
 			luminosity = LuminosityMarginalizedOverType(
-				Lognormal('dum1'+str(i), mu=L_snIa,tau=sigma_L_snIa),
-				Lognormal('dum2'+str(i), mu=L_snII,tau=sigma_L_snII), prob)
+				Lognormal('dum1'+str(i), mu=logL_snIa,tau=tau_snIa),
+				Lognormal('dum2'+str(i), mu=logL_snII,tau=tau_snII), prob)
 
 		"""
-		flux that arrives to the telescope is deterministic
+		Host Redshift.  Eventually we will want to model the host,
+		for which redshift is just one parameter.  This is assumed
+		to be measured perfectly if there is a spectrum.
+
+
+		Parameters
+		----------
+
+		redshift :		Redshift of host galaxy (and hence of transient)
+		"""
+		if observation['spectype'][i] is not None:
+			redshift = observation['spectype'][i]
+		else:
+			redshift = Uniform('redshift'+str(i),lower =0.01, upper =5)
+
+		"""
+		luminosity distance.  This is fixed given the cosmology.
+
+		for the moment the described by a linear model.  Need to implement
+		the real solution that needs an integration implemented in theano
+
+		Dependencies
+		------------
+
+		redshift  	:	host redshift
+		cosmology 	:   cosmology
 
 		Parameters
 		-----------
 
-		flux: float
-			flux of object that arrives to observatory
+		luminosity_distance : fixed
+		"""
+
+		luminosity_distance = Om0 +  w0* redshift
+
+
+
+
+		"""
+		flux that arrives to the telescope is deterministic
+
+		Dependencies
+		------------
+
+		luminosity
+		redshift
+		luminosity_distance
+
+		Parameters
+		-----------
+
+		flux: 		flux of object that arrives to observatory. Fixed.
 		"""
 
 		flux = luminosity/4/numpy.pi/luminosity_distance/luminosity_distance
@@ -287,16 +446,22 @@ with basic_model:
 		"""
 
 		"""
-		counts that are measured
+		counts.  This is observed.
+
+		Dependencies
+		-------------
+
+		flux
+		calibration
 
 		Parameters
 		----------
 
-		counts : float
+		counts : measured counts
 
 		"""
-
-		counts = Lognormal('counts'+str(i), mu=flux*10**(-zeropoints/2.5) , tau=0.05, observed=observation['photometry'][i])
+		counts_mu = flux*10**(-zeropoints/2.5)
+		counts = Normal('counts'+str(i), mu= counts_mu, sd=0.02*counts_mu, observed=observation['photometry'][i])
 
 
 
