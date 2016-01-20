@@ -23,7 +23,7 @@ class LuminosityMarginalizedOverType(Continuous):
     	pdf(L|T1, X)
     pdf2 : Continuous
     	pdf(L|T2, X)
-    p : Theano.Tensor
+    p : theano.tensor
     	pdf(T1|X), as a consequence pdf(T2|X) = 1-p
     """
 
@@ -42,6 +42,9 @@ class LuminosityMarginalizedOverType(Continuous):
 
 class LuminosityGivenSpectype(Lognormal):
     r"""The distribution for the joint spectype and luminosity
+
+    It is the product of the probability of the type times the pdf of the luminosity
+    which in this case is Lognormal (the Parent class).  Do templates exist in Python?
 
 	.. math::
 		p(spectype, luminosity|rate_II_r,L_Ia,L_II) =
@@ -66,9 +69,7 @@ class LuminosityGivenSpectype(Lognormal):
 		"""
 		Implementation of Sum_i pdf(L|Ti,X) pdf(Ti|X).
 		""" 
-		mu = self.mu
-		tau = self.tau
-		return bound(T.log(p) + super(LuminosityGivenSpectype, self).logp(value), tau > 0)
+		return bound(T.log(p)+ super(LuminosityGivenSpectype, self).logp(value), p > 0, p<=1)
 
 def pgm():
 	from daft import PGM, Node, Plate
@@ -166,7 +167,7 @@ spectype = numpy.random.uniform(low=0, high=1, size=nTrans)
 observation['spectype'] = spectype.round().astype('int')
 luminosity = (1.-observation['spectype']) + observation['spectype']*.5
 ld = FlatwCDM(H0=72, Om0=0.28, w0=-1).luminosity_distance(observation['specz']).value
-observation['photometry'] = luminosity / 4/numpy.pi/ld/ld
+observation['counts'] = luminosity / 4/numpy.pi/ld/ld
 
 # Create the pymc3 model and fill it with the distributions and parameters
 # of the model
@@ -191,8 +192,8 @@ with basic_model:
 	w0:		constant equation of state w
 	"""
 
-	Om0 = Uniform('Om0',lower=0.0, upper=1)
-	w0 = Uniform('w0', lower=-2, upper=2)
+	Om0 = Uniform('Om0',lower=0., upper=1)
+	w0 = Uniform('w0', lower=1, upper=2)
 
 	"""
 	Calibration Node.  These are the global zeropoints for each band.
@@ -211,7 +212,7 @@ with basic_model:
 	zeropoints = Normal('zeropoints', mu=0, sd=.02, shape = n_bands)
 
 	"""
-	SN Ia rates.  For SN cosmology the relative rates between different
+	SN Ia Rate Node.  For SN cosmology the relative rates between different
 	populations are sufficient.  We will do rates relative to the
 	type Ia rate:
 
@@ -225,7 +226,7 @@ with basic_model:
 
 
 	"""
-	SN II rates.  For the moment a two-population model is considered;
+	SN II Rate Node.  For the moment a two-population model is considered;
 	generally we will want to consider more populations.
 
 	Parameters
@@ -239,7 +240,7 @@ with basic_model:
 	rate_II_r = Uniform('rate_II_r', lower=0.1, upper=10)
 
 	"""
-	SN Ia luminosity.  For the moment consider the SN to be phase-indepemdent
+	SN Ia luminosity Node.  For the moment consider the SN to be phase-indepemdent
 	with no internal parameters.  Eventually this will represent time-evolving
 	SED.
 
@@ -251,14 +252,14 @@ with basic_model:
 	sigma_L_snIa :	intrinsic luminosity dispersion (mag)
 
 	"""
-	L_snIa = Uniform('L_snIa', lower=0.01, upper=10)
+	L_snIa = Uniform('L_snIa', lower=0.1, upper=10)
 	sigma_L_snIa = Uniform('sigma_L_snIa', lower=0.01, upper=.2)
 	logL_snIa = T.log(L_snIa)
 	tau_snIa = 1/sigma_L_snIa/sigma_L_snIa
 
 
 	"""
-	SN II luminosity.  For the moment consider the SN to be time-indepemdent
+	SN II luminosity Node.  For the moment consider the SN to be time-indepemdent
 	with no internal parameters.  Eventually this will represent time-evolving
 	SED.
 
@@ -269,7 +270,7 @@ with basic_model:
 	sigma_L_snII : 	intrinsic luminosity dispersion (mag)
 
 	"""
-	L_snII = Uniform('L_snII', lower=-10, upper=10)
+	L_snII = Uniform('L_snII', lower=0.1, upper=10)
 	sigma_L_snII = Uniform('sigma_L_snII', lower=0.01, upper=1)
 	logL_snII = T.log(L_snII)
 	tau_snII = 1/sigma_L_snII/sigma_L_snII
@@ -280,7 +281,7 @@ with basic_model:
 	for i in xrange(nTrans):
 
 		"""
-		Probabilities of being a type of object.  For now only SN Ia, and SN II.
+		Type probability Node.  Probabilities of being a type of object.  For now only SN Ia, and SN II.
 
 		Dependencies
 		-------------
@@ -299,24 +300,15 @@ with basic_model:
 		prob = rate_Ia_r/(rate_Ia_r+rate_II_r)
 
 
-
-
 		"""
-		Type of the object. The type is a discrete parameter for the type
-		of the object.  To simplify the model we do the following:
+		Type Node.
 
-		1. Assume that spectroscopic classification is perfect.
-		2. When spectroscopic classification is not available, marginalize 
-		over this parameter.
+		In this implementation the type node is not explicitly considered.
 
-		Otherwise, we would have to represent
+		There are two possibilities:
 
-		pdf(type, luminosity | X),
-
-		which is challenging.  I am not ever sure that mcpy3 can handle a
-		mixed discrete and continuous pdf.
-
-		Therefore in this code type not considered explicitly
+		1. If there is a spectroscopic type it perfectly determines the type.
+		2. Otherwise, type is marginalized in the input model.
 
 		Dependencies
 		------------
@@ -333,11 +325,13 @@ with basic_model:
 		if observation['spectype'][i] is not None:
 
 			"""
-			luminosity and spectype when spectype gives perfect spectroscopic typing.
+			Luminosity Node in the case of spectroscopic classification.
+
+			spectype gives perfect spectroscopic typing sp
 
 			p(spectype, luminosity|X) = p(luminosity| type_i, X) p(ttype=spectype| X)
 
-			which is handled by the class LuminosityGivenSpectype
+			The distribution for luminosity is handled by the class LuminosityGivenSpectype
 
 			Dependencies
 			-------------
@@ -348,7 +342,6 @@ with basic_model:
 			Parameters
 			-----------
 
-			spectype
 			luminosity
 			"""
 
@@ -361,9 +354,10 @@ with basic_model:
 
 		else:
 			"""
-			luminosity for the case where the type is not known
+			luminosity Node for the case where the type is not known.  The type Node
+			is marginalized internally.
 
-			 pdf(L|X) = \sum_i pdf(L|T_ii,X) pdf(T_i|X).
+			 pdf(L|X) = \sum_i pdf(L|T_i,X) pdf(T_i|X).
 
 			Dependencies
 			------------
@@ -377,66 +371,77 @@ with basic_model:
 
 			luminosity : intrinsic luminosity marginalized over the types
 			"""
+
 			luminosity = LuminosityMarginalizedOverType(
 				Lognormal('dum1'+str(i), mu=logL_snIa,tau=tau_snIa),
 				Lognormal('dum2'+str(i), mu=logL_snII,tau=tau_snII), prob)
 
-		"""
-		Host Redshift.  Eventually we will want to model the host,
-		for which redshift is just one parameter.  This is assumed
-		to be measured perfectly if there is a spectrum.
 
-
-		Parameters
-		----------
-
-		redshift :		Redshift of host galaxy (and hence of transient)
-		"""
 		if observation['spectype'][i] is not None:
-			redshift = observation['spectype'][i]
+
+			"""
+			Redshift Node.  Not considered if there is a spectroscopic redshift.
+
+			See below.
+			"""
+
+			"""
+			Luminosity distance, Flux nodes.  Fixed.
+
+
+			If there is a spectroscopic redshift
+
+			p(specz, luminosity_distance, flux | redshift, X) = p(luminosity_distance, flux | redshift=specz, X)
+
+			for the moment luminosity distance  is the described by a linear model.  Need to implement
+			the real solution that needs an integration implemented in theano
+
+			current implementation does not have redshift-dependence of flux but eventually it will.
+
+			Dependencies
+			------------
+
+			luminosity  :	luminosity
+			redshift  	:	host redshift
+			cosmology 	:   cosmology
+
+			Parameters
+			-----------
+
+			luminosity_distance : fixed
+			flux 				: fixed
+			"""
+
+			luminosity_distance = Om0 +  w0* observation['specz']
+			flux = luminosity/4/numpy.pi/luminosity_distance/luminosity_distance
+
 		else:
+
+			"""
+			Host Redshift Node.  Eventually we will want to model the host,
+			for which redshift is just one parameter.  This is assumed
+			to be measured perfectly if there is a spectrum.
+
+			There are therefore two scenarios:
+
+			1. If there is a spectroscopic redshift this node is not explicitly considered.
+			2. If there is no spectroscopic redshift it is considered.
+
+			Parameters
+			----------
+
+			redshift :		Redshift of host galaxy (and hence of transient)
+			"""
+
 			redshift = Uniform('redshift'+str(i),lower =0.01, upper =5)
 
-		"""
-		luminosity distance.  This is fixed given the cosmology.
+			"""
+			Luminosity distance, Flux nodes.  Fixed.
 
-		for the moment the described by a linear model.  Need to implement
-		the real solution that needs an integration implemented in theano
-
-		Dependencies
-		------------
-
-		redshift  	:	host redshift
-		cosmology 	:   cosmology
-
-		Parameters
-		-----------
-
-		luminosity_distance : fixed
-		"""
-
-		luminosity_distance = Om0 +  w0* redshift
-
-
-
-
-		"""
-		flux that arrives to the telescope is deterministic
-
-		Dependencies
-		------------
-
-		luminosity
-		redshift
-		luminosity_distance
-
-		Parameters
-		-----------
-
-		flux: 		flux of object that arrives to observatory. Fixed.
-		"""
-
-		flux = luminosity/4/numpy.pi/luminosity_distance/luminosity_distance
+			The same as above except now there is no spectroscopic redshift observable.
+			"""
+			luminosity_distance = Om0 +  w0* redshift
+			flux = luminosity/4/numpy.pi/luminosity_distance/luminosity_distance			
 
 
 		"""
@@ -446,7 +451,9 @@ with basic_model:
 		"""
 
 		"""
-		counts.  This is observed.
+		counts Node.  This is observed.
+
+		eventually will have selection criteria
 
 		Dependencies
 		-------------
@@ -461,9 +468,38 @@ with basic_model:
 
 		"""
 		counts_mu = flux*10**(-zeropoints/2.5)
-		counts = Normal('counts'+str(i), mu= counts_mu, sd=0.02*counts_mu, observed=observation['photometry'][i])
+		counts = Normal('counts'+str(i), mu= counts_mu, sd=0.02*counts_mu, observed=observation['counts'][i])
 
 
+		"""
+		spectral type Node.
+
+		the spectroscopic typing is assumed to be perfect.  It is therefore handled upstream
+
+		Dependencies
+		------------
+		ttype
+
+		Parameters
+		----------
+		spectype
+
+		"""
+
+		"""
+		spectral redshift Node.
+
+		the spectroscopic redshift is assumed to be perfect.  It is therefore handled upstream
+
+		Dependencies
+		------------
+		redshift
+
+		Parameters
+		----------
+		specredshift
+
+		"""
 
 from pymc3 import find_MAP, NUTS, sample
 from scipy import optimize
