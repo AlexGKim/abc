@@ -5,6 +5,10 @@ from pymc3 import NUTS, Model, Normal, Lognormal, Flat, Bernoulli, Uniform
 from astropy.cosmology import FlatwCDM
 from pymc3.distributions import Continuous
 from pymc3.distributions.dist_math import bound
+
+from astropy import constants as const
+from astropy import units as u
+
 import theano.tensor as T
 
 class LuminosityMarginalizedOverType(Continuous):
@@ -145,12 +149,9 @@ def pgm():
 
 	pgm.figure.savefig("nodes_pgm.pdf")
 
-# pgm()
-
-# wefwe
 
 # the number of transients
-nTrans = 20
+nTrans = 10
 
 # set the state of the random number generator
 seed=0
@@ -166,8 +167,10 @@ observation['specz'] = numpy.random.uniform(low=0.1, high=0.8, size=nTrans)
 spectype = numpy.random.uniform(low=0, high=1, size=nTrans)
 observation['spectype'] = spectype.round().astype('int')
 luminosity = (1.-observation['spectype']) + observation['spectype']*.5
-ld = FlatwCDM(H0=72, Om0=0.28, w0=-1).luminosity_distance(observation['specz']).value
-observation['counts'] = luminosity / 4/numpy.pi/ld/ld
+cosmo = FlatwCDM(H0=72, Om0=0.28, w0=-1)
+ld = cosmo.luminosity_distance(observation['specz']).value
+h0 = (const.c/cosmo.H0).to(u.Mpc).value
+observation['counts'] = luminosity / 4/numpy.pi/ld/ld*10**(0.02/2.5)
 
 # Create the pymc3 model and fill it with the distributions and parameters
 # of the model
@@ -380,40 +383,15 @@ with basic_model:
 		if observation['spectype'][i] is not None:
 
 			"""
-			Redshift Node.  Not considered if there is a spectroscopic redshift.
+			Redshift Node.  Is equal to the observed redshift
 
 			See below.
 			"""
 
-			"""
-			Luminosity distance, Flux nodes.  Fixed.
+			redshift = observation['specz']
 
-
-			If there is a spectroscopic redshift
-
-			p(specz, luminosity_distance, flux | redshift, X) = p(luminosity_distance, flux | redshift=specz, X)
-
-			for the moment luminosity distance  is the described by a linear model.  Need to implement
-			the real solution that needs an integration implemented in theano
-
-			current implementation does not have redshift-dependence of flux but eventually it will.
-
-			Dependencies
-			------------
-
-			luminosity  :	luminosity
-			redshift  	:	host redshift
-			cosmology 	:   cosmology
-
-			Parameters
-			-----------
-
-			luminosity_distance : fixed
-			flux 				: fixed
-			"""
-
-			luminosity_distance = Om0 +  w0* observation['specz']
-			flux = luminosity/4/numpy.pi/luminosity_distance/luminosity_distance
+			# luminosity_distance = Om0 +  w0* observation['specz']
+			# flux = luminosity/4/numpy.pi/luminosity_distance/luminosity_distance
 
 		else:
 
@@ -435,13 +413,43 @@ with basic_model:
 
 			redshift = Uniform('redshift'+str(i),lower =0.01, upper =5)
 
-			"""
-			Luminosity distance, Flux nodes.  Fixed.
+		"""
+		Luminosity distance, Flux nodes.  Fixed.
 
-			The same as above except now there is no spectroscopic redshift observable.
-			"""
-			luminosity_distance = Om0 +  w0* redshift
-			flux = luminosity/4/numpy.pi/luminosity_distance/luminosity_distance			
+		If there is a spectroscopic redshift
+
+		p(specz, luminosity_distance, flux | redshift, X) = p(luminosity_distance, flux | redshift=specz, X)
+
+		Otherwise
+
+		p(luminosity_distance, flux | redshift, X) = p(luminosity_distance, flux | redshift, X)
+
+		current implementation does not have redshift-dependence of flux but eventually it will.
+
+		Dependencies
+		------------
+
+		luminosity  :	luminosity
+		redshift  	:	host redshift
+		cosmology 	:   cosmology
+
+		Parameters
+		-----------
+
+		luminosity_distance : fixed
+		flux 				: fixed
+		"""
+
+		"""
+		poorman luminosity distance
+		"""
+		nbin=10		
+		luminosity_distance = 0.5+ + 0.5/T.sqrt(Om0*(1+redshift)**3 +  (1-Om0)*(1+redshift)**(3*(1+w0)))
+		for index in xrange(1,nbin):
+			luminosity_distance = luminosity_distance +1./T.sqrt(Om0*(1.+index*redshift/nbin)**3 + (1-Om0)*(1.+index*redshift/nbin)**(3*(1+w0)))
+		luminosity_distance=luminosity_distance/h0/(redshift/nbin)
+
+		flux = luminosity/4/numpy.pi/luminosity_distance/luminosity_distance			
 
 
 		"""
