@@ -44,7 +44,7 @@ class LuminosityMarginalizedOverType(Continuous):
 		return T.log(self.p*numpy.exp(self.pdf1.logp(value)) +
     		(1-self.p)*T.exp(self.pdf2.logp(value)))
 
-class LuminosityGivenSpectype(Lognormal):
+class LogLuminosityGivenSpectype(Normal):
     r"""The distribution for the joint spectype and luminosity
 
     It is the product of the probability of the type times the pdf of the luminosity
@@ -66,7 +66,7 @@ class LuminosityGivenSpectype(Lognormal):
     """
 
     def __init__(self, p=1, *args, **kwargs):
-    	super(LuminosityGivenSpectype, self).__init__(*args, **kwargs)
+    	super(LogLuminosityGivenSpectype, self).__init__(*args, **kwargs)
     	self.p = p
 
 	def logp(self, value):
@@ -195,8 +195,8 @@ with basic_model:
 	w0:		constant equation of state w
 	"""
 
-	Om0 = Uniform('Om0',lower=0., upper=1)
-	w0 = Uniform('w0', lower=1, upper=2)
+	Om0 = Lognormal('Om0', mu=numpy.log(0.28), tau=1/.2/.2)
+	w0 = Normal('w0', mu=-1, sd=0.2)
 
 	"""
 	Calibration Node.  These are the global zeropoints for each band.
@@ -255,10 +255,11 @@ with basic_model:
 	sigma_L_snIa :	intrinsic luminosity dispersion (mag)
 
 	"""
-	L_snIa = Uniform('L_snIa', lower=0.1, upper=10)
-	sigma_L_snIa = Uniform('sigma_L_snIa', lower=0.01, upper=.2)
-	logL_snIa = T.log(L_snIa)
-	tau_snIa = 1/sigma_L_snIa/sigma_L_snIa
+#	sigma_L_snIa = Lognormal('sigma_L_snIa', mu=numpy.log(0.02), tau=1./0.1/0.1)
+	sigma_snIa = Lognormal('sigma_snIa', mu=numpy.log(0.02), tau=1./0.1/0.1)
+#	L_snIa = Lognormal('L_snIa', mu=numpy.log(1), tau=tau_snIa)
+	logL_snIa = Normal('logL_snIa', mu=numpy.log(1), sd = 0.02)
+
 
 
 	"""
@@ -273,10 +274,13 @@ with basic_model:
 	sigma_L_snII : 	intrinsic luminosity dispersion (mag)
 
 	"""
-	L_snII = Uniform('L_snII', lower=0.1, upper=10)
-	sigma_L_snII = Uniform('sigma_L_snII', lower=0.01, upper=1)
-	logL_snII = T.log(L_snII)
-	tau_snII = 1/sigma_L_snII/sigma_L_snII
+#	sigma_L_snII = Lognormal('sigma_L_snIIa', mu=numpy.log(0.2), tau=1/0.1/0.1)
+	sigma_snII = Lognormal('sigma_snII', mu=numpy.log(0.2), tau=1./0.1/0.1)
+#	L_snII = Lognormal('L_snII', mu=numpy.log(0.5), tau=tau_snII)
+	logL_snII = Normal('logL_snII', mu=numpy.log(0.5), sd=0.02)
+
+
+
 
 
 	# Loop through parameters that are object-specific.
@@ -349,11 +353,13 @@ with basic_model:
 			"""
 
 			if observation['spectype'][i] == 0:
-				luminosity = LuminosityGivenSpectype('luminosity'+str(i),
-					mu=logL_snIa,tau=tau_snIa, p=prob)
+				logluminosity = LogLuminosityGivenSpectype('logluminosity'+str(i),
+					mu=logL_snIa,sd=sigma_snIa, p=prob)
 			else:
-				luminosity = LuminosityGivenSpectype('luminosity'+str(i),
-					mu=logL_snII,tau=tau_snII, p=1-prob)
+				logluminosity = LogLuminosityGivenSpectype('logluminosity'+str(i),
+					mu=logL_snII,sd=sigma_snII, p=1-prob)
+
+			luminosity = T.exp(logluminosity)
 
 		else:
 			"""
@@ -443,13 +449,15 @@ with basic_model:
 		"""
 		poorman luminosity distance
 		"""
-		nbin=10		
-		luminosity_distance = 0.5+ + 0.5/T.sqrt(Om0*(1+redshift)**3 +  (1-Om0)*(1+redshift)**(3*(1+w0)))
-		for index in xrange(1,nbin):
-			luminosity_distance = luminosity_distance +1./T.sqrt(Om0*(1.+index*redshift/nbin)**3 + (1-Om0)*(1.+index*redshift/nbin)**(3*(1+w0)))
-		luminosity_distance=luminosity_distance/h0/(redshift/nbin)
 
-		flux = luminosity/4/numpy.pi/luminosity_distance/luminosity_distance			
+		# Having problems with theano levels of nesting in finer numerical integration 
+		luminosity_distance = (1+redshift)*(0.5 +0.5/T.sqrt(Om0*(1+redshift)**3 + (1-Om0)*(1+redshift)**(3*(1+w0))) \
+			+1./T.sqrt(Om0*(1+.25*redshift)**3 + (1-Om0)*(1+.25*redshift)**(3*(1+w0))) \
+			+1./T.sqrt(Om0*(1+.50*redshift)**3 + (1-Om0)*(1+.50*redshift)**(3*(1+w0))) \
+			+1./T.sqrt(Om0*(1+.75*redshift)**3 + (1-Om0)*(1+.75*redshift)**(3*(1+w0))) \
+			)/h0*redshift/4
+
+		flux = luminosity/4/numpy.pi/luminosity_distance**2		
 
 
 		"""
