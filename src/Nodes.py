@@ -4,10 +4,12 @@ import numpy
 from pymc3 import NUTS, Model, Normal, Lognormal, Flat, Bernoulli, Uniform
 from astropy.cosmology import FlatwCDM
 from pymc3.distributions import Continuous
-from pymc3.distributions.dist_math import bound
+from pymc3.distributions.dist_math import bound, std_cdf
 
 from astropy import constants as const
 from astropy import units as u
+
+import matplotlib.pyplot as plt
 
 import theano.tensor as T
 
@@ -45,7 +47,7 @@ class LuminosityMarginalizedOverType(Continuous):
     		(1-self.p)*T.exp(self.pdf2.logp(value)))
 
 class LogLuminosityGivenSpectype(Normal):
-    r"""The distribution for the joint spectype and luminosity
+    r"""The distribution for the joint spectype and log-luminosity
 
     It is the product of the probability of the type times the pdf of the luminosity
     which in this case is Lognormal (the Parent class).  Do templates exist in Python?
@@ -75,6 +77,34 @@ class LogLuminosityGivenSpectype(Normal):
 		""" 
 		return bound(T.log(p)+ super(LuminosityGivenSpectype, self).logp(value), p > 0, p<=1)
 
+class CountsWithThreshold(Normal):
+    r"""The distribution for the joint spectype and log-luminosity
+
+    pdf of counts given a threshold
+
+	.. math::
+
+    This class should be generalized to handle multiple types
+
+		
+    Parameters
+    -----------
+    threshold : theano.tensor
+    	minimum counts in order to be discovered
+
+    """
+
+    def __init__(self, threshold=0, *args, **kwargs):
+    	super(CountsWithThreshold, self).__init__(*args, **kwargs)
+    	self.threshold = threshold
+    	self.normalization  = T.log(1-std_cdf((self.threshold-self.mu)/self.sd))
+
+	def logp(self, value):
+		"""
+		Implementation of Sum_i pdf(L|Ti,X) pdf(Ti|X).
+		""" 
+		return bound(-self.normalization+ super(CountsWithThreshold, self).logp(value), value >= self.threshold)
+
 def pgm():
 	from daft import PGM, Node, Plate
 	from matplotlib import rc
@@ -88,22 +118,24 @@ def pgm():
 	pgm.add_node(Node('Rate_II',r"{SNII Rate}", 2,8,scale=1.6,aspect=1.2))
 	pgm.add_node(Node('L_Ia',r"{SNIa L, $\sigma_L$}", 3,8,scale=1.6,aspect=1.2))
 	pgm.add_node(Node('L_II',r"{SNII L, $\sigma_L$}", 4,8,scale=1.6,aspect=1.2))
-	pgm.add_node(Node('Cosmology',r"Cosmology", 6,8, scale=1.6,aspect=1.2))
-	pgm.add_node(Node('Calibration',r"Calibration", 7, 8, scale=1.6,aspect=1.2))
+	pgm.add_node(Node('Cosmology',r"Cosmology", 7,8, scale=1.6,aspect=1.2))
+	pgm.add_node(Node('Calibration',r"Calibration", 8, 8, scale=1.6,aspect=1.2))
 
-	pgm.add_node(Node('Redshift',r"{Redshift}", 5,7, scale=1.6,aspect=1.2))
+	pgm.add_node(Node('Neighbors',r"\centering{Neighbor \newline Redshift}", 5,7, scale=1.6,aspect=1.2))
+	pgm.add_node(Node('Redshift',r"{Redshift}", 6,7, scale=1.6,aspect=1.2))
 
 	pgm.add_node(Node('Type_prob',r"Type prob", 1,6, fixed=1,offset=(20,-10)))
-	pgm.add_node(Node('Distance',r"$L_D$", 6,6, fixed=1,offset=(10,10)))
+	pgm.add_node(Node('Distance',r"$L_D$", 7,6, fixed=1,offset=(10,10)))
 
 	pgm.add_node(Node('Type',r"Type", 1, 5, scale=1.6,aspect=1.2))
 
 	pgm.add_node(Node('Luminosity',r"Luminosity", 4, 4, scale=1.6,aspect=1.2))
-	pgm.add_node(Node('Flux',r"Flux", 6, 3, scale=1.2,fixed=True,offset=(-20,-20)))
+	pgm.add_node(Node('Flux',r"Flux", 7, 3, scale=1.2,fixed=True,offset=(-20,-20)))
 
 
 	pgm.add_node(Node('Spec_type',r"Spec type", 1, 1, scale=1.6,aspect=1.2,observed=1))
-	pgm.add_node(Node('Spec_redshift',r"Spec redshift", 5, 1, scale=1.6,aspect=1.2,observed=1))
+	pgm.add_node(Node('Galaxy_redshift',r"\centering{Galaxy \newline redshift}", 5, 1, scale=1.6,aspect=1.2,observed=1))
+	pgm.add_node(Node('Spec_redshift',r"Spec redshift", 6, 1, scale=1.6,aspect=1.2,observed=1))
 	pgm.add_node(Node('Counts',r"Counts", 7, 1, scale=1.2,observed=1))
 
 
@@ -124,13 +156,15 @@ def pgm():
 	pgm.add_edge("Distance","Flux")
 
 	pgm.add_edge("Type","Spec_type")
+	pgm.add_edge("Neighbors","Galaxy_redshift")
+	pgm.add_edge("Redshift","Galaxy_redshift")
 	pgm.add_edge("Redshift","Spec_redshift")
 
 	pgm.add_edge("Flux","Counts")
 	pgm.add_edge("Calibration","Counts")
 
 	# Big Plate: Galaxy
-	pgm.add_plate(Plate([0.4, 0.5, 7.2, 7.],
+	pgm.add_plate(Plate([0.4, 0.5, 8.2, 7.],
 	                    label=r"SNe $i = 1, \cdots, N_{SN}$",
 	                    shift=-0.2,label_offset=[20,2]))
 
@@ -149,9 +183,11 @@ def pgm():
 
 	pgm.figure.savefig("nodes_pgm.pdf")
 
+pgm()
+wedwe
 
 # the number of transients
-nTrans = 10
+nTrans = 15
 
 # set the state of the random number generator
 seed=0
@@ -166,11 +202,28 @@ observation=dict()
 observation['specz'] = numpy.random.uniform(low=0.1, high=0.8, size=nTrans)
 spectype = numpy.random.uniform(low=0, high=1, size=nTrans)
 observation['spectype'] = spectype.round().astype('int')
-luminosity = (1.-observation['spectype']) + observation['spectype']*.5
+luminosity = (1.-observation['spectype'])*10**(numpy.random.normal(0, 0.1/2.5, size=nTrans)) \
+	+ observation['spectype']*.5**10**(numpy.random.normal(0, 0.4/2.5,size=nTrans))
 cosmo = FlatwCDM(H0=72, Om0=0.28, w0=-1)
 ld = cosmo.luminosity_distance(observation['specz']).value
 h0 = (const.c/cosmo.H0).to(u.Mpc).value
+
+
 observation['counts'] = luminosity / 4/numpy.pi/ld/ld*10**(0.02/2.5)
+
+count_lim = .4e-8
+
+found  = observation['counts'] >= count_lim
+nTrans = found.sum()
+print nTrans
+observation['specz'] = observation['specz'][found]
+observation['spectype'] =observation['spectype'][found]
+observation['counts'] =observation['counts'][found]
+
+# plt.scatter(observation['specz'],observation['counts'])
+# plt.ylim((0, 2e-8))
+# plt.show()
+
 
 # Create the pymc3 model and fill it with the distributions and parameters
 # of the model
@@ -247,41 +300,34 @@ with basic_model:
 	with no internal parameters.  Eventually this will represent time-evolving
 	SED.
 
+	Actually work in log-luminosity
 
 	Parameters
 	----------
 
-	L_snIa 	:		SN Ia mean luminosity
-	sigma_L_snIa :	intrinsic luminosity dispersion (mag)
+	logL_snIa 	:		SN Ia mean luminosity
+	sigma_snIa :	intrinsic luminosity dispersion (mag)
 
 	"""
-#	sigma_L_snIa = Lognormal('sigma_L_snIa', mu=numpy.log(0.02), tau=1./0.1/0.1)
-	sigma_snIa = Lognormal('sigma_snIa', mu=numpy.log(0.02), tau=1./0.1/0.1)
-#	L_snIa = Lognormal('L_snIa', mu=numpy.log(1), tau=tau_snIa)
 	logL_snIa = Normal('logL_snIa', mu=numpy.log(1), sd = 0.02)
-
-
+	sigma_snIa = Lognormal('sigma_snIa', mu=numpy.log(0.02), tau=1./0.1/0.1)
 
 	"""
 	SN II luminosity Node.  For the moment consider the SN to be time-indepemdent
 	with no internal parameters.  Eventually this will represent time-evolving
 	SED.
 
+	Actually work in log-luminosity
+
 	Parameters
 	----------
 
 	L_snII 	: 		SN II mean luminosity
-	sigma_L_snII : 	intrinsic luminosity dispersion (mag)
+	sigma_snII : 	intrinsic luminosity dispersion (mag)
 
 	"""
-#	sigma_L_snII = Lognormal('sigma_L_snIIa', mu=numpy.log(0.2), tau=1/0.1/0.1)
-	sigma_snII = Lognormal('sigma_snII', mu=numpy.log(0.2), tau=1./0.1/0.1)
-#	L_snII = Lognormal('L_snII', mu=numpy.log(0.5), tau=tau_snII)
 	logL_snII = Normal('logL_snII', mu=numpy.log(0.5), sd=0.02)
-
-
-
-
+	sigma_snII = Lognormal('sigma_snII', mu=numpy.log(0.2), tau=1./0.1/0.1)
 
 	# Loop through parameters that are object-specific.
 	# Distribution names have the transient index
@@ -381,10 +427,10 @@ with basic_model:
 			luminosity : intrinsic luminosity marginalized over the types
 			"""
 
-			luminosity = LuminosityMarginalizedOverType(
-				Lognormal('dum1'+str(i), mu=logL_snIa,tau=tau_snIa),
-				Lognormal('dum2'+str(i), mu=logL_snII,tau=tau_snII), prob)
-
+			logluminosity = LuminosityMarginalizedOverType(
+				Normal('dum1'+str(i), mu=logL_snIa,sd=sigma_snIa),
+				Normal('dum2'+str(i), mu=logL_snII,sd=sigma_snII), prob)
+			luminosity = T.exp(logluminosity)
 
 		if observation['spectype'][i] is not None:
 
@@ -484,7 +530,7 @@ with basic_model:
 
 		"""
 		counts_mu = flux*10**(-zeropoints/2.5)
-		counts = Normal('counts'+str(i), mu= counts_mu, sd=0.02*counts_mu, observed=observation['counts'][i])
+		counts = CountsWithThreshold('counts'+str(i), threshold = count_lim, mu= counts_mu, sd=0.02*counts_mu, observed=observation['counts'][i])
 
 
 		"""
