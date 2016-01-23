@@ -54,9 +54,9 @@ class LogLuminosityGivenSpectype(Normal):
 
     .. math::
         p(spectype, luminosity|rate_II_r,L_Ia,L_II) =
-                        p(spectype,luminosity| ttype=snIa,rate_II_r,L_Ia,L_II)p(ttype=snIa|rate_II_r) +
-                        p(spectype,luminosity| ttype=snII,rate_II_r,L_Ia,L_II)p(ttype=snII|rate_II_r)
-                        = p(luminosity | ttype=spectype,L_Ia,L_II) p((ttype=spectype|rate_II_r))
+                    p(spectype,luminosity| ttype=snIa,rate_II_r,L_Ia,L_II)p(ttype=snIa|rate_II_r) +
+                    p(spectype,luminosity| ttype=snII,rate_II_r,L_Ia,L_II)p(ttype=snII|rate_II_r)
+                    = p(luminosity | ttype=spectype,L_Ia,L_II) p((ttype=spectype|rate_II_r))
 
     This class should be generalized to handle multiple types
 
@@ -114,8 +114,8 @@ class CountsWithThreshold(Continuous):
         Poorman luminosity distance.
 
         Presumably there will be a numerical integration function that inherits from theano.Op with
-        gradient implmented so that HMC can be run.  The class can be specified by the integrand, which
-        is the gradient.
+        gradient implmented so that HMC can be run.  The class can be specified by the integrand,
+        which is the gradient.
         """
 
         luminosity_distance = (1+z)*(0.5 \
@@ -246,10 +246,10 @@ def simulateData():
     observation['counts'] = luminosity / 4/numpy.pi/ld/ld*10**(0.02/2.5)
 
     count_lim = .4e-8
-
     found  = observation['counts'] >= count_lim
-    observation['specz'] = observation['specz'][found]
-    observation['zprob'] = observation['zprob'][found]
+    nTrans =  found.sum()
+    observation['specz'] = numpy.reshape(observation['specz'][found],(nTrans,1))
+    observation['zprob'] = numpy.reshape(observation['zprob'][found],(nTrans,1))
     observation['spectype'] =observation['spectype'][found]
     observation['counts'] =observation['counts'][found]
     return observation
@@ -263,7 +263,7 @@ def simulateData():
 def runModel():
 
     observation = simulateData()
-    nTrans = len(observation)
+    nTrans = len(observation['spectype'])
 
     # Create the pymc3 model and fill it with the distributions and parameters
     # of the model
@@ -278,9 +278,9 @@ def runModel():
 
         pdf(Om0, w0)
 
-        We need the flexibility to switch in and out different cosmological models.  The function that
-        describes luminosity distance is specific to the model: the parameters and function should be
-        packaged together.
+        We need the flexibility to switch in and out different cosmological models.  The function
+        that describes luminosity distance is specific to the model: the parameters and function
+        should be packaged together.
 
         Parameters
         ----------
@@ -314,8 +314,8 @@ def runModel():
 
         rate_Ia_r = constant
 
-        For SN cosmology the relative rates between different populations are sufficient.  Rates of all
-        types are relative the snIa rate, so snIa rate is taken to be 1.
+        For SN cosmology the relative rates between different populations are sufficient.  Rates of
+        all types are relative the snIa rate, so snIa rate is taken to be 1.
 
         Parameters
         -----------
@@ -458,7 +458,6 @@ def runModel():
             Luminosity      :
 
             """
-
             if observation['spectype'][i] is not None:
 
                 if observation['spectype'][i] == 0:
@@ -522,9 +521,9 @@ def runModel():
 
             """
 
-            counts = CountsWithThreshold('counts'+str(i),luminosity=luminosity, zs=observation['specz'], \
-                        pzs = observation['zprob'], Om0= Om0, w0=w0, Z=zeropoints,  \
-                        observed=observation['counts'][i])
+            counts = CountsWithThreshold('counts'+str(i),luminosity=luminosity, \
+                zs=observation['specz'][i],  pzs = observation['zprob'][i], Om0= Om0, \
+                w0=w0, Z=zeropoints, observed=observation['counts'][i])
 
 
     from pymc3 import find_MAP, NUTS, sample
