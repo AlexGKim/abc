@@ -12,6 +12,7 @@ from astropy import units as u
 import matplotlib.pyplot as plt
 
 import theano.tensor as T
+from theano import pp
 
 class LuminosityMarginalizedOverType(Continuous):
     r"""The distribution for the luminosity marginalized over two kinds
@@ -109,6 +110,10 @@ class CountsWithThreshold(Continuous):
         self.w0 = w0
         self.Z = Z
         
+    def h_inv(self,z):
+        # return 1./T.sqrt(self.Om0*(1+z)**3 + (1-self.Om0)*(1+z)**(3*(1+self.w0)))
+        return (1+z)**(-1.5)/T.sqrt(self.Om0 + (1-self.Om0)*(1+z)**(3*self.w0))
+        
     def luminosity_distance(self, z):
         """
         Poorman luminosity distance.
@@ -118,23 +123,27 @@ class CountsWithThreshold(Continuous):
         which is the gradient.
         """
 
-        luminosity_distance = (1+z)*(0.5 \
-            +0.5/T.sqrt(self.Om0*(1+z)**3 + (1-self.Om0)*(1+z)**(3*(1+self.w0))) \
-            +1./T.sqrt(self.Om0*(1+.25*z)**3 + (1-self.Om0)*(1+.25*z)**(3*(1+self.w0))) \
-            +1./T.sqrt(self.Om0*(1+.50*z)**3 + (1-self.Om0)*(1+.50*z)**(3*(1+self.w0))) \
-            +1./T.sqrt(self.Om0*(1+.75*z)**3 + (1-self.Om0)*(1+.75*z)**(3*(1+self.w0))) \
-            )/CountsWithThreshold.h0*z/4
+        # luminosity_distance = (1+z)*(0.5 \
+        #     +0.5/T.sqrt(self.Om0*(1+z)**3 + (1-self.Om0)*(1+z)**(3*(1+self.w0))) \
+        #     +1./T.sqrt(self.Om0*(1+.25*z)**3 + (1-self.Om0)*(1+.25*z)**(3*(1+self.w0))) \
+        #     +1./T.sqrt(self.Om0*(1+.50*z)**3 + (1-self.Om0)*(1+.50*z)**(3*(1+self.w0))) \
+        #     +1./T.sqrt(self.Om0*(1+.75*z)**3 + (1-self.Om0)*(1+.75*z)**(3*(1+self.w0))) \
+        #     )/CountsWithThreshold.h0*z/4
+        luminosity_distance = 0.5/CountsWithThreshold.h0*(z+z*2)*(1+ self.h_inv(z))
         return luminosity_distance
 
     def logp(self, value):
-        ans = 0.
+        
         for index in xrange(len(self.zs)):
             ld = self.luminosity_distance(self.zs[index])
-            mu = self.luminosity/4/numpy.pi/(ld**2)*10**(-self.Z/2.5)    #average counts
-            tau = 1/0.02*2
-            ans = ans + T.log(self.pzs[index]) + bound((-tau * (value - mu)**2 + T.log(tau / numpy.pi / 2.)) / 2.,
-                     tau > 0)
-
+            mu = self.luminosity/(4*numpy.pi)/(ld**2)*10**(-self.Z/2.5)    #average counts
+            tau = (0.02*mu)**(-2)
+            if index == 0:
+                ans = bound(T.log(self.pzs[index]) + (-tau * (value - mu)**2 + T.log(tau / numpy.pi / 2.)) / 2., \
+                    tau > 0,self.pzs[index] >0,self.pzs[index] <=1 )
+            else:
+                ans = bound(ans + T.log(self.pzs[index]) + (-tau * (value - mu)**2 + T.log(tau / numpy.pi / 2.)) / 2., \
+                    tau > 0,self.pzs[index] >0,self.pzs[index] <=1 )
         #need to add threshold
 
         return ans
