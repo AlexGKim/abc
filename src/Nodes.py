@@ -48,16 +48,21 @@ class LuminosityMarginalizedOverType(Continuous):
             (1-self.p)*T.exp(self.pdf2.logp(value)))
 
 class LogLuminosityGivenSpectype(Normal):
-    r"""The distribution for the joint spectype and log-luminosity
+    r"""The distribution for the joint spectype and log-luminosity.
+
+    The input variable ls log-luminosity, not luminosity.  This therefore subclasses
+    Normal.
 
     It is the product of the probability of the type times the pdf of the luminosity
     which in this case is Lognormal (the Parent class).  Do templates exist in Python?
 
     .. math::
-        p(spectype, luminosity|rate_II_r,L_Ia,L_II) =
-                    p(spectype,luminosity| ttype=snIa,rate_II_r,L_Ia,L_II)p(ttype=snIa|rate_II_r) +
-                    p(spectype,luminosity| ttype=snII,rate_II_r,L_Ia,L_II)p(ttype=snII|rate_II_r)
-                    = p(luminosity | ttype=spectype,L_Ia,L_II) p((ttype=spectype|rate_II_r))
+        pdf(Obs type, Luminosity | Type prob, logL_snIa, logL_snII)
+            = sum_i pdf(Obs type| Type_i) *
+                pdf(Luminosity | Type_i, logL_snIa, logL_snII) *
+                pdf(Type_i | Type prob)
+            = pdf(Luminosity | Type=Obs type, logL_snIa, logL_snII) *
+                pdf(Type=Obs type | Type prob)
 
     This class should be generalized to handle multiple types
 
@@ -71,13 +76,10 @@ class LogLuminosityGivenSpectype(Normal):
     def __init__(self, p=1, *args, **kwargs):
         super(LogLuminosityGivenSpectype, self).__init__(*args, **kwargs)
         self.p = p
+#        self.logp = T.log(self.p)  #For unknown reasons this causes ths code to crash
 
     def logp(self, value):
-        """
-        Implementation of Sum_i pdf(L|Ti,X) pdf(Ti|X).
-        """ 
-        return bound(T.log(self.p)+ super(LogLuminosityGivenSpectype, self).logp(value), self.p > 0, \
-            self.p<=1)
+        return T.log(self.p) + super(LogLuminosityGivenSpectype, self).logp(value)
 
 class CountsWithThreshold(Continuous):
     r"""The distribution for the joint spectype and log-luminosity
@@ -85,9 +87,8 @@ class CountsWithThreshold(Continuous):
     pdf of counts given a threshold
 
     .. math::
-
-    This class should be generalized to handle multiple types
-
+        pdf(observed redshift, Counts | Luminosity, Redshift, Cosmology, Calibration)
+            = sum_i p_i pdf(Counts | Luminosity, Redshift=observer_redshift_i, Cosmology, Calibration)
         
     Parameters
     -----------
@@ -98,6 +99,7 @@ class CountsWithThreshold(Continuous):
 
     cosmo = FlatwCDM(H0=72, Om0=0.28, w0=-1)
     h0 = (const.c/cosmo.H0).to(u.Mpc).value
+    ln10 = numpy.log(10.)
 
     def __init__(self, threshold=0, luminosity=None, zs=None, pzs = None, Om0= None, w0=None, \
             Z=None, *args, **kwargs):
@@ -129,21 +131,20 @@ class CountsWithThreshold(Continuous):
         #     +1./T.sqrt(self.Om0*(1+.50*z)**3 + (1-self.Om0)*(1+.50*z)**(3*(1+self.w0))) \
         #     +1./T.sqrt(self.Om0*(1+.75*z)**3 + (1-self.Om0)*(1+.75*z)**(3*(1+self.w0))) \
         #     )/CountsWithThreshold.h0*z/4
-        luminosity_distance = 0.5/CountsWithThreshold.h0*(z+z*2)*(1+ self.h_inv(z))
+        luminosity_distance = 0.5/CountsWithThreshold.h0*(z+T.sqr(z))*(1+ self.h_inv(z))
         return luminosity_distance
+        # return T.log(self.Om0) + z*T.log(self.w0)
+
 
     def logp(self, value):
-        
+        ans=0.
         for index in xrange(len(self.zs)):
             ld = self.luminosity_distance(self.zs[index])
-            mu = self.luminosity/(4*numpy.pi)/(ld**2)*10**(-self.Z/2.5)    #average counts
-            tau = (0.02*mu)**(-2)
-            if index == 0:
-                ans = bound(T.log(self.pzs[index]) + (-tau * (value - mu)**2 + T.log(tau / numpy.pi / 2.)) / 2., \
-                    tau > 0,self.pzs[index] >0,self.pzs[index] <=1 )
-            else:
-                ans = bound(ans + T.log(self.pzs[index]) + (-tau * (value - mu)**2 + T.log(tau / numpy.pi / 2.)) / 2., \
-                    tau > 0,self.pzs[index] >0,self.pzs[index] <=1 )
+            flux = self.luminosity/(4*numpy.pi)/T.sqr(ld)
+            counts  = flux*T.exp(CountsWithThreshold.ln10/2.5*self.Z)
+            tau = 1/1e-9/1e-9
+            ans = ans + T.log(self.pzs[index]) + (-tau * T.sqr(value - counts) + T.log(tau / numpy.pi / 2.)) / 2.
+
         #need to add threshold
 
         return ans
@@ -245,7 +246,7 @@ def simulateData():
     observation['zprob'] = numpy.zeros(nTrans)+1.
     spectype = numpy.random.uniform(low=0, high=1, size=nTrans)
     observation['spectype'] = spectype.round().astype('int')
-    luminosity = (1.-observation['spectype'])*10**(numpy.random.normal(0, 0.1/2.5, size=nTrans)) \
+    luminosity = (1.-observation['spectype'])*10**(CountsWithThreshold.ln10*numpy.random.normal(0, 0.1/2.5, size=nTrans)) \
         + observation['spectype']*.5**10**(numpy.random.normal(0, 0.4/2.5,size=nTrans))
     cosmo = FlatwCDM(H0=72, Om0=0.28, w0=-1)
     ld = cosmo.luminosity_distance(observation['specz']).value
@@ -297,8 +298,8 @@ def runModel():
         w0:     constant equation of state w
         """
 
-        Om0 = Lognormal('Om0', mu=numpy.log(0.28), tau=1/.2/.2)
-        w0 = Normal('w0', mu=-1, sd=0.2)
+        Om0 = Lognormal('Om0', mu=numpy.log(0.28), tau=1/.1/.1)
+        w0 = Normal('w0', mu=-1, sd=0.05)
 
         """
         Calibration Node.
@@ -349,10 +350,11 @@ def runModel():
         Parameters
         ----------
 
-        rate_snII_r     : relative rate of SNe II compared to SNe Ia. 
+        rate_II_r     : relative rate of SNe II compared to SNe Ia. 
 
         """
-        rate_II_r = Uniform('rate_II_r', lower=0.1, upper=10)
+
+        rate_II_r = Uniform('rate_II_r', lower=0.25, upper=4)
 
         """
         SN Ia luminosity Node.  (actually working in log-L)
@@ -371,7 +373,7 @@ def runModel():
 
         """
         logL_snIa = Normal('logL_snIa', mu=numpy.log(1), sd = 0.02)
-        sigma_snIa = Lognormal('sigma_snIa', mu=numpy.log(0.02), tau=1./0.1/0.1)
+        sigma_snIa = Lognormal('sigma_snIa', mu=numpy.log(0.1), tau=1./0.1/0.1)
 
         """
         SN Ia luminosity Node.  (actually working in log-L)
@@ -386,7 +388,7 @@ def runModel():
 
         """
         logL_snII = Normal('logL_snII', mu=numpy.log(0.5), sd=0.02)
-        sigma_snII = Lognormal('sigma_snII', mu=numpy.log(0.2), tau=1./0.4/0.4)
+        sigma_snII = Lognormal('sigma_snII', mu=numpy.log(0.4), tau=1./0.1/0.1)
 
         """
         Enter the plate that considers one supernova at a time
@@ -463,23 +465,26 @@ def runModel():
             Parameters
             ----------
 
-            obstype         :   observed type, SN Ia=0, SNII=1
+            obstype         :   observed type, SN Ia=0, SNII=1 Marginalized over
             Luminosity      :
 
             """
             if observation['spectype'][i] is not None:
 
                 if observation['spectype'][i] == 0:
-                    logluminosity = LogLuminosityGivenSpectype('logluminosity'+str(i),
+                    logluminosity = LogLuminosityGivenSpectype('logluminosity'+str(i), \
                         mu=logL_snIa,sd=sigma_snIa, p=prob)
+                     # logluminosity = Normal('logluminosity'+str(i), \
+                     #    mu=logL_snIa,sd=sigma_snIa)
                 else:
-                    logluminosity = LogLuminosityGivenSpectype('logluminosity'+str(i),
+                    logluminosity = LogLuminosityGivenSpectype('logluminosity'+str(i), \
                         mu=logL_snII,sd=sigma_snII, p=1-prob)
-
+                    # logluminosity = Normal('logluminosity'+str(i), \
+                    #     mu=logL_snII,sd=sigma_snII)
                 luminosity = T.exp(logluminosity)
 
             else:
-
+                raise Exception('This is not implemented yet')
                 logluminosity = LuminosityMarginalizedOverType(
                     Normal('dum1'+str(i), mu=logL_snIa,sd=sigma_snIa),
                     Normal('dum2'+str(i), mu=logL_snII,sd=sigma_snII), prob)
@@ -497,9 +502,9 @@ def runModel():
 
             pdf(observed redshift, Counts | Luminosity, Redshift, Cosmology, Calibration)
                 = pdf(observed redshift| Redshift) *
-                    pdf(Counts | Redshift, Cosmology, Calibration)
+                    pdf(Counts | Luminosity, Redshift, Cosmology, Calibration)
 
-            The pdf of the observed redshift is assumed to be a sum of delta functions, prefectly
+            The pdf of the observed redshift is assumed to be a sum of delta functions, perfectly
             measured redshift of the supernova or redshifts of potential galaxy hosts.
 
             pdf(observed redshift | Redshift) = sum_i p_i delta(observer redshift_i - Redshift)
@@ -509,10 +514,9 @@ def runModel():
             so
 
             pdf(observed redshift, Counts | Luminosity, Redshift, Cosmology, Calibration)
-                = sum_i p_i pdf(Counts | Redshift=observer_redshift_i, Cosmology, Calibration)
+                = sum_i p_i pdf(Counts | Luminosity, Redshift=observer_redshift_i, Cosmology, Calibration)
 
             The class CountsWithThreshold handles this pdf
-
 
             Dependencies
             ------------
@@ -525,7 +529,7 @@ def runModel():
             Parameters
             -----------
 
-            observed_redshift   
+            observed_redshift   Marginalized over
             counts
 
             """
