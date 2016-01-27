@@ -14,38 +14,44 @@ import matplotlib.pyplot as plt
 import theano.tensor as T
 from theano import pp
 
-class LuminosityMarginalizedOverType(Continuous):
+class LogLuminosityMarginalizedOverType(Continuous):
     r"""The distribution for the luminosity marginalized over two kinds
     of astronomical sources:
 
     .. math::
-        pdf(L|X) = \sum_i pdf(L|T_ii,X) pdf(T_i|X).
+        pdf(Luminosity | Type prob, logL_snIa, logL_snII)
+            = sum_i pdf(Luminosity | Type_i, logL_snIa, logL_snII) *
+                pdf(Type_i | Type prob)
 
-    This class should be generalized to handle multiple types
 
-        
+    This class should be generalized to handle multiple types each with its own model
+
     Parameters
     -----------
-    pdf1 : Continuous
-        pdf(L|T1, X)
-    pdf2 : Continuous
-        pdf(L|T2, X)
+    mus : array
+        the logL_X
+    sds : array
+        the sigma_X
     p : theano.tensor
+        The probability of the first case
         pdf(T1|X), as a consequence pdf(T2|X) = 1-p
     """
 
-    def __init__(self, pdf1, pdf2, p, *args, **kwargs):
-        super(LuminosityMarginalizedOverType, self).__init__(*args, **kwargs)
-        self.pdf1 = pdf1
-        self.pdf2 = pdf2
+
+
+    def __init__(self, mus=numpy.zeros(2), sds=1.+numpy.zeros(2), p=0.5, *args, **kwargs):
+        super(LogLuminosityMarginalizedOverType, self).__init__(*args, **kwargs)
+        self.mus =mus
+        self.sds = sds
         self.p = p
 
     def logp(self, value):
         """
         Implementation of Sum_i pdf(L|Ti,X) pdf(Ti|X).
         """
-        return T.log(self.p*numpy.exp(self.pdf1.logp(value)) +
-            (1-self.p)*T.exp(self.pdf2.logp(value)))
+        taus = T.pow(self.sds,-2)
+        return T.log(self.p) + (-taus[0] * (value - self.mus[0])**2 + T.log(taus[0] / numpy.pi / 2.)) / 2. + \
+            T.log(1-self.p) + (-taus[1] * (value - self.mus[1])**2 + T.log(taus[1] / numpy.pi / 2.)) / 2.
 
 class LogLuminosityGivenSpectype(Normal):
     r"""The distribution for the joint spectype and log-luminosity.
@@ -262,6 +268,7 @@ def simulateData():
     observation['specz'] = numpy.reshape(observation['specz'][found],(nTrans,1))
     observation['zprob'] = numpy.reshape(observation['zprob'][found],(nTrans,1))
     observation['spectype'] =observation['spectype'][found]
+    observation['spectype'][0] = -1   # case of no spectral type
     observation['counts'] =observation['counts'][found]
     return observation
 
@@ -470,26 +477,25 @@ def runModel():
             Luminosity      :
 
             """
-            if observation['spectype'][i] is not None:
-
-                if observation['spectype'][i] == 0:
-                    logluminosity = LogLuminosityGivenSpectype('logluminosity'+str(i), \
-                        mu=logL_snIa,sd=numpy.log(10)/2.5*sigma_snIa, p=prob)
-                     # logluminosity = Normal('logluminosity'+str(i), \
-                     #    mu=logL_snIa,sd=sigma_snIa)
-                else:
-                    logluminosity = LogLuminosityGivenSpectype('logluminosity'+str(i), \
-                        mu=logL_snII,sd=numpy.log(10)/2.5*sigma_snII, p=1-prob)
-                    # logluminosity = Normal('logluminosity'+str(i), \
-                    #     mu=logL_snII,sd=sigma_snII)
-                luminosity = T.exp(logluminosity)
-
+            if observation['spectype'][i] == -1 :
+                logluminosity = LogLuminosityMarginalizedOverType('logluminosity'+str(i), 
+                    mus=[logL_snIa, logL_snII], \
+                    sds = [numpy.log(10)/2.5*sigma_snIa,numpy.log(10)/2.5*sigma_snII], p=prob, \
+                    testval = 1.)
             else:
-                raise Exception('This is not implemented yet')
-                logluminosity = LuminosityMarginalizedOverType(
-                    Normal('dum1'+str(i), mu=logL_snIa,sd=numpy.log(10)/2.5*sigma_snIa),
-                    Normal('dum2'+str(i), mu=logL_snII,sd=numpy.log(10)/2.5*sigma_snII), prob)
-                luminosity = T.exp(logluminosity)
+                if observation['spectype'][i] == 0:
+                    usemu = logL_snIa
+                    usesd = numpy.log(10)/2.5*sigma_snIa
+                    usep = prob
+                else:
+                    usemu = logL_snII
+                    usesd = numpy.log(10)/2.5*sigma_snII
+                    usep = 1-prob
+
+                logluminosity = LogLuminosityGivenSpectype('logluminosity'+str(i), \
+                        mu=usemu,sd=usesd, p=usep)
+                
+            luminosity = T.exp(logluminosity)
 
             """
             Redshift Node.
