@@ -168,7 +168,7 @@ def pgm():
     pgm.add_node(Node('Cosmology',r"Cosmology", 7,8, scale=1.6,aspect=1.2))
     pgm.add_node(Node('Calibration',r"Calibration", 8, 8, scale=1.6,aspect=1.2))
 
-#   pgm.add_node(Node('Neighbors',r"\centering{Neighbor \newline Redshift}", 5,7, scale=1.6,aspect=1.2))
+ #   pgm.add_node(Node('Neighbors',r"\centering{Neighbor \newline Redshifts}", 5,7, scale=1.6,aspect=1.2))
     pgm.add_node(Node('Redshift',r"{Redshift}", 6,7, scale=1.6,aspect=1.2))
 
     pgm.add_node(Node('Type_prob',r"Type prob", 1,6, fixed=1,offset=(20,-10)))
@@ -202,6 +202,7 @@ def pgm():
     pgm.add_edge("Distance","Flux")
 
     pgm.add_edge("Type","Obs_Type")
+#    pgm.add_edge("Neighbors","Obs_Redshift")
     pgm.add_edge("Redshift","Obs_Redshift")
 
     pgm.add_edge("Flux","Counts")
@@ -225,7 +226,7 @@ def pgm():
     # pgm.figure.text(0.01,0.1,r'\underline{DATA}',size='large')
 
 
-    pgm.figure.savefig("nodes_pgm.pdf")
+    pgm.figure.savefig("../results/nodes_pgm.pdf")
 
 
 def simulateData():
@@ -246,7 +247,7 @@ def simulateData():
     observation['zprob'] = numpy.zeros(nTrans)+1.
     spectype = numpy.random.uniform(low=0, high=1, size=nTrans)
     observation['spectype'] = spectype.round().astype('int')
-    luminosity = (1.-observation['spectype'])*10**(CountsWithThreshold.ln10*numpy.random.normal(0, 0.1/2.5, size=nTrans)) \
+    luminosity = (1.-observation['spectype'])*10**(numpy.random.normal(0, 0.1/2.5, size=nTrans)) \
         + observation['spectype']*.5**10**(numpy.random.normal(0, 0.4/2.5,size=nTrans))
     cosmo = FlatwCDM(H0=72, Om0=0.28, w0=-1)
     ld = cosmo.luminosity_distance(observation['specz']).value
@@ -473,12 +474,12 @@ def runModel():
 
                 if observation['spectype'][i] == 0:
                     logluminosity = LogLuminosityGivenSpectype('logluminosity'+str(i), \
-                        mu=logL_snIa,sd=sigma_snIa, p=prob)
+                        mu=logL_snIa,sd=numpy.log(10)/2.5*sigma_snIa, p=prob)
                      # logluminosity = Normal('logluminosity'+str(i), \
                      #    mu=logL_snIa,sd=sigma_snIa)
                 else:
                     logluminosity = LogLuminosityGivenSpectype('logluminosity'+str(i), \
-                        mu=logL_snII,sd=sigma_snII, p=1-prob)
+                        mu=logL_snII,sd=numpy.log(10)/2.5*sigma_snII, p=1-prob)
                     # logluminosity = Normal('logluminosity'+str(i), \
                     #     mu=logL_snII,sd=sigma_snII)
                 luminosity = T.exp(logluminosity)
@@ -486,8 +487,8 @@ def runModel():
             else:
                 raise Exception('This is not implemented yet')
                 logluminosity = LuminosityMarginalizedOverType(
-                    Normal('dum1'+str(i), mu=logL_snIa,sd=sigma_snIa),
-                    Normal('dum2'+str(i), mu=logL_snII,sd=sigma_snII), prob)
+                    Normal('dum1'+str(i), mu=logL_snIa,sd=numpy.log(10)/2.5*sigma_snIa),
+                    Normal('dum2'+str(i), mu=logL_snII,sd=numpy.log(10)/2.5*sigma_snII), prob)
                 luminosity = T.exp(logluminosity)
 
             """
@@ -544,7 +545,7 @@ def runModel():
     with basic_model:
 
         # obtain starting values via MAP
-        start = find_MAP(fmin=optimize.fmin_powell)
+        start = find_MAP(fmin=optimize.fmin_bfgs, disp=True)
 
         # draw 2000 posterior samples
         trace = sample(500, start=start)
