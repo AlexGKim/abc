@@ -1,18 +1,132 @@
 #!/usr/bin/env python
-
 import numpy
 from pymc3 import NUTS, Model, Normal, Lognormal, Flat, Bernoulli, Uniform
 from astropy.cosmology import FlatwCDM
 from pymc3.distributions import Continuous
 from pymc3.distributions.dist_math import bound, std_cdf
+from pymc3.backends import SQLite
 
 from astropy import constants as const
 from astropy import units as u
 
 import matplotlib.pyplot as plt
 
+import theano
 import theano.tensor as T
 from theano import pp
+from theano.compile.ops import as_op
+
+cosmo = FlatwCDM(H0=72, Om0=0.28, w0=-1)
+h0 = (const.c/cosmo.H0).to(u.Mpc).value
+
+def hinv(z, Om0, w0):
+    return T.pow((1+z)**3 * (Om0 + (1-Om0)*(1+z)**(3*w0)),-0.5)
+
+def luminosity_distance(z, Om0, w0):
+    return 0.5/h0*(z+z**2)*(1+ hinv(z, Om0, w0))
+
+def normalization_integrand(lnLoversigma, lnL, sigma, Z, threshold, ld):
+    luminosity = T.exp(lnLoversigma*sigma-lnL)
+    flux = (1./4/numpy.pi)*luminosity/ld**2
+    counts = flux*numpy.exp(Counts.ln10/2.5)*T.exp(Z)
+    ccdf  = 1-std_cdf((threshold-counts)/1e-9)
+    return numpy.exp(-lnLoversigma**2/2.)*ccdf
+
+def normalization_integral(lnL, sigma, Z, threshold, ld):
+    # integral with coordinates in lnL/sigma units
+    # coarse trapezoidal integral over L
+    # This ugliness is due to nesting problems in theano
+    #for index in xrange(-3,4):
+    return 0.5*normalization_integrand(-3, lnL, sigma, Z, threshold, ld) +\
+        normalization_integrand(-2, lnL, sigma, Z, threshold, ld) + \
+        normalization_integrand(-1, lnL, sigma, Z, threshold, ld) + \
+        normalization_integrand(0, lnL, sigma, Z, threshold, ld) + \
+        normalization_integrand(1, lnL, sigma, Z, threshold, ld) + \
+        normalization_integrand(2, lnL, sigma, Z, threshold, ld) + \
+        0.5 * normalization_integrand(3, lnL, sigma, Z, threshold, ld)
+
+#   Maybe want to define a theano function for luminosity distance.  This is a first crack
+#   that doesn't quire work
+#
+# class LuminosityDistance(theano.Op):
+#     """
+#     This creates an Op that takes x to a*x+b.
+#     """
+#     __props__ = ("z")
+
+#     def __init__(self, z):
+#         super(LuminosityDistance, self).__init__()
+#         self.z = z
+
+#     def make_node(self, Om0, w0):
+#         # check that the theano version has support for __props__.
+#         assert hasattr(self, '_props'), "Your version of theano is too old to support __props__."
+#         Om0 = theano.tensor.as_tensor_variable(Om0)
+#         w0 = theano.tensor.as_tensor_variable(w0)
+
+#         return theano.Apply(self, [Om0, w0], [theano.tensor.lscalar()])
+
+#     def h2(self, Om0, w0):
+#         # h2(z=0) = 1
+#         return (1+self.z)**3 * (Om0 + (1-Om0)*(1+self.z)**(3*w0))
+
+#     def dh2dOm0 (self, Om0, w0):
+#         # dh2dOm0 h2(z=0) = 0
+#         return (1+self.z)**3 * (1 - (1+self.z)**(3*w0))
+
+#     def dh2dw0(self, Om0, w0):
+#         # dh2dw0 = 0
+#         return (1+self.z)**3 * T.log(1+self.z) * (1+self.z)**(3*w0)
+
+#     def perform(self, node, inputs, output_storage):
+
+#         """
+#         Poorman luminosity distance.
+
+#         Presumably there will be a numerical integration function that inherits from theano.Op with
+#         gradient implmented so that HMC can be run.  The class can be specified by the integrand,
+#         which is the gradient.
+
+#         Inputs
+#         ------
+#         z :         Theano.lscalar
+#             redshift
+#         Om0 :       Theano.lscalar
+#             Omega_M
+#         w :         Theano.lscalar
+#             w0
+
+#         Output
+#         ------
+
+#         luminosity distance : Theano.lscaoar
+#             luminosity distance in Mp units
+#         """
+
+#         Om0 = inputs[0]
+#         w0  = inputs[1]
+
+#         z = output_storage[0]
+
+#         # luminosity_distance = (1+z)*(0.5 \
+#         #     +0.5/T.sqrt(self.Om0*(1+z)**3 + (1-self.Om0)*(1+z)**(3*(1+self.w0))) \
+#         #     +1./T.sqrt(self.Om0*(1+.25*z)**3 + (1-self.Om0)*(1+.25*z)**(3*(1+self.w0))) \
+#         #     +1./T.sqrt(self.Om0*(1+.50*z)**3 + (1-self.Om0)*(1+.50*z)**(3*(1+self.w0))) \
+#         #     +1./T.sqrt(self.Om0*(1+.75*z)**3 + (1-self.Om0)*(1+.75*z)**(3*(1+self.w0))) \
+#         #     )/CountsWithThreshold.h0*z/4
+#         z[0] = 0.5/h0*(self.z+T.sqr(self.z))*(1+ 1//T.sqrt(self.h2(Om0, w0)))
+
+
+#     def infer_shape(self, node, i0_shapes):
+#         return i0_shapes
+
+#     def grad(self, inputs, output_grads):
+#         Om0 = inputs[0]
+#         w0  = inputs[1]
+#         return [-0.5 * 0.5/h0*(self.z+T.sqr(self.z))* \
+#             T.pow(h2(self.z, Om0, w0),-1.5) * self.dh2dOm0(Om0, w0)* output_grads[0],  \
+#             + -0.5 * 0.5/h0*(self.z+T.sqr(self.z))* \
+#             T.pow(h2(self.z, Om0, w0),-1.5) * self.dh2dw0(Om0, w0)* output_grads[1]]
 
 class LogLuminosityMarginalizedOverType(Continuous):
     r"""The distribution for the luminosity marginalized over two kinds
@@ -36,8 +150,6 @@ class LogLuminosityMarginalizedOverType(Continuous):
         The probability of the first case
         pdf(T1|X), as a consequence pdf(T2|X) = 1-p
     """
-
-
 
     def __init__(self, mus=numpy.zeros(2), sds=1.+numpy.zeros(2), p=0.5, *args, **kwargs):
         super(LogLuminosityMarginalizedOverType, self).__init__(*args, **kwargs)
@@ -87,14 +199,14 @@ class LogLuminosityGivenSpectype(Normal):
     def logp(self, value):
         return T.log(self.p) + super(LogLuminosityGivenSpectype, self).logp(value)
 
-class CountsWithThreshold(Continuous):
+class Counts(Continuous):
     r"""The distribution for the joint spectype and log-luminosity
 
     pdf of counts given a threshold
 
     .. math::
         pdf(observed redshift, Counts | Luminosity, Redshift, Cosmology, Calibration)
-            = sum_i p_i pdf(Counts | Luminosity, Redshift=observer_redshift_i, Cosmology, Calibration)
+            = sum_i p_i pdf(Counts | Flux_i, Redshift=observer_redshift_i, Calibration)
         
     Parameters
     -----------
@@ -103,51 +215,20 @@ class CountsWithThreshold(Continuous):
 
     """
 
-    cosmo = FlatwCDM(H0=72, Om0=0.28, w0=-1)
-    h0 = (const.c/cosmo.H0).to(u.Mpc).value
+
     ln10 = numpy.log(10.)
 
-    def __init__(self, threshold=0, luminosity=None, zs=None, pzs = None, Om0= None, w0=None, \
-            Z=None, *args, **kwargs):
-        super(CountsWithThreshold, self).__init__(*args, **kwargs)
-        self.threshold = threshold
-        self.zs=zs
+    def __init__(self, fluxes=None, pzs = None, Z=None, *args, **kwargs):
+        super(Counts, self).__init__(*args, **kwargs)
+        self.fluxes = fluxes
         self.pzs=pzs
-        self.luminosity = luminosity
-        self.Om0 = Om0
-        self.w0 = w0
         self.Z = Z
-        
-    def h_inv(self,z):
-        # return 1./T.sqrt(self.Om0*(1+z)**3 + (1-self.Om0)*(1+z)**(3*(1+self.w0)))
-        return (1+z)**(-1.5)/T.sqrt(self.Om0 + (1-self.Om0)*(1+z)**(3*self.w0))
-        
-    def luminosity_distance(self, z):
-        """
-        Poorman luminosity distance.
-
-        Presumably there will be a numerical integration function that inherits from theano.Op with
-        gradient implmented so that HMC can be run.  The class can be specified by the integrand,
-        which is the gradient.
-        """
-
-        # luminosity_distance = (1+z)*(0.5 \
-        #     +0.5/T.sqrt(self.Om0*(1+z)**3 + (1-self.Om0)*(1+z)**(3*(1+self.w0))) \
-        #     +1./T.sqrt(self.Om0*(1+.25*z)**3 + (1-self.Om0)*(1+.25*z)**(3*(1+self.w0))) \
-        #     +1./T.sqrt(self.Om0*(1+.50*z)**3 + (1-self.Om0)*(1+.50*z)**(3*(1+self.w0))) \
-        #     +1./T.sqrt(self.Om0*(1+.75*z)**3 + (1-self.Om0)*(1+.75*z)**(3*(1+self.w0))) \
-        #     )/CountsWithThreshold.h0*z/4
-        luminosity_distance = 0.5/CountsWithThreshold.h0*(z+T.sqr(z))*(1+ self.h_inv(z))
-        return luminosity_distance
-        # return T.log(self.Om0) + z*T.log(self.w0)
-
 
     def logp(self, value):
         ans=0.
-        for index in xrange(len(self.zs)):
-            ld = self.luminosity_distance(self.zs[index])
-            flux = self.luminosity/(4*numpy.pi)/T.sqr(ld)
-            counts  = flux*T.exp(CountsWithThreshold.ln10/2.5*self.Z)
+        for index in xrange(len(self.pzs)):
+            flux = self.fluxes[index]
+            counts  = flux*T.exp(Counts.ln10/2.5*self.Z)
             tau = 1/1e-9/1e-9
             ans = ans + T.log(self.pzs[index]) + (-tau * T.sqr(value - counts) + T.log(tau / numpy.pi / 2.)) / 2.
 
@@ -157,6 +238,44 @@ class CountsWithThreshold(Continuous):
         #self.normalization  = T.log(1-std_cdf((self.threshold-self.mu)/self.sd))
         #return bound(-self.normalization+ super(CountsWithThreshold, self).logp(value), value >= self.threshold)
 
+class SampleRenormalization(Continuous):
+    r""" Renormalization factor from sample selection for a typed supernova with fixed
+    redshift.
+
+    .. math:
+        P(S_c, S_T| z=z_o, X) =
+            sum_i  P(T_i|z=z_o, X)
+                \int dL p(L|T_i, z=z_o, X)  \left[\int_{c_T}^{\infty} dc_o  p(c_o | T=T_i, L, z=z_o, X)\right]
+
+
+    """
+    def __init__(self, threshold = 0, logL_snIa=0, sigma_snIa=1, logL_snII=0, sigma_snII=1,
+             luminosity_distances=None, pzs=0, prob = None, Z=None, *args, **kwargs):
+        super(SampleRenormalization, self).__init__()
+        self.threshold = threshold
+        self.logL_snIa=logL_snIa
+        self.sigma_snIa = sigma_snIa
+        self.logL_snII=logL_snII
+        self.sigma_snII = sigma_snII
+        self.pzs = pzs
+        self.prob = prob
+        self.luminosity_distances=luminosity_distances
+        self.Z = Z
+
+    def logp(self, value):
+        # this is independent of value
+
+        #sum over redshift
+        for ld, pz, indz in zip(self.luminosity_distances,self.pzs,xrange(len(self.pzs))):
+            #sum over type
+            tsum = self.prob*normalization_integral(self.logL_snIa, self.sigma_snIa, self.Z, self.threshold, ld) + \
+                (1-self.prob)*normalization_integral(self.logL_snII, self.sigma_snII, self.Z, self.threshold, ld)
+
+            if indz == 0:
+                ans = pz*tsum
+            else: 
+                ans = ans + pz*tsum
+        return -T.log(ans)
 
 def pgm():
     from daft import PGM, Node, Plate
@@ -541,20 +660,37 @@ def runModel():
 
             """
 
-            counts = CountsWithThreshold('counts'+str(i),luminosity=luminosity, \
-                zs=observation['specz'][i],  pzs = observation['zprob'][i], Om0= Om0, \
-                w0=w0, Z=zeropoints, observed=observation['counts'][i])
+            lds=[]
+            fluxes=[]
+            for z_ in observation['specz'][i]:
+                # ld = 0.5/h0*(z_+T.sqr(z_))* \
+                #     (1+ 1//T.sqrt((1+z_)**3 * (Om0 + (1-Om0)*(1+z_)**(3*w0))))
+                ld = luminosity_distance(z_, Om0, w0)
+                lds.append(ld)
+                fluxes.append(luminosity/4/numpy.pi/ld**2)
 
+            counts = Counts('counts'+str(i),fluxes =fluxes,  \
+                pzs = observation['zprob'][i], Z=zeropoints, observed=observation['counts'][i])
 
-    from pymc3 import find_MAP, NUTS, sample
+            if observation['spectype'][i] == -1 :
+                pass
+            else:
+                normalization=SampleRenormalization('normalization'+str(i), threshold = 1e-9, 
+                    logL_snIa=logL_snIa, sigma_snIa=sigma_snIa, logL_snII=logL_snII, sigma_snII=sigma_snII,
+                    luminosity_distances=lds, Z=zeropoints, pzs=observation['zprob'][i], prob=prob, observed=1)
+
+    from pymc3 import find_MAP, NUTS, sample, summary
     from scipy import optimize
     with basic_model:
+
+        backend = SQLite('trace.sqlite')
 
         # obtain starting values via MAP
         start = find_MAP(fmin=optimize.fmin_bfgs, disp=True)
 
         # draw 2000 posterior samples
-        trace = sample(500, start=start)
+        trace = sample(500, start=start, trace=backend)
 
+        summary(trace)
 runModel()
 #pgm()
